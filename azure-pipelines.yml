@@ -5,9 +5,6 @@ trigger:
 
 variables:
   agent-pool: 'Docker-pool'
-  AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-  AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-  ALLOW_PUSH_CONTAINER: $(ALLOW_PUSH_CONTAINER)
 
 stages:
   - stage: CD
@@ -23,6 +20,10 @@ stages:
           - bash: |
               chmod +x ./tools/push-container.sh
               make cd BUILD_NUMBER="$(Build.BuildNumber)"              
+            env: 
+              AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+              AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+              ALLOW_PUSH_CONTAINER: $(ALLOW_PUSH_CONTAINER)
             displayName: 'make cd'
             condition: succeeded()
           - task: PublishBuildArtifacts@1
