@@ -31,5 +31,5 @@ manifests:
 deliver:
 	@sh ./tools/push-container.sh "${APP_IMAGE_NAME}" "${BUILD_NUMBER}"
 
-ci: clean restore build container
+ci: clean restore build container manifests
 cd: ci deliver
