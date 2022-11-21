@@ -44,9 +44,9 @@ stages:
           - download: current
             artifact: manifests
             displayName: 'Download build artifacts'
-          - publish: '$(Pipeline.Workspace)/manifests/production'
-            artifact: deployed-manifests-prod
-            displayName: 'Publish production manifests'
+          - publish: '$(Pipeline.Workspace)/manifests/'
+            artifact: deployed-manifests
+            displayName: 'Publish manifests'
           - task: Kubernetes@1
             displayName: kubectl apply
             inputs:
