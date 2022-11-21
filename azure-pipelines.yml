@@ -47,7 +47,7 @@ stages:
             displayName: kubectl apply
             inputs:
               connectionType: Kubernetes Service Connection
-              kubernetesServiceEndpoint: Kubernetes-logistics-customshandl-yvkrg
+              kubernetesServiceEndpoint: Kubernetes-Hellman-selfservice-deploy
               cwd: '$(Pipeline.Workspace)/manifests/'
               command: apply
               arguments: -f .
