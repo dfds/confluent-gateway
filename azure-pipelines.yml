@@ -1,0 +1,53 @@
+trigger:
+  branches:
+    include:
+    - master
+
+variables:
+  agent-pool: 'Docker-pool'
+
+stages:
+  - stage: CD
+    displayName: 'Build, test, deliver deployment artifacts'
+    jobs:
+      - job: CD
+        pool: 
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: GoTool@0
+            inputs:
+              version: '1.19.2'
+          - bash: |
+              chmod +x ./tools/push-container.sh
+              make cd BUILD_NUMBER="$(Build.BuildNumber)"              
+            displayName: 'make cd'
+            condition: succeeded()
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Artifact: manifests"
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/.output/manifests'
+              ArtifactName: manifests
+
+  - stage: Deploy
+    dependsOn: CD
+    displayName: 'Deployments'
+    jobs:
+      - job: Production
+        pool: 
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: none
+          - download: current
+            artifact: manifests
+            displayName: 'Download build artifacts'
+          - publish: '$(Pipeline.Workspace)/manifests/production'
+            artifact: deployed-manifests-prod
+            displayName: 'Publish production manifests'
+          - task: Kubernetes@1
+            displayName: kubectl apply
+            inputs:
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceEndpoint: Kubernetes-logistics-customshandl-yvkrg
+              cwd: '$(Pipeline.Workspace)/manifests/'
+              command: apply
+              arguments: -f .
