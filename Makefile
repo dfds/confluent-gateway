@@ -16,11 +16,15 @@ restore:
 	@cd src && go mod download -x
 
 build:
-	@cd src && GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
+	@cd src && GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_BUILD=0 go build \
 		-x \
 		-v \
-		-ldflags '-w -s -extldflags=-static' \
+		-ldflags='-extldflags=-static -w -s' \
+		-tags netgo,osusergo \
 		-o $(OUTPUT_DIR_APP)/confluent-gateway
+
+# NOTE: if CGO_BUILD=0 becomes a problem down the line
+# go build -ldflags='-extldflags=-static -w -s' -tags netgo,osusergo
 
 container:
 	@docker build -t $(APP_IMAGE_NAME) .
