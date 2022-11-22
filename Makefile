@@ -17,8 +17,9 @@ restore:
 
 build:
 	@cd src && GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
+		-x \
 		-v \
-		-ldflags '-w -s' \
+		-ldflags '-w -s -extldflags "-static"' \
 		-o $(OUTPUT_DIR_APP)/confluent-gateway
 
 container:
