@@ -19,7 +19,7 @@ build:
 	@cd src && GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
 		-x \
 		-v \
-		-ldflags '-w -s -extldflags "-static"' \
+		-ldflags '-w -s -extldflags=-static' \
 		-o $(OUTPUT_DIR_APP)/confluent-gateway
 
 container:
