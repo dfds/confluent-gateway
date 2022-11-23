@@ -26,6 +26,11 @@ build:
 # NOTE: if CGO_BUILD=0 becomes a problem down the line
 # go build -ldflags='-extldflags=-static -w -s' -tags netgo,osusergo
 
+test: tests
+
+tests:
+	@cd src && go test -v -cover
+
 container:
 	@docker build -t $(APP_IMAGE_NAME) .
 
