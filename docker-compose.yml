@@ -1,0 +1,8 @@
+version: "3.8"
+
+services:
+
+  fake-confluent-cloud:
+    build: ./fake_dependencies/confluent-cloud
+    ports:
+      - 5051:8080
