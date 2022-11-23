@@ -3,16 +3,40 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func main() {
-	fmt.Println("Fake Confluent Cloud!")
 	r := gin.Default()
 
-	r.GET("/ping", func(c *gin.Context) {
+	r.POST("/kafka/v3/clusters/:cluster_id/topics", func(c *gin.Context) {
+		c.Status(204)
+	})
+
+	r.POST("/iam/v2/service-accounts", func(c *gin.Context) {
+		time.Now().Format("")
 		c.JSON(200, gin.H{
-			"message": "pong",
+			"id": fmt.Sprintf("sa-%s", time.Now().Format("150405")),
 		})
 	})
+
+	r.POST("/kafka/v3/clusters/:cluster_id/acls", func(c *gin.Context) {
+		c.Status(204)
+	})
+
+	r.POST("/iam/v2/api-keys", func(c *gin.Context) {
+		time.Now().Format("")
+		c.JSON(200, gin.H{
+			"id": fmt.Sprintf("username-%s", time.Now().Format("150405")),
+			"spec": gin.H{
+				"secret": fmt.Sprintf("password-%s", time.Now().Format("150405")),
+				"resource": gin.H{
+					"id": "fake-cluster-id-1",
+				},
+			},
+		})
+	})
+
+	fmt.Println("Fake Confluent Cloud!")
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
