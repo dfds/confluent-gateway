@@ -1,5 +1,11 @@
 package models
 
+import (
+	"context"
+	uuid "github.com/satori/go.uuid"
+	"time"
+)
+
 type NewTopicHasBeenRequested struct {
 	CapabilityRootId string // example => logistics-somecapability-abcd
 	ClusterId        string
@@ -13,15 +19,20 @@ type ServiceAccountId string
 type ClusterId string
 
 type Cluster struct {
-	ClusterId         ClusterId
+	ClusterId         ClusterId `gorm:"column:id;primarykey"`
 	Name              string
 	AdminApiEndpoint  string
-	AdminApiKey       ApiKey
+	AdminApiKey       ApiKey `gorm:"embedded;embeddedPrefix:admin_api_key_"`
 	BootstrapEndpoint string
 }
 
+func (*Cluster) TableName() string {
+	return "cluster"
+}
+
 type ClusterRepository interface {
-	Get(id ClusterId) (Cluster, error)
+	Get(ctx context.Context, id ClusterId) (Cluster, error)
+	GetAll(ctx context.Context) ([]Cluster, error)
 }
 
 type Acl struct {
@@ -53,11 +64,17 @@ type Topic struct {
 }
 
 type AclEntry struct {
+	Id             int `gorm:"primarykey"`
+	ProcessId      uuid.UUID
 	ResourceType   string
 	ResourceName   string
 	PatternType    string
 	OperationType  string
 	PermissionType string
+}
+
+func (*AclEntry) TableName() string {
+	return "acl"
 }
 
 type ApiKey struct {
@@ -66,13 +83,20 @@ type ApiKey struct {
 }
 
 type Process struct {
-	CapabilityRootId      CapabilityRootId
-	ClusterId             ClusterId
-	Topic                 Topic
-	ServiceAccountId      ServiceAccountId
-	Acl                   Acl
-	ApiKey                ApiKey
-	IsApiKeyStoredInVault bool
+	Id               uuid.UUID `gorm:"type:uuid;primarykey"`
+	CapabilityRootId CapabilityRootId
+	ClusterId        ClusterId
+	Topic            Topic `gorm:"embedded;embeddedPrefix:topic_"`
+	ServiceAccountId ServiceAccountId
+	Acl              []AclEntry
+	ApiKey           ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
+	ApiKeyCreatedAt  *time.Time
+	CreatedAt        *time.Time
+	CompletedAt      *time.Time
+}
+
+func (*Process) TableName() string {
+	return "process"
 }
 
 func (p *Process) ProcessLogic() {
@@ -83,4 +107,9 @@ func (p *Process) ProcessLogic() {
 	//	1.5. Ensure api keys are stored in vault
 	//2. Ensure topic is created
 	//3. Done!
+}
+
+type ProcessRepository interface {
+	FindById(ctx context.Context, id uuid.UUID) (*Process, error)
+	FindNextIncomplete(ctx context.Context) (*Process, error)
 }
