@@ -3,6 +3,7 @@ BUILD_NUMBER=n/a
 OUTPUT_DIR=${PWD}/.output
 OUTPUT_DIR_APP=${OUTPUT_DIR}/app
 OUTPUT_DIR_MANIFESTS=${OUTPUT_DIR}/manifests
+OUTPUT_DIR_TESTS=${OUTPUT_DIR}/tests
 GOOS=linux
 GOARCH=amd64
 
@@ -11,6 +12,7 @@ clean:
 	@mkdir $(OUTPUT_DIR)
 	@mkdir $(OUTPUT_DIR_APP)
 	@mkdir $(OUTPUT_DIR_MANIFESTS)
+	@mkdir $(OUTPUT_DIR_TESTS)
 
 restore:
 	@cd src && go mod download -x
@@ -29,7 +31,10 @@ build:
 test: tests
 
 tests:
-	@cd src && go test -v -cover
+	@cd src && go test \
+		-v \
+		-cover \
+		-json > $(OUTPUT_DIR_TESTS)/test-results.json
 
 container:
 	@docker build -t $(APP_IMAGE_NAME) .

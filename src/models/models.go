@@ -1,4 +1,4 @@
-package main
+package models
 
 type NewTopicHasBeenRequested struct {
 	CapabilityRootId string // example => logistics-somecapability-abcd
