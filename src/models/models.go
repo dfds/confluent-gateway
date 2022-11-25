@@ -20,6 +20,10 @@ type Cluster struct {
 	BootstrapEndpoint string
 }
 
+type ClusterRepository interface {
+	Get(id ClusterId) (Cluster, error)
+}
+
 type Acl struct {
 	Entries []AclEntry
 }
