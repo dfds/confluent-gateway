@@ -1,0 +1,4 @@
+id,process_id,resource_type,resource_name,pattern_type,operation_type,permission_type
+1,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm
+2,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm
+3,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm
