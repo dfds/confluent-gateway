@@ -47,6 +47,10 @@ package confluent
 //	//)
 //}
 
+type client struct {
+}
+
+//
 //func NewConfluentClient(provider CredentialsProvider) Client {
 //	return &client{provider: provider}
 //}
