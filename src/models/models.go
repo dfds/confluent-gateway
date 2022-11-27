@@ -1,9 +1,5 @@
 package models
 
-import (
-	uuid "github.com/satori/go.uuid"
-)
-
 type NewTopicHasBeenRequested struct {
 	CapabilityRootId string // example => logistics-somecapability-abcd
 	ClusterId        string
@@ -13,17 +9,3 @@ type NewTopicHasBeenRequested struct {
 }
 
 type CapabilityRootId string
-
-type AclEntry struct {
-	Id             int `gorm:"primarykey"`
-	ProcessId      uuid.UUID
-	ResourceType   string
-	ResourceName   string
-	PatternType    string
-	OperationType  string
-	PermissionType string
-}
-
-func (*AclEntry) TableName() string {
-	return "acl"
-}

@@ -1,4 +1,4 @@
-id,process_id,resource_type,resource_name,pattern_type,operation_type,permission_type
-1,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm
-2,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm
-3,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm
+id,process_id,resource_type,resource_name,pattern_type,operation_type,permission_type,created_at
+1100179b-5075-40b1-a155-c44ad1ae268f,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm,2022-01-01
+2584e3b0-6ae0-48c1-9cc5-bac7f375b0eb,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm,
+dbc1477e-6863-4e76-9c9a-54dcc135b813,4bf89980-fe38-46cb-833e-b07bc108d61b,topic,name,type,op,perm,

@@ -2,11 +2,11 @@ package models
 
 type CloudApiAccess struct {
 	ApiEndpoint string
-	UserName    string
+	Username    string
 	Password    string
 }
 
 type ApiKey struct {
-	UserName string
+	Username string
 	Password string
 }

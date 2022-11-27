@@ -40,13 +40,15 @@ CREATE TABLE process (
 );
 
 CREATE TABLE acl (
-    id  INT GENERATED ALWAYS AS IDENTITY,
+    id uuid NOT NULL,
     process_id uuid NOT NULL,
 	resource_type varchar(255) NOT NULL,
 	resource_name varchar(255) NOT NULL,
 	pattern_type varchar(255) NOT NULL,
 	operation_type varchar(255) NOT NULL,
 	permission_type varchar(255) NOT NULL,
+    created_at timestamp NULL,
 
-    CONSTRAINT fk_process FOREIGN KEY(process_id)  REFERENCES process(id)
+    CONSTRAINT acl_pk PRIMARY KEY(id),
+    CONSTRAINT fk_process FOREIGN KEY(process_id) REFERENCES process(id)
 );
