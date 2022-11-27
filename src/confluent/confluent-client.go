@@ -24,7 +24,7 @@ func (c *client) CreateServiceAccount(name string, description string) models.Se
 	panic("implement me")
 }
 
-func (c *client) CreateACLEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclEntry) {
+func (c *client) CreateACLEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) {
 	//TODO implement me
 	panic("implement me")
 }
