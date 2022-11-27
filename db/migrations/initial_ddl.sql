@@ -9,6 +9,18 @@ CREATE TABLE cluster (
     CONSTRAINT cluster_pk PRIMARY KEY(id)
 );
 
+CREATE TABLE service_account (
+    id varchar(255) NOT NULL,
+    capability_root_id varchar(255) NOT NULL,
+    cluster_id varchar(255) NOT NULL,
+    api_key_username varchar(255) NULL,
+    api_key_password varchar(255) NULL,
+    created_at timestamp NOT NULL,
+
+    CONSTRAINT service_account_pk PRIMARY KEY(id)
+);
+
+
 CREATE TABLE process (
     id uuid NOT NULL,
     capability_root_id varchar(255) NOT NULL,
@@ -23,7 +35,8 @@ CREATE TABLE process (
     created_at timestamp NULL,
     completed_at timestamp NULL,
 
-    CONSTRAINT process_pk PRIMARY KEY(id)
+    CONSTRAINT process_pk PRIMARY KEY(id),
+    CONSTRAINT fk_service_account FOREIGN KEY(service_account_id) REFERENCES service_account(id)
 );
 
 CREATE TABLE acl (

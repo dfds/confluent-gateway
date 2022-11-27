@@ -13,19 +13,6 @@ type NewTopicHasBeenRequested struct {
 }
 
 type CapabilityRootId string
-type ServiceAccountId string
-
-type ServiceAccount struct {
-	Id               ServiceAccountId
-	CapabilityRootId CapabilityRootId
-	ClusterAccess    []ClusterAccess
-}
-
-type ClusterAccess struct {
-	ClusterId        ClusterId
-	ServiceAccountId ServiceAccountId
-	ApiKey           ApiKey
-}
 
 type AclEntry struct {
 	Id             int `gorm:"primarykey"`

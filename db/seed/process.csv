@@ -1,2 +1,2 @@
 id,capability_root_id,cluster_id,topic_name,topic_partitions,topic_retention,service_account_id,api_key_username,api_key_password,api_key_created_at,created_at,completed_at
-4bf89980-fe38-46cb-833e-b07bc108d61b,root-id-xyzwu,cluster,topic,1,-1,sa-xyzwe,,,,,
+4bf89980-fe38-46cb-833e-b07bc108d61b,root-id-xyzwu,cluster,topic,1,-1,sa-xyzwu,,,,,
