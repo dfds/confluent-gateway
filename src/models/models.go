@@ -17,12 +17,6 @@ type NewTopicHasBeenRequested struct {
 type CapabilityRootId string
 type ServiceAccountId string
 
-type CloudApiAccess struct {
-	UserName    string
-	Password    string
-	ApiEndpoint string
-}
-
 type ServiceAccount struct {
 	Id               ServiceAccountId
 	CapabilityRootId CapabilityRootId
@@ -53,11 +47,6 @@ type AclEntry struct {
 
 func (*AclEntry) TableName() string {
 	return "acl"
-}
-
-type ApiKey struct {
-	UserName string
-	Password string
 }
 
 type Process struct {
