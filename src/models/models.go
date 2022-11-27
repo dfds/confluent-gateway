@@ -16,28 +16,6 @@ type NewTopicHasBeenRequested struct {
 
 type CapabilityRootId string
 type ServiceAccountId string
-type ClusterId string
-
-type Cluster struct {
-	ClusterId         ClusterId `gorm:"column:id;primarykey"`
-	Name              string
-	AdminApiEndpoint  string
-	AdminApiKey       ApiKey `gorm:"embedded;embeddedPrefix:admin_api_key_"`
-	BootstrapEndpoint string
-}
-
-func (*Cluster) TableName() string {
-	return "cluster"
-}
-
-type ClusterRepository interface {
-	Get(ctx context.Context, id ClusterId) (Cluster, error)
-	GetAll(ctx context.Context) ([]Cluster, error)
-}
-
-type Acl struct {
-	Entries []AclEntry
-}
 
 type CloudApiAccess struct {
 	UserName    string
