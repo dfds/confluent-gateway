@@ -2,10 +2,13 @@ package database
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/dfds/confluent-gateway/models"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type processRepository struct {
@@ -24,7 +27,7 @@ func (r *processRepository) FindById(ctx context.Context, id uuid.UUID) (*models
 }
 
 func (r *processRepository) query(ctx context.Context) *gorm.DB {
-	return r.db.Model(&models.Process{}).Preload("Acl").WithContext(ctx)
+	return r.db.Model(&models.Process{}).Preload("Acl").Preload("ServiceAccount").WithContext(ctx)
 }
 
 func (r *processRepository) FindNextIncomplete(ctx context.Context) (*models.Process, error) {
@@ -38,8 +41,32 @@ func (r *processRepository) FindNextIncomplete(ctx context.Context) (*models.Pro
 	return &process, nil
 }
 
+func (r *processRepository) Find(ctx context.Context, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.Process, error) {
+	var process = models.Process{}
+	err := r.query(ctx).First(&process, "capability_root_id = ? and cluster_id = ? and topic_name = ?", capabilityRootId, clusterId, topicName).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &process, nil
+}
+
+func (r *processRepository) Save(ctx context.Context, process *models.Process) error {
+	return r.db.WithContext(ctx).Create(process).Error
+}
+
+func (r *processRepository) Update(ctx context.Context, process *models.Process) error {
+	fmt.Println("Update")
+	return r.db.Debug().WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Clauses(clause.OnConflict{DoNothing: true}).Save(process).Error
+}
 func NewProcessRepository(dsn string) (models.ProcessRepository, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		//Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		return nil, err
 	}
