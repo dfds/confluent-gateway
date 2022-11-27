@@ -29,12 +29,6 @@ type ClusterAccess struct {
 	ApiKey           ApiKey
 }
 
-type Topic struct {
-	Name       string
-	Partitions int
-	Retention  int
-}
-
 type AclEntry struct {
 	Id             int `gorm:"primarykey"`
 	ProcessId      uuid.UUID
