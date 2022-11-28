@@ -2,6 +2,7 @@ package confluent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dfds/confluent-gateway/models"
@@ -26,23 +27,23 @@ type client struct {
 	clusterRepository models.ClusterRepository
 }
 
-func (c *client) CreateServiceAccount(name string, description string) models.ServiceAccountId {
+func (c *client) CreateServiceAccount(ctx context.Context, name string, description string) models.ServiceAccountId {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *client) CreateACLEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclEntry) {
+func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *client) CreateApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) models.ApiKey {
+func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) models.ApiKey {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *client) CreateTopic(clusterId models.ClusterId, name string, partitions int, retention int) {
-	cluster, _ := c.clusterRepository.Get(clusterId)
+func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) {
+	cluster, _ := c.clusterRepository.Get(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
 	payload, _ := json.Marshal(createTopicRequest{

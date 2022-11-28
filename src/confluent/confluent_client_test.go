@@ -1,6 +1,7 @@
 package confluent
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dfds/confluent-gateway/models"
@@ -16,8 +17,12 @@ type stubClusterRepository struct {
 	cluster models.Cluster
 }
 
-func (stub stubClusterRepository) Get(id models.ClusterId) (models.Cluster, error) {
+func (stub stubClusterRepository) Get(ctx context.Context, id models.ClusterId) (models.Cluster, error) {
 	return stub.cluster, nil
+}
+
+func (stub stubClusterRepository) GetAll(ctx context.Context) ([]models.Cluster, error) {
+	return []models.Cluster{stub.cluster}, nil
 }
 
 func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
@@ -37,7 +42,7 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 				Name:             "dummy",
 				AdminApiEndpoint: server.URL,
 				AdminApiKey: models.ApiKey{
-					UserName: "dummy-username",
+					Username: "dummy-username",
 					Password: "dummy-password",
 				},
 				BootstrapEndpoint: "dummy",
@@ -49,7 +54,7 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			}
 
 			// act
-			stubClient.CreateTopic(stubCluster.ClusterId, "dummy", 1, 1)
+			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", 1, 1)
 
 			// assert
 			expectedRelativeUrl := fmt.Sprintf("/kafka/v3/clusters/%s/topics", stubClusterId)
@@ -79,7 +84,7 @@ func TestCreateTopicCreatesTopicWithExpectedName(t *testing.T) {
 				Name:             "dummy",
 				AdminApiEndpoint: server.URL,
 				AdminApiKey: models.ApiKey{
-					UserName: "dummy-username",
+					Username: "dummy-username",
 					Password: "dummy-password",
 				},
 				BootstrapEndpoint: "dummy",
@@ -91,7 +96,7 @@ func TestCreateTopicCreatesTopicWithExpectedName(t *testing.T) {
 			}
 
 			// act
-			stubClient.CreateTopic(stubCluster.ClusterId, expectedTopicName, 1, 1)
+			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, expectedTopicName, 1, 1)
 
 			// assert
 			if expectedTopicName != sentRequest.TopicName {
@@ -120,7 +125,7 @@ func TestCreateTopicCreatesTopicWithExpectedPartitionCount(t *testing.T) {
 				Name:             "dummy",
 				AdminApiEndpoint: server.URL,
 				AdminApiKey: models.ApiKey{
-					UserName: "dummy-username",
+					Username: "dummy-username",
 					Password: "dummy-password",
 				},
 				BootstrapEndpoint: "dummy",
@@ -132,7 +137,7 @@ func TestCreateTopicCreatesTopicWithExpectedPartitionCount(t *testing.T) {
 			}
 
 			// act
-			stubClient.CreateTopic(stubCluster.ClusterId, "dummy", expectedPartitionCount, 1)
+			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", expectedPartitionCount, 1)
 
 			// assert
 			if expectedPartitionCount != sentRequest.PartitionCount {
@@ -157,7 +162,7 @@ func TestCreateTopicCreatesTopicWithExpectedReplicationFactor(t *testing.T) {
 		Name:             "dummy",
 		AdminApiEndpoint: server.URL,
 		AdminApiKey: models.ApiKey{
-			UserName: "dummy-username",
+			Username: "dummy-username",
 			Password: "dummy-password",
 		},
 		BootstrapEndpoint: "dummy",
@@ -169,7 +174,7 @@ func TestCreateTopicCreatesTopicWithExpectedReplicationFactor(t *testing.T) {
 	}
 
 	// act
-	stubClient.CreateTopic(stubCluster.ClusterId, "dummy", 1, 1)
+	stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", 1, 1)
 
 	// assert
 	if sentRequest.ReplicationFactor != 3 {
@@ -196,7 +201,7 @@ func TestCreateTopicCreatesTopicWithExpectedRetention(t *testing.T) {
 				Name:             "dummy",
 				AdminApiEndpoint: server.URL,
 				AdminApiKey: models.ApiKey{
-					UserName: "dummy-username",
+					Username: "dummy-username",
 					Password: "dummy-password",
 				},
 				BootstrapEndpoint: "dummy",
@@ -208,7 +213,7 @@ func TestCreateTopicCreatesTopicWithExpectedRetention(t *testing.T) {
 			}
 
 			// act
-			stubClient.CreateTopic(stubCluster.ClusterId, "dummy", 1, expectedRetention)
+			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", 1, expectedRetention)
 
 			// assert
 			expectedConfigs := []config{{
