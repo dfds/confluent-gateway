@@ -34,7 +34,7 @@ tests:
 	@cd src && go test \
 		-v \
 		-cover \
-		-json > $(OUTPUT_DIR_TESTS)/test-results.json
+		./...
 
 container:
 	@docker build -t $(APP_IMAGE_NAME) .
