@@ -2,14 +2,13 @@ package confluent
 
 import (
 	"context"
-	"encoding/json"
+	b64 "encoding/base64"
 	"fmt"
 	"github.com/dfds/confluent-gateway/models"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
-	"strconv"
 	"testing"
 )
 
@@ -42,8 +41,8 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 				Name:             "dummy",
 				AdminApiEndpoint: server.URL,
 				AdminApiKey: models.ApiKey{
-					Username: "dummy-username",
-					Password: "dummy-password",
+					Username: "dummy",
+					Password: "dummy",
 				},
 				BootstrapEndpoint: "dummy",
 			}
@@ -58,101 +57,18 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 
 			// assert
 			expectedRelativeUrl := fmt.Sprintf("/kafka/v3/clusters/%s/topics", stubClusterId)
-			if expectedRelativeUrl != usedEndpointUrl {
-				t.Errorf("Unexpected cluster admin api endpoint of %s used", usedEndpointUrl)
-			}
+
+			assert.Equal(t, expectedRelativeUrl, usedEndpointUrl)
 		})
 	}
 }
 
-func TestCreateTopicCreatesTopicWithExpectedName(t *testing.T) {
-	tests := []string{"foo", "bar", "baz", "qux"}
-
-	for _, expectedTopicName := range tests {
-		t.Run(expectedTopicName, func(t *testing.T) {
-			sentRequest := &createTopicRequest{}
-
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNoContent)
-				body, _ := io.ReadAll(r.Body)
-				json.Unmarshal(body, sentRequest)
-			}))
-			defer server.Close()
-
-			stubCluster := models.Cluster{
-				ClusterId:        models.ClusterId("dummy"),
-				Name:             "dummy",
-				AdminApiEndpoint: server.URL,
-				AdminApiKey: models.ApiKey{
-					Username: "dummy-username",
-					Password: "dummy-password",
-				},
-				BootstrapEndpoint: "dummy",
-			}
-
-			stubClient := client{
-				cloudApiAccess:    models.CloudApiAccess{},
-				clusterRepository: stubClusterRepository{cluster: stubCluster},
-			}
-
-			// act
-			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, expectedTopicName, 1, 1)
-
-			// assert
-			if expectedTopicName != sentRequest.TopicName {
-				t.Errorf("Unexpected topic name of %s sent", sentRequest.TopicName)
-			}
-		})
-	}
-}
-
-func TestCreateTopicCreatesTopicWithExpectedPartitionCount(t *testing.T) {
-	tests := []int{1, 2, 3, 4}
-
-	for _, expectedPartitionCount := range tests {
-		t.Run(strconv.Itoa(expectedPartitionCount), func(t *testing.T) {
-			sentRequest := &createTopicRequest{}
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNoContent)
-				body, _ := io.ReadAll(r.Body)
-				json.Unmarshal(body, sentRequest)
-			}))
-
-			defer server.Close()
-
-			stubCluster := models.Cluster{
-				ClusterId:        models.ClusterId("dummy"),
-				Name:             "dummy",
-				AdminApiEndpoint: server.URL,
-				AdminApiKey: models.ApiKey{
-					Username: "dummy-username",
-					Password: "dummy-password",
-				},
-				BootstrapEndpoint: "dummy",
-			}
-
-			stubClient := client{
-				cloudApiAccess:    models.CloudApiAccess{},
-				clusterRepository: stubClusterRepository{cluster: stubCluster},
-			}
-
-			// act
-			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", expectedPartitionCount, 1)
-
-			// assert
-			if expectedPartitionCount != sentRequest.PartitionCount {
-				t.Errorf("Unexpected partition count of %v sent", sentRequest.PartitionCount)
-			}
-		})
-	}
-}
-
-func TestCreateTopicCreatesTopicWithExpectedReplicationFactor(t *testing.T) {
-	sentRequest := &createTopicRequest{}
+func TestCreateTopicSendsExpectedPayload(t *testing.T) {
+	sentRequest := ""
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, sentRequest)
+		sentRequest = string(body)
 	}))
 
 	defer server.Close()
@@ -162,8 +78,54 @@ func TestCreateTopicCreatesTopicWithExpectedReplicationFactor(t *testing.T) {
 		Name:             "dummy",
 		AdminApiEndpoint: server.URL,
 		AdminApiKey: models.ApiKey{
-			Username: "dummy-username",
-			Password: "dummy-password",
+			Username: "dummy",
+			Password: "dummy",
+		},
+		BootstrapEndpoint: "dummy",
+	}
+
+	stubClient := client{
+		cloudApiAccess:    models.CloudApiAccess{},
+		clusterRepository: stubClusterRepository{cluster: stubCluster},
+	}
+
+	// act
+	stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "foo-topic-name", 1, 2)
+
+	// assert
+	assert.JSONEq(
+		t,
+		`{
+			"topic_name": "foo-topic-name",
+			"partition_count": 1,
+			"replication_factor": 3,
+			"configs": [{
+				"name": "retention.ms",
+				"value": "2"
+			}]
+		}`,
+		sentRequest,
+	)
+}
+
+func TestCreateTopicUsesExpectedApiKey(t *testing.T) {
+	expected := "Basic " + b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", "foo", "bar")))
+
+	usedApiKey := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		usedApiKey = r.Header.Get("Authorization")
+	}))
+
+	defer server.Close()
+
+	stubCluster := models.Cluster{
+		ClusterId:        models.ClusterId("dummy"),
+		Name:             "dummy",
+		AdminApiEndpoint: server.URL,
+		AdminApiKey: models.ApiKey{
+			Username: "foo",
+			Password: "bar",
 		},
 		BootstrapEndpoint: "dummy",
 	}
@@ -177,53 +139,5 @@ func TestCreateTopicCreatesTopicWithExpectedReplicationFactor(t *testing.T) {
 	stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", 1, 1)
 
 	// assert
-	if sentRequest.ReplicationFactor != 3 {
-		t.Errorf("Unexpected replication factor of %v sent", sentRequest.ReplicationFactor)
-	}
-}
-
-func TestCreateTopicCreatesTopicWithExpectedRetention(t *testing.T) {
-	tests := []int{1, 2, 3, 4}
-
-	for _, expectedRetention := range tests {
-		t.Run(strconv.Itoa(expectedRetention), func(t *testing.T) {
-			sentRequest := &createTopicRequest{}
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNoContent)
-				body, _ := io.ReadAll(r.Body)
-				json.Unmarshal(body, sentRequest)
-			}))
-
-			defer server.Close()
-
-			stubCluster := models.Cluster{
-				ClusterId:        models.ClusterId("dummy"),
-				Name:             "dummy",
-				AdminApiEndpoint: server.URL,
-				AdminApiKey: models.ApiKey{
-					Username: "dummy-username",
-					Password: "dummy-password",
-				},
-				BootstrapEndpoint: "dummy",
-			}
-
-			stubClient := client{
-				cloudApiAccess:    models.CloudApiAccess{},
-				clusterRepository: stubClusterRepository{cluster: stubCluster},
-			}
-
-			// act
-			stubClient.CreateTopic(context.TODO(), stubCluster.ClusterId, "dummy", 1, expectedRetention)
-
-			// assert
-			expectedConfigs := []config{{
-				Name:  "retention.ms",
-				Value: strconv.Itoa(expectedRetention),
-			}}
-
-			if !reflect.DeepEqual(expectedConfigs, sentRequest.Configs) {
-				t.Errorf("Unexpected retention of %v sent", sentRequest.Configs)
-			}
-		})
-	}
+	assert.Equal(t, expected, usedApiKey)
 }

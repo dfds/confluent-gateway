@@ -56,11 +56,16 @@ func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 		}},
 	})
 
-	_, _ = http.Post(
-		url,
-		"application/json",
-		bytes.NewBuffer(payload),
-	)
+	request, _ := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(cluster.AdminApiKey.Username, cluster.AdminApiKey.Password)
+
+	response, err := http.DefaultClient.Do(request)
+	defer response.Body.Close()
+
+	if err != nil {
+		panic(response.Status)
+	}
 }
 
 func NewConfluentClient(cloudApiAccess models.CloudApiAccess, clusterRepository models.ClusterRepository) models.ConfluentClient {
