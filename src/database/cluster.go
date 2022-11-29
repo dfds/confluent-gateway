@@ -28,10 +28,6 @@ func (r *clusterRepository) GetAll(ctx context.Context) ([]models.Cluster, error
 	return clusters, nil
 }
 
-func (r *clusterRepository) query(ctx context.Context) *gorm.DB {
-	return r.db.Model(&models.Process{}).Preload("Acl").WithContext(ctx)
-}
-
 func NewClusterRepository(dsn string) (models.ClusterRepository, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
