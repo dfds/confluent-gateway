@@ -55,7 +55,7 @@ func (c *client) CreateServiceAccount(ctx context.Context, name string, descript
 	return &serviceAccountId, nil
 }
 
-func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) {
+func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
 	cluster, _ := c.clusterRepository.Get(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/acls", cluster.AdminApiEndpoint, clusterId)
 
@@ -77,8 +77,10 @@ func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 	defer response.Body.Close()
 
 	if err != nil {
-		panic(response.Status)
+		// log
 	}
+
+	return err
 }
 
 func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
@@ -120,7 +122,7 @@ func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 	}, nil
 }
 
-func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) {
+func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) error {
 	cluster, _ := c.clusterRepository.Get(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
@@ -142,8 +144,10 @@ func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	defer response.Body.Close()
 
 	if err != nil {
-		panic(response.Status)
+		// log
 	}
+
+	return err
 }
 
 func NewConfluentClient(cloudApiAccess models.CloudApiAccess, clusterRepository models.ClusterRepository) models.ConfluentClient {
