@@ -56,8 +56,29 @@ func (c *client) CreateServiceAccount(ctx context.Context, name string, descript
 }
 
 func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) {
-	//TODO implement me
-	panic("implement me")
+	cluster, _ := c.clusterRepository.Get(ctx, clusterId)
+	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/acls", cluster.AdminApiEndpoint, clusterId)
+
+	payload := `{
+		"resource_type": "` + string(entry.ResourceType) + `",
+		"resource_name": "` + string(entry.ResourceName) + `",
+		"pattern_type": "` + string(entry.PatternType) + `",
+		"principal": "User:` + string(serviceAccountId) + `",
+		"host": "*",
+		"operation": "` + string(entry.OperationType) + `",
+		"permission": "` + string(entry.PermissionType) + `"
+	}`
+
+	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(cluster.AdminApiKey.Username, cluster.AdminApiKey.Password)
+
+	response, err := http.DefaultClient.Do(request)
+	defer response.Body.Close()
+
+	if err != nil {
+		panic(response.Status)
+	}
 }
 
 func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {

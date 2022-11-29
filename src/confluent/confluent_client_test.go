@@ -385,3 +385,132 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 	// assert
 	assert.Equal(t, expected, *result)
 }
+
+// ---------------------------------------------------------------------------------------------------------
+
+func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
+	tests := []string{"foo", "bar", "baz", "qux"}
+
+	for _, stubClusterId := range tests {
+		t.Run(stubClusterId, func(t *testing.T) {
+			usedEndpointUrl := ""
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNoContent)
+				usedEndpointUrl = r.RequestURI
+			}))
+			defer server.Close()
+
+			stubCluster := models.Cluster{
+				ClusterId:        models.ClusterId(stubClusterId),
+				Name:             "dummy",
+				AdminApiEndpoint: server.URL,
+				AdminApiKey: models.ApiKey{
+					Username: "dummy",
+					Password: "dummy",
+				},
+				BootstrapEndpoint: "dummy",
+			}
+
+			stubClient := client{
+				cloudApiAccess:    models.CloudApiAccess{},
+				clusterRepository: stubClusterRepository{cluster: stubCluster},
+			}
+
+			stubAclDefinition := models.AclDefinition{}
+
+			// act
+			stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, "dummy", stubAclDefinition)
+
+			// assert
+			expectedRelativeUrl := fmt.Sprintf("/kafka/v3/clusters/%s/acls", stubClusterId)
+			assert.Equal(t, expectedRelativeUrl, usedEndpointUrl)
+		})
+	}
+}
+
+func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
+	sentRequest := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		body, _ := io.ReadAll(r.Body)
+		sentRequest = string(body)
+	}))
+
+	defer server.Close()
+
+	stubCluster := models.Cluster{
+		ClusterId:        models.ClusterId("dummy"),
+		Name:             "dummy",
+		AdminApiEndpoint: server.URL,
+		AdminApiKey: models.ApiKey{
+			Username: "dummy",
+			Password: "dummy",
+		},
+		BootstrapEndpoint: "dummy",
+	}
+
+	stubClient := client{
+		cloudApiAccess:    models.CloudApiAccess{},
+		clusterRepository: stubClusterRepository{cluster: stubCluster},
+	}
+
+	stubAclDefinition := models.AclDefinition{
+		ResourceType:   "foo",
+		ResourceName:   "bar",
+		PatternType:    "baz",
+		OperationType:  "qux",
+		PermissionType: "quux",
+	}
+
+	// act
+	stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, "sa-1234", stubAclDefinition)
+
+	// assert
+	assert.JSONEq(
+		t,
+		`{
+			"resource_type": "foo",
+			"resource_name": "bar",
+			"pattern_type": "baz",
+			"principal": "User:sa-1234",
+			"host": "*",
+			"operation": "qux",
+			"permission": "quux"
+		}`,
+		sentRequest,
+	)
+}
+
+func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
+	expected := "Basic " + b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", "foo", "bar")))
+
+	usedApiKey := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		usedApiKey = r.Header.Get("Authorization")
+	}))
+
+	defer server.Close()
+
+	stubCluster := models.Cluster{
+		ClusterId:        models.ClusterId("dummy"),
+		Name:             "dummy",
+		AdminApiEndpoint: server.URL,
+		AdminApiKey: models.ApiKey{
+			Username: "foo",
+			Password: "bar",
+		},
+		BootstrapEndpoint: "dummy",
+	}
+
+	stubClient := client{
+		cloudApiAccess:    models.CloudApiAccess{},
+		clusterRepository: stubClusterRepository{cluster: stubCluster},
+	}
+
+	// act
+	stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, "dummy", models.AclDefinition{})
+
+	// assert
+	assert.Equal(t, expected, usedApiKey)
+}
