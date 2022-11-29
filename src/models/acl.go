@@ -23,16 +23,6 @@ func (ad AclDefinition) String() string {
 	}, " | ")
 }
 
-func NewAclDefinition(resourceType ResourceType, resourceName string, patternType PatternType, operationType OperationType, permissionType PermissionType) AclDefinition {
-	return AclDefinition{
-		ResourceType:   resourceType,
-		ResourceName:   resourceName,
-		PatternType:    patternType,
-		OperationType:  operationType,
-		PermissionType: permissionType,
-	}
-}
-
 type OperationType string
 
 const (
@@ -69,52 +59,54 @@ const (
 )
 
 func CreateAclDefinitions(capabilityRootId CapabilityRootId) []AclDefinition {
-	const PublicTopicPrefix = "pub."
-	const AllTopics = "'*'"
-	const ClusterResourceName = "kafka-cluster"
+	const publicTopicPrefix = "pub."
+	const allTopics = "'*'"
+	const clusterResourceName = "kafka-cluster"
 
-	pubPrefix := fmt.Sprintf("%s%s", PublicTopicPrefix, string(capabilityRootId))
+	pubPrefix := fmt.Sprintf("%s%s", publicTopicPrefix, string(capabilityRootId))
 	connectPrefix := fmt.Sprintf("connect-%s", string(capabilityRootId))
 
 	return []AclDefinition{
 		// deny create operations on all resource types
-		CreateAclForTopicPrefix(AllTopics, OperationTypeCreate, PermissionTypeDeny),
+		defineAcl(ResourceTypeTopic, allTopics, PatternTypePrefix, OperationTypeCreate, PermissionTypeDeny),
 
 		// for all private topics
-		CreateAclForTopicPrefix(string(capabilityRootId), OperationTypeRead, PermissionTypeAllow),
-		CreateAclForTopicPrefix(string(capabilityRootId), OperationTypeWrite, PermissionTypeAllow),
-		CreateAclForTopicPrefix(string(capabilityRootId), OperationTypeCreate, PermissionTypeAllow),
-		CreateAclForTopicPrefix(string(capabilityRootId), OperationTypeDescribe, PermissionTypeAllow),
-		CreateAclForTopicPrefix(string(capabilityRootId), OperationTypeDescribeConfigs, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, string(capabilityRootId), PatternTypePrefix, OperationTypeRead, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, string(capabilityRootId), PatternTypePrefix, OperationTypeWrite, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, string(capabilityRootId), PatternTypePrefix, OperationTypeCreate, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, string(capabilityRootId), PatternTypePrefix, OperationTypeDescribe, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, string(capabilityRootId), PatternTypePrefix, OperationTypeDescribeConfigs, PermissionTypeAllow),
 
 		// for all public topics
-		CreateAclForTopicPrefix(PublicTopicPrefix, OperationTypeRead, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, publicTopicPrefix, PatternTypePrefix, OperationTypeRead, PermissionTypeAllow),
 
 		// for own public topics
-		CreateAclForTopicPrefix(pubPrefix, OperationTypeWrite, PermissionTypeAllow),
-		CreateAclForTopicPrefix(pubPrefix, OperationTypeCreate, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, pubPrefix, PatternTypePrefix, OperationTypeWrite, PermissionTypeAllow),
+		defineAcl(ResourceTypeTopic, pubPrefix, PatternTypePrefix, OperationTypeCreate, PermissionTypeAllow),
 
 		// for all connect groups
-		CreateAclForGroupPrefix(connectPrefix, OperationTypeRead, PermissionTypeAllow),
-		CreateAclForGroupPrefix(connectPrefix, OperationTypeWrite, PermissionTypeAllow),
-		CreateAclForGroupPrefix(connectPrefix, OperationTypeCreate, PermissionTypeAllow),
+		defineAcl(ResourceTypeGroup, connectPrefix, PatternTypePrefix, OperationTypeRead, PermissionTypeAllow),
+		defineAcl(ResourceTypeGroup, connectPrefix, PatternTypePrefix, OperationTypeWrite, PermissionTypeAllow),
+		defineAcl(ResourceTypeGroup, connectPrefix, PatternTypePrefix, OperationTypeCreate, PermissionTypeAllow),
 
 		// for all capability groups
-		CreateAclForGroupPrefix(string(capabilityRootId), OperationTypeRead, PermissionTypeAllow),
-		CreateAclForGroupPrefix(string(capabilityRootId), OperationTypeWrite, PermissionTypeAllow),
-		CreateAclForGroupPrefix(string(capabilityRootId), OperationTypeCreate, PermissionTypeAllow),
+		defineAcl(ResourceTypeGroup, string(capabilityRootId), PatternTypePrefix, OperationTypeRead, PermissionTypeAllow),
+		defineAcl(ResourceTypeGroup, string(capabilityRootId), PatternTypePrefix, OperationTypeWrite, PermissionTypeAllow),
+		defineAcl(ResourceTypeGroup, string(capabilityRootId), PatternTypePrefix, OperationTypeCreate, PermissionTypeAllow),
 
 		// for cluster
-		NewAclDefinition(ResourceTypeCluster, ClusterResourceName, PatternTypeLiteral, OperationTypeAlter, PermissionTypeDeny),
-		NewAclDefinition(ResourceTypeCluster, ClusterResourceName, PatternTypeLiteral, OperationTypeAlterConfigs, PermissionTypeDeny),
-		NewAclDefinition(ResourceTypeCluster, ClusterResourceName, PatternTypeLiteral, OperationTypeClusterAction, PermissionTypeDeny),
+		defineAcl(ResourceTypeCluster, clusterResourceName, PatternTypeLiteral, OperationTypeAlter, PermissionTypeDeny),
+		defineAcl(ResourceTypeCluster, clusterResourceName, PatternTypeLiteral, OperationTypeAlterConfigs, PermissionTypeDeny),
+		defineAcl(ResourceTypeCluster, clusterResourceName, PatternTypeLiteral, OperationTypeClusterAction, PermissionTypeDeny),
 	}
 }
 
-func CreateAclForTopicPrefix(topicName string, operationType OperationType, permissionType PermissionType) AclDefinition {
-	return NewAclDefinition(ResourceTypeTopic, topicName, PatternTypePrefix, operationType, permissionType)
-}
-
-func CreateAclForGroupPrefix(groupName string, operationType OperationType, permissionType PermissionType) AclDefinition {
-	return NewAclDefinition(ResourceTypeGroup, groupName, PatternTypePrefix, operationType, permissionType)
+func defineAcl(resourceType ResourceType, resourceName string, patternType PatternType, operationType OperationType, permissionType PermissionType) AclDefinition {
+	return AclDefinition{
+		ResourceType:   resourceType,
+		ResourceName:   resourceName,
+		PatternType:    patternType,
+		OperationType:  operationType,
+		PermissionType: permissionType,
+	}
 }

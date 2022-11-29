@@ -6,7 +6,7 @@ import (
 )
 
 func TestAclDefinition_String(t *testing.T) {
-	acl := NewAclDefinition(PatternTypePrefix, "pub.", PatternTypePrefix, OperationTypeRead, PermissionTypeAllow)
+	acl := defineAcl(PatternTypePrefix, "pub.", PatternTypePrefix, OperationTypeRead, PermissionTypeAllow)
 
 	assert.Equal(t, "PREFIX | pub. | PREFIX | READ | ALLOW", acl.String())
 }
