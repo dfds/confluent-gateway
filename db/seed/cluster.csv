@@ -1,3 +1,0 @@
-id,name,admin_api_endpoint,admin_api_key_username,admin_api_key_password,bootstrap_endpoint
-c-p_xyzwu,prod,http://api.prod,admin,admin,kafka-prod:9092
-c-t_xyzwu,test,http://api.test,admin,admin,kafka-test:9092
