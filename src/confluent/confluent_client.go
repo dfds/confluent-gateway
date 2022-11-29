@@ -10,26 +10,41 @@ import (
 	"strconv"
 )
 
-type createTopicRequest struct {
-	TopicName         string   `json:"topic_name"`
-	PartitionCount    int      `json:"partition_count"`
-	ReplicationFactor int      `json:"replication_factor"`
-	Configs           []config `json:"configs"`
-}
-
-type config struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
 type client struct {
 	cloudApiAccess    models.CloudApiAccess
 	clusterRepository models.ClusterRepository
 }
 
-func (c *client) CreateServiceAccount(ctx context.Context, name string, description string) models.ServiceAccountId {
-	//TODO implement me
-	panic("implement me")
+func (c *client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
+	url := c.cloudApiAccess.ApiEndpoint
+	payload := `{
+		"display_name": "` + name + `",
+		"description": "` + description + `"
+	}`
+
+	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(c.cloudApiAccess.Username, c.cloudApiAccess.Password)
+
+	response, err := http.DefaultClient.Do(request)
+	defer response.Body.Close()
+
+	if err != nil {
+		//log -> response.Status
+		return "", err
+	}
+
+	serviceAccountResponse := &createServiceAccountResponse{}
+	derr := json.NewDecoder(response.Body).Decode(serviceAccountResponse)
+	if derr != nil {
+		return "", derr
+	}
+
+	return models.ServiceAccountId(serviceAccountResponse.Id), nil
+}
+
+type createServiceAccountResponse struct {
+	Id string ` json:"id"`
 }
 
 func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) {
@@ -46,17 +61,17 @@ func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	cluster, _ := c.clusterRepository.Get(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
-	payload, _ := json.Marshal(createTopicRequest{
-		TopicName:         name,
-		PartitionCount:    partitions,
-		ReplicationFactor: 3,
-		Configs: []config{{
-			Name:  "retention.ms",
-			Value: strconv.Itoa(retention),
-		}},
-	})
+	payload := `{
+		"topic_name": "` + name + `",
+		"partition_count": ` + strconv.Itoa(partitions) + `,
+		"replication_factor": 3,
+		"configs": [{
+			"name": "retention.ms",
+			"value": "` + strconv.Itoa(retention) + `"
+		}]
+	}`
 
-	request, _ := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(cluster.AdminApiKey.Username, cluster.AdminApiKey.Password)
 
