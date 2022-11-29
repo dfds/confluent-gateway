@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/dfds/confluent-gateway/models"
 	uuid "github.com/satori/go.uuid"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -63,15 +62,7 @@ func (r *processRepository) Update(ctx context.Context, process *models.Process)
 	fmt.Println("Update")
 	return r.db.Debug().WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Clauses(clause.OnConflict{DoNothing: true}).Save(process).Error
 }
-func NewProcessRepository(dsn string) (models.ProcessRepository, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		//Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		return nil, err
-	}
 
-	return &processRepository{
-		db: db,
-	}, nil
+func NewProcessRepository(db *gorm.DB) models.ProcessRepository {
+	return &processRepository{db}
 }
