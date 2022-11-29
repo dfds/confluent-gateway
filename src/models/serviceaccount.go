@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	uuid "github.com/satori/go.uuid"
 	"time"
 )
@@ -82,7 +81,7 @@ func (*AclEntry) TableName() string {
 }
 
 type ServiceAccountRepository interface {
-	GetByCapabilityRootId(ctx context.Context, capabilityRootId CapabilityRootId) (*ServiceAccount, error)
-	Create(ctx context.Context, serviceAccount *ServiceAccount) error
-	Save(ctx context.Context, serviceAccount *ServiceAccount) error
+	GetByCapabilityRootId(capabilityRootId CapabilityRootId) (*ServiceAccount, error)
+	Create(serviceAccount *ServiceAccount) error
+	Save(serviceAccount *ServiceAccount) error
 }

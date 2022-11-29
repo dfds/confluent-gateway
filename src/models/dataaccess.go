@@ -1,7 +1,13 @@
 package models
 
+import "context"
+
 type DataAccess interface {
-	Transaction(f func(DataAccess) error) error
+	NewSession(context.Context) DataSession
+}
+
+type DataSession interface {
+	Transaction(func(DataSession) error) error
 	ServiceAccounts() ServiceAccountRepository
 	Processes() ProcessRepository
 }

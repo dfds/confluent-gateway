@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"github.com/dfds/confluent-gateway/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,6 +25,10 @@ func (da *dataAccess) Processes() models.ProcessRepository {
 	return NewProcessRepository(da.db)
 }
 
+func (da *dataAccess) NewSession(ctx context.Context) models.DataSession {
+	return &dataSession{da.db.Session(&gorm.Session{Context: ctx})}
+}
+
 func NewDatabase(dsn string) (models.DataAccess, error) {
 	config := gorm.Config{
 		//	//Logger: logger.Default.LogMode(logger.Silent),
@@ -33,4 +38,22 @@ func NewDatabase(dsn string) (models.DataAccess, error) {
 	} else {
 		return &dataAccess{db}, nil
 	}
+}
+
+type dataSession struct {
+	db *gorm.DB
+}
+
+func (da *dataSession) Transaction(f func(models.DataSession) error) error {
+	return da.db.Debug().Transaction(func(tx *gorm.DB) error {
+		return f(&dataSession{tx})
+	})
+}
+
+func (da *dataSession) ServiceAccounts() models.ServiceAccountRepository {
+	return NewServiceAccountRepository(da.db)
+}
+
+func (da *dataSession) Processes() models.ProcessRepository {
+	return NewProcessRepository(da.db)
 }

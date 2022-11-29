@@ -40,8 +40,8 @@ func (p *ProcessState) MarkAsCompleted() {
 }
 
 type ProcessRepository interface {
-	Create(ctx context.Context, process *ProcessState) error
-	Update(ctx context.Context, process *ProcessState) error
+	Create(process *ProcessState) error
+	Update(process *ProcessState) error
 }
 
 //endregion
@@ -54,8 +54,8 @@ func NewTopicCreationProcess(data DataAccess) *TopicCreationProcess {
 	return &TopicCreationProcess{data}
 }
 
-func (tcp *TopicCreationProcess) ProcessLogic(request NewTopicHasBeenRequested) {
-	p, err := tcp.prepareProcess(request)
+func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) {
+	p, err := tcp.prepareProcess(ctx, request)
 	if err != nil {
 		panic(err)
 	}
@@ -88,12 +88,14 @@ func (tcp *TopicCreationProcess) ProcessLogic(request NewTopicHasBeenRequested) 
 	}
 }
 
-func (tcp *TopicCreationProcess) prepareProcess(request NewTopicHasBeenRequested) (*process, error) {
+func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request NewTopicHasBeenRequested) (*process, error) {
 	capabilityRootId := CapabilityRootId(request.CapabilityRootId)
 	clusterId := ClusterId(request.ClusterId)
 	topic := NewTopic(request.TopicName, request.Partitions, request.Retention)
 
-	serviceAccount, err := tcp.data.ServiceAccounts().GetByCapabilityRootId(context.TODO(), capabilityRootId)
+	session := tcp.data.NewSession(ctx)
+
+	serviceAccount, err := session.ServiceAccounts().GetByCapabilityRootId(capabilityRootId)
 	if err != nil {
 		return nil, err
 	}
@@ -123,36 +125,36 @@ func (tcp *TopicCreationProcess) prepareProcess(request NewTopicHasBeenRequested
 		CompletedAt:       nil,
 	}
 
-	if err := tcp.data.Processes().Create(context.TODO(), state); err != nil {
+	if err := session.Processes().Create(state); err != nil {
 		return nil, err
 	}
 
-	return &process{tcp.data, state}, nil
+	return &process{session, state}, nil
 }
 
 type process struct {
-	Data  DataAccess
-	State *ProcessState
+	Session DataSession
+	State   *ProcessState
 }
 
 func (p *process) execute(stepFunc func(*process) error) error {
-	return p.Data.Transaction(func(data DataAccess) error {
-		session := &process{data, p.State}
+	return p.Session.Transaction(func(session DataSession) error {
+		process := &process{session, p.State}
 
-		if err := stepFunc(session); err != nil {
+		if err := stepFunc(process); err != nil {
 			return err
 		}
 
-		return data.Processes().Update(context.TODO(), p.State)
+		return session.Processes().Update(p.State)
 	})
 }
 
 // region Steps
 
-func ensureServiceAccount(session *process) error {
+func ensureServiceAccount(process *process) error {
 	fmt.Println("### EnsureServiceAccount")
 
-	if session.State.HasServiceAccount {
+	if process.State.HasServiceAccount {
 		return nil
 	}
 
@@ -161,33 +163,33 @@ func ensureServiceAccount(session *process) error {
 
 	newServiceAccount := &ServiceAccount{
 		Id:               serviceAccountId,
-		CapabilityRootId: session.State.CapabilityRootId,
-		ClusterAccesses:  []ClusterAccess{NewClusterAccess(serviceAccountId, session.State.ClusterId, session.State.CapabilityRootId)},
+		CapabilityRootId: process.State.CapabilityRootId,
+		ClusterAccesses:  []ClusterAccess{NewClusterAccess(serviceAccountId, process.State.ClusterId, process.State.CapabilityRootId)},
 		CreatedAt:        time.Now(),
 	}
 
-	session.State.HasServiceAccount = true
+	process.State.HasServiceAccount = true
 
-	return session.Data.ServiceAccounts().Create(context.TODO(), newServiceAccount)
+	return process.Session.ServiceAccounts().Create(newServiceAccount)
 }
 
-func ensureServiceAccountAcl(session *process) error {
+func ensureServiceAccountAcl(process *process) error {
 	fmt.Println("### EnsureServiceAccountAcl")
-	if session.State.HasClusterAccess {
+	if process.State.HasClusterAccess {
 		return nil
 	}
 
-	serviceAccount, err := session.Data.ServiceAccounts().GetByCapabilityRootId(context.TODO(), session.State.CapabilityRootId)
+	serviceAccount, err := process.Session.ServiceAccounts().GetByCapabilityRootId(process.State.CapabilityRootId)
 	if err != nil {
 		return err
 	}
 
-	clusterAccess, ok := serviceAccount.TryGetClusterAccess(session.State.ClusterId)
+	clusterAccess, ok := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
 
 	if !ok {
-		clusterAccess = NewClusterAccess(serviceAccount.Id, session.State.ClusterId, session.State.CapabilityRootId)
+		clusterAccess = NewClusterAccess(serviceAccount.Id, process.State.ClusterId, process.State.CapabilityRootId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, clusterAccess)
-		session.Data.ServiceAccounts().Save(context.TODO(), serviceAccount)
+		process.Session.ServiceAccounts().Save(serviceAccount)
 	}
 
 	for _, entry := range clusterAccess.Acl {
@@ -199,66 +201,66 @@ func ensureServiceAccountAcl(session *process) error {
 		now := time.Now()
 		entry.CreatedAt = &now
 
-		err := session.Data.ServiceAccounts().Save(context.TODO(), serviceAccount)
+		err := process.Session.ServiceAccounts().Save(serviceAccount)
 		if err != nil {
 			return err
 		}
 	}
 
-	session.State.HasClusterAccess = true
+	process.State.HasClusterAccess = true
 	return nil
 }
 
-func ensureServiceAccountApiKey(session *process) error {
+func ensureServiceAccountApiKey(process *process) error {
 	fmt.Println("### EnsureServiceAccountApiKey")
-	if session.State.HasApiKey {
+	if process.State.HasApiKey {
 		return nil
 	}
 
-	serviceAccount, err := session.Data.ServiceAccounts().GetByCapabilityRootId(context.TODO(), session.State.CapabilityRootId)
+	serviceAccount, err := process.Session.ServiceAccounts().GetByCapabilityRootId(process.State.CapabilityRootId)
 	if err != nil {
 		return err
 	}
 
-	clusterAccess, _ := serviceAccount.TryGetClusterAccess(session.State.ClusterId)
+	clusterAccess, _ := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
 
 	// TODO -- create API key in Confluent Cloud
 
 	clusterAccess.ApiKey = ApiKey{"USERNAME", "PA55W0RD"}
-	err = session.Data.ServiceAccounts().Save(context.TODO(), serviceAccount)
+	err = process.Session.ServiceAccounts().Save(serviceAccount)
 	if err != nil {
 		return err
 	}
 
-	session.State.HasApiKey = true
+	process.State.HasApiKey = true
 	return nil
 }
 
-func ensureServiceAccountApiKeyAreStoredInVault(session *process) error {
+func ensureServiceAccountApiKeyAreStoredInVault(process *process) error {
 	fmt.Println("### EnsureServiceAccountApiKeyAreStoredInVault")
-	if session.State.HasApiKeyInVault {
+	if process.State.HasApiKeyInVault {
 		return nil
 	}
 
-	serviceAccount, err := session.Data.ServiceAccounts().GetByCapabilityRootId(context.TODO(), session.State.CapabilityRootId)
+	serviceAccount, err := process.Session.ServiceAccounts().GetByCapabilityRootId(process.State.CapabilityRootId)
 	if err != nil {
 		return err
 	}
 
-	clusterAccess, _ := serviceAccount.TryGetClusterAccess(session.State.ClusterId)
+	clusterAccess, _ := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
 
 	// TODO -- save API key in vault
 	_ = clusterAccess.ApiKey
 
-	session.State.HasApiKeyInVault = true
+	process.State.HasApiKeyInVault = true
 
 	return nil
 }
 
-func ensureTopicIsCreated(session *process) error {
+func ensureTopicIsCreated(process *process) error {
 	// TODO -- create topic in Confluent Cloud
 
-	session.State.MarkAsCompleted()
+	process.State.MarkAsCompleted()
 
 	return nil
 }
