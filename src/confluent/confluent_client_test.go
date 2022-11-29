@@ -145,34 +145,30 @@ func TestCreateTopicUsesExpectedApiKey(t *testing.T) {
 // ---------------------------------------------------------------------------------------------------------
 
 func TestCreateServiceAccountCallsExpectedEndpoint(t *testing.T) {
-	tests := []string{"foo", "bar", "baz", "qux"}
+	expectedRelativeUrl := "/iam/v2/service-accounts"
 
-	for _, stubEndpoint := range tests {
-		t.Run(stubEndpoint, func(t *testing.T) {
-			usedEndpointUrl := ""
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNoContent)
-				usedEndpointUrl = r.RequestURI
-			}))
-			defer server.Close()
+	usedEndpointUrl := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		usedEndpointUrl = r.RequestURI
+	}))
 
-			stubClient := client{
-				cloudApiAccess: models.CloudApiAccess{
-					ApiEndpoint: server.URL + "/" + stubEndpoint,
-					Username:    "dummy",
-					Password:    "dummy",
-				},
-				clusterRepository: stubClusterRepository{},
-			}
+	defer server.Close()
 
-			// act
-			stubClient.CreateServiceAccount(context.TODO(), "dummy", "dummy")
-
-			// assert
-			expectedRelativeUrl := "/" + stubEndpoint
-			assert.Equal(t, expectedRelativeUrl, usedEndpointUrl)
-		})
+	stubClient := client{
+		cloudApiAccess: models.CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "dummy",
+			Password:    "dummy",
+		},
+		clusterRepository: stubClusterRepository{},
 	}
+
+	// act
+	stubClient.CreateServiceAccount(context.TODO(), "dummy", "dummy")
+
+	// assert
+	assert.Equal(t, expectedRelativeUrl, usedEndpointUrl)
 }
 
 func TestCreateServiceAccountSendsExpectedPayload(t *testing.T) {
@@ -258,4 +254,134 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 
 	// assert
 	assert.Equal(t, expected, serviceAccountId)
+}
+
+// ---------------------------------------------------------------------------------------------------------
+
+func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
+	expectedRelativeUrl := "/iam/v2/api-keys"
+
+	usedEndpointUrl := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		usedEndpointUrl = r.RequestURI
+	}))
+	defer server.Close()
+
+	stubClient := client{
+		cloudApiAccess: models.CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "dummy",
+			Password:    "dummy",
+		},
+		clusterRepository: stubClusterRepository{},
+	}
+
+	// act
+	stubClient.CreateApiKey(context.TODO(), "dummy", "dummy")
+
+	// assert
+	assert.Equal(t, expectedRelativeUrl, usedEndpointUrl)
+}
+
+func TestCreateApiKeySendsExpectedPayload(t *testing.T) {
+	sentPayload := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		body, _ := io.ReadAll(r.Body)
+		sentPayload = string(body)
+	}))
+
+	defer server.Close()
+
+	stubClient := client{
+		cloudApiAccess: models.CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "dummy",
+			Password:    "dummy",
+		},
+		clusterRepository: stubClusterRepository{},
+	}
+
+	// act
+	stubClient.CreateApiKey(context.TODO(), "foo", "bar")
+
+	// assert
+	assert.JSONEq(
+		t,
+		`{
+			"spec": {
+				"display_name": "foo-bar",
+				"description": "Created with Confluent Gateway",
+				"owner": {
+				  	"id": "bar"
+				},
+				"resource": {
+				  	"id": "foo"
+				}
+			}
+		}`,
+		sentPayload,
+	)
+}
+
+func TestCreateApiKeyUsesExpectedApiKey(t *testing.T) {
+	expected := "Basic " + b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", "foo", "bar")))
+
+	usedApiKey := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		usedApiKey = r.Header.Get("Authorization")
+	}))
+
+	defer server.Close()
+
+	stubClient := client{
+		cloudApiAccess: models.CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "foo",
+			Password:    "bar",
+		},
+		clusterRepository: stubClusterRepository{},
+	}
+
+	// act
+	stubClient.CreateApiKey(context.TODO(), "dummy", "dummy")
+
+	// assert
+	assert.Equal(t, expected, usedApiKey)
+}
+
+func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
+	expected := models.ApiKey{
+		Username: "foo",
+		Password: "bar",
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"id": "foo",
+			"spec": {
+				"secret": "bar"
+			}
+		}`))
+	}))
+
+	defer server.Close()
+
+	stubClient := client{
+		cloudApiAccess: models.CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "dummy",
+			Password:    "dummy",
+		},
+		clusterRepository: stubClusterRepository{},
+	}
+
+	// act
+	result, _ := stubClient.CreateApiKey(context.TODO(), "dummy", "dummy")
+
+	// assert
+	assert.Equal(t, expected, *result)
 }
