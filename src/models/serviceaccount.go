@@ -1,31 +1,88 @@
 package models
 
 import (
+	"context"
+	uuid "github.com/satori/go.uuid"
 	"time"
 )
 
 type ServiceAccountId string
 
 type ServiceAccount struct {
-	Id               ServiceAccountId
+	Id               ServiceAccountId `gorm:"primarykey"`
 	CapabilityRootId CapabilityRootId
-	ClusterId        ClusterId
-	ApiKey           ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
-	//Acl              []AclEntry
-	CreatedAt time.Time
+	ClusterAccesses  []ClusterAccess
+	CreatedAt        time.Time
 }
 
 func (*ServiceAccount) TableName() string {
 	return "service_account"
 }
 
-type AclEntry struct {
-	Id               int `gorm:"primarykey"`
+func (sa *ServiceAccount) TryGetClusterAccess(clusterId ClusterId) (ClusterAccess, bool) {
+	for _, clusterAccess := range sa.ClusterAccesses {
+		if clusterAccess.ClusterId == clusterId {
+			return clusterAccess, true
+		}
+	}
+	return ClusterAccess{}, false
+}
+
+type ClusterAccess struct {
+	Id               uuid.UUID `gorm:"primarykey"`
+	ClusterId        ClusterId
 	ServiceAccountId ServiceAccountId
-	CreatedAt        *time.Time
+	ApiKey           ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
+	Acl              []AclEntry
+	CreatedAt        time.Time
+}
+
+func (*ClusterAccess) TableName() string {
+	return "cluster_access"
+}
+
+func NewClusterAccess(serviceAccountId ServiceAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) ClusterAccess {
+	clusterAccessId := uuid.NewV4()
+
+	return ClusterAccess{
+		Id:               clusterAccessId,
+		ServiceAccountId: serviceAccountId,
+		ClusterId:        clusterId,
+		ApiKey:           ApiKey{},
+		Acl:              createAclEntries(capabilityRootId, clusterAccessId),
+		CreatedAt:        time.Now(),
+	}
+}
+
+func createAclEntries(capabilityRootId CapabilityRootId, clusterAccessId uuid.UUID) []AclEntry {
+	allDefinitions := CreateAclDefinitions(capabilityRootId)
+
+	acl := make([]AclEntry, len(allDefinitions))
+
+	for i, definition := range allDefinitions {
+		acl[i] = AclEntry{
+			Id:              uuid.NewV4(),
+			ClusterAccessId: clusterAccessId,
+			CreatedAt:       nil,
+			AclDefinition:   definition,
+		}
+	}
+	return acl
+}
+
+type AclEntry struct {
+	Id              uuid.UUID `gorm:"primarykey"`
+	ClusterAccessId uuid.UUID
+	CreatedAt       *time.Time
 	AclDefinition
 }
 
 func (*AclEntry) TableName() string {
 	return "acl"
+}
+
+type ServiceAccountRepository interface {
+	GetByCapabilityRootId(ctx context.Context, capabilityRootId CapabilityRootId) (*ServiceAccount, error)
+	Create(ctx context.Context, serviceAccount *ServiceAccount) error
+	Save(ctx context.Context, serviceAccount *ServiceAccount) error
 }
