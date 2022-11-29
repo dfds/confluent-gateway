@@ -253,7 +253,7 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 	serviceAccountId, _ := stubClient.CreateServiceAccount(context.TODO(), "dummy", "dummy")
 
 	// assert
-	assert.Equal(t, expected, serviceAccountId)
+	assert.Equal(t, expected, *serviceAccountId)
 }
 
 // ---------------------------------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ type createApiKeyResponse struct {
 	} `json:"spec"`
 }
 
-func (c *client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
+func (c *client) CreateServiceAccount(ctx context.Context, name string, description string) (*models.ServiceAccountId, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
 	payload := `{
 		"display_name": "` + name + `",
@@ -42,16 +42,17 @@ func (c *client) CreateServiceAccount(ctx context.Context, name string, descript
 
 	if err != nil {
 		//log -> response.Status
-		return "", err
+		return nil, err
 	}
 
 	serviceAccountResponse := &createServiceAccountResponse{}
 	derr := json.NewDecoder(response.Body).Decode(serviceAccountResponse)
 	if derr != nil {
-		return "", derr
+		return nil, derr
 	}
 
-	return models.ServiceAccountId(serviceAccountResponse.Id), nil
+	serviceAccountId := models.ServiceAccountId(serviceAccountResponse.Id)
+	return &serviceAccountId, nil
 }
 
 func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) {
