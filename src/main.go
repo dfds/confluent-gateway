@@ -7,14 +7,20 @@ import (
 const dsn = "host=localhost user=postgres password=p dbname=db port=5432 sslmode=disable"
 
 func main() {
-	//pr, err := database.NewProcessRepository(dsn)
+	//db, err := database.NewDatabase(dsn)
 	//if err != nil {
 	//	panic(err)
 	//}
 	//
-	//process := models.NewTopicCreationProcess(pr)
+	//process := models.NewTopicCreationProcess(db, &mocks.MockClient{
+	//	ServiceAccountId: "sa-some",
+	//	ApiKey: models.ApiKey{
+	//		Username: "u-some",
+	//		Password: "p-another",
+	//	},
+	//}, &mocks.MockAwsClient{})
 	//
-	//process.ProcessLogic(models.NewTopicHasBeenRequested{
+	//process.ProcessLogic(context.TODO(), models.NewTopicHasBeenRequested{
 	//	CapabilityRootId: "new-cap",
 	//	ClusterId:        "cluster-id",
 	//	TopicName:        "new-topic",
