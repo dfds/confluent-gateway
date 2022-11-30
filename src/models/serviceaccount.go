@@ -40,6 +40,18 @@ func (*ClusterAccess) TableName() string {
 	return "cluster_access"
 }
 
+func (ca *ClusterAccess) GetAclPendingCreation() []*AclEntry {
+	var pending []*AclEntry
+
+	for _, entry := range ca.Acl {
+		if entry.CreatedAt == nil {
+			pending = append(pending, &entry)
+		}
+	}
+
+	return pending
+}
+
 func NewClusterAccess(serviceAccountId ServiceAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) ClusterAccess {
 	clusterAccessId := uuid.NewV4()
 

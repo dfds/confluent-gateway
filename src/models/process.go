@@ -71,7 +71,7 @@ func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTo
 		panic(err)
 	}
 	//	1.3. Ensure service account has all acls
-	if err := p.execute(ensureServiceAccountAcl); err != nil {
+	if err := p.executeWhile(ensureServiceAccountAcl, p.HasPendingClusterAccess); err != nil {
 		panic(err)
 	}
 	//	1.4. Ensure service account has api keys
@@ -137,6 +137,10 @@ type process struct {
 	State   *ProcessState
 }
 
+func (p *process) HasPendingClusterAccess() bool {
+	return !p.State.HasClusterAccess
+}
+
 func (p *process) execute(stepFunc func(*process) error) error {
 	return p.Session.Transaction(func(session DataSession) error {
 		process := &process{session, p.State}
@@ -147,6 +151,15 @@ func (p *process) execute(stepFunc func(*process) error) error {
 
 		return session.Processes().Update(p.State)
 	})
+}
+
+func (p *process) executeWhile(stepFunc func(*process) error, predicate func() bool) error {
+	for predicate() {
+		if err := p.execute(stepFunc); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // region Steps
@@ -184,31 +197,32 @@ func ensureServiceAccountAcl(process *process) error {
 		return err
 	}
 
-	clusterAccess, ok := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
+	clusterAccess, hasClusterAccess := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
 
-	if !ok {
+	if !hasClusterAccess {
 		clusterAccess = NewClusterAccess(serviceAccount.Id, process.State.ClusterId, process.State.CapabilityRootId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, clusterAccess)
-		process.Session.ServiceAccounts().Save(serviceAccount)
-	}
-
-	for _, entry := range clusterAccess.Acl {
-		if entry.CreatedAt != nil {
-			continue
-		}
-
-		// TODO -- create ACLs in Confluent Cloud
-		now := time.Now()
-		entry.CreatedAt = &now
-
-		err := process.Session.ServiceAccounts().Save(serviceAccount)
-		if err != nil {
+		if err = process.Session.ServiceAccounts().Save(serviceAccount); err != nil {
 			return err
 		}
 	}
 
-	process.State.HasClusterAccess = true
-	return nil
+	entries := clusterAccess.GetAclPendingCreation()
+	if len(entries) == 0 {
+		// no acl entries left => mark as done
+		process.State.HasClusterAccess = true
+		return nil
+
+	} else {
+		nextEntry := entries[0]
+
+		// TODO -- create ACLs in Confluent Cloud
+
+		now := time.Now()
+		nextEntry.CreatedAt = &now
+
+		return process.Session.ServiceAccounts().Save(serviceAccount)
+	}
 }
 
 func ensureServiceAccountApiKey(process *process) error {
