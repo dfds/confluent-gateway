@@ -47,11 +47,12 @@ type ProcessRepository interface {
 //endregion
 
 type TopicCreationProcess struct {
-	data DataAccess
+	data   DataAccess
+	client ConfluentClient
 }
 
-func NewTopicCreationProcess(data DataAccess) *TopicCreationProcess {
-	return &TopicCreationProcess{data}
+func NewTopicCreationProcess(data DataAccess, client ConfluentClient) *TopicCreationProcess {
+	return &TopicCreationProcess{data, client}
 }
 
 func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) {
@@ -129,12 +130,13 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 		return nil, err
 	}
 
-	return &process{session, state}, nil
+	return &process{session, state, tcp.client}, nil
 }
 
 type process struct {
 	Session DataSession
 	State   *ProcessState
+	Client  ConfluentClient
 }
 
 func (p *process) HasPendingClusterAccess() bool {
@@ -143,7 +145,7 @@ func (p *process) HasPendingClusterAccess() bool {
 
 func (p *process) execute(stepFunc func(*process) error) error {
 	return p.Session.Transaction(func(session DataSession) error {
-		process := &process{session, p.State}
+		process := &process{session, p.State, p.Client}
 
 		if err := stepFunc(process); err != nil {
 			return err
@@ -171,13 +173,15 @@ func ensureServiceAccount(process *process) error {
 		return nil
 	}
 
-	// TODO -- create service account in confluent cloud
-	serviceAccountId := ServiceAccountId("sa-some")
+	serviceAccountId, err := process.Client.CreateServiceAccount(context.TODO(), "sa-some-name", "sa description")
+	if err != nil {
+		return err
+	}
 
 	newServiceAccount := &ServiceAccount{
-		Id:               serviceAccountId,
+		Id:               *serviceAccountId,
 		CapabilityRootId: process.State.CapabilityRootId,
-		ClusterAccesses:  []ClusterAccess{NewClusterAccess(serviceAccountId, process.State.ClusterId, process.State.CapabilityRootId)},
+		ClusterAccesses:  []ClusterAccess{NewClusterAccess(*serviceAccountId, process.State.ClusterId, process.State.CapabilityRootId)},
 		CreatedAt:        time.Now(),
 	}
 
@@ -216,7 +220,9 @@ func ensureServiceAccountAcl(process *process) error {
 	} else {
 		nextEntry := entries[0]
 
-		// TODO -- create ACLs in Confluent Cloud
+		if err := process.Client.CreateACLEntry(context.TODO(), process.State.ClusterId, serviceAccount.Id, nextEntry.AclDefinition); err != nil {
+			return err
+		}
 
 		now := time.Now()
 		nextEntry.CreatedAt = &now
@@ -238,9 +244,12 @@ func ensureServiceAccountApiKey(process *process) error {
 
 	clusterAccess, _ := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
 
-	// TODO -- create API key in Confluent Cloud
+	key, err := process.Client.CreateApiKey(context.TODO(), clusterAccess.ClusterId, serviceAccount.Id)
+	if err != nil {
+		return err
+	}
 
-	clusterAccess.ApiKey = ApiKey{"USERNAME", "PA55W0RD"}
+	clusterAccess.ApiKey = *key
 	err = process.Session.ServiceAccounts().Save(serviceAccount)
 	if err != nil {
 		return err
@@ -272,7 +281,13 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *process) error {
 }
 
 func ensureTopicIsCreated(process *process) error {
-	// TODO -- create topic in Confluent Cloud
+	fmt.Println("### EnsureTopicIsCreated")
+
+	topic := process.State.Topic
+	err := process.Client.CreateTopic(context.TODO(), process.State.ClusterId, topic.Name, topic.Partitions, topic.Retention)
+	if err != nil {
+		return err
+	}
 
 	process.State.MarkAsCompleted()
 
