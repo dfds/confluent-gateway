@@ -48,3 +48,6 @@ deliver:
 
 ci: clean restore build tests container manifests
 cd: ci deliver
+
+run:
+	@cd src && go run main.go
