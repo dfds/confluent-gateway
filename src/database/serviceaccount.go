@@ -38,6 +38,10 @@ func (r *serviceAccountRepository) Save(serviceAccount *models.ServiceAccount) e
 	return r.db.Save(serviceAccount).Error
 }
 
+func (r *serviceAccountRepository) UpdateAclEntry(aclEntry *models.AclEntry) error {
+	return r.db.Save(aclEntry).Error
+}
+
 func NewServiceAccountRepository(db *gorm.DB) models.ServiceAccountRepository {
 	return &serviceAccountRepository{db}
 }

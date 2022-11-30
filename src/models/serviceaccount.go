@@ -40,12 +40,12 @@ func (*ClusterAccess) TableName() string {
 	return "cluster_access"
 }
 
-func (ca *ClusterAccess) GetAclPendingCreation() []*AclEntry {
-	var pending []*AclEntry
+func (ca *ClusterAccess) GetAclPendingCreation() []AclEntry {
+	var pending []AclEntry
 
 	for _, entry := range ca.Acl {
 		if entry.CreatedAt == nil {
-			pending = append(pending, &entry)
+			pending = append(pending, entry)
 		}
 	}
 
@@ -84,7 +84,7 @@ func createAclEntries(capabilityRootId CapabilityRootId, clusterAccessId uuid.UU
 type AclEntry struct {
 	Id              uuid.UUID `gorm:"primarykey"`
 	ClusterAccessId uuid.UUID
-	CreatedAt       *time.Time
+	CreatedAt       *time.Time `gorm:"autoCreateTime:false"`
 	AclDefinition
 }
 
@@ -96,4 +96,5 @@ type ServiceAccountRepository interface {
 	GetByCapabilityRootId(capabilityRootId CapabilityRootId) (*ServiceAccount, error)
 	Create(serviceAccount *ServiceAccount) error
 	Save(serviceAccount *ServiceAccount) error
+	UpdateAclEntry(aclEntry *AclEntry) error
 }

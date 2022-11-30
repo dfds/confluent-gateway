@@ -229,7 +229,7 @@ func ensureServiceAccountAcl(process *process) error {
 		now := time.Now()
 		nextEntry.CreatedAt = &now
 
-		return process.Session.ServiceAccounts().Save(serviceAccount)
+		return process.Session.ServiceAccounts().UpdateAclEntry(&nextEntry)
 	}
 }
 
