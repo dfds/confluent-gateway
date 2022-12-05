@@ -60,7 +60,7 @@ func NewTopicCreationProcess(data DataAccess, client ConfluentClient, aws AwsCli
 func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) error {
 	p, err := tcp.prepareProcess(ctx, request)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if p.State.IsCompleted() {
