@@ -46,7 +46,11 @@ type logger struct {
 }
 
 func (l *logger) Error(error *error, message string, args ...string) {
-	logger := l.innerLog.Error().Err(*error)
+	logger := l.innerLog.Error()
+
+	if error != nil {
+		logger = logger.Err(*error)
+	}
 
 	msg := convertToMessage(message, args...)
 	for _, v := range msg.fields {

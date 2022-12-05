@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"github.com/dfds/confluent-gateway/logging"
+	"github.com/dfds/confluent-gateway/messaging"
 )
 
 const dsn = "host=localhost user=postgres password=p dbname=db port=5432 sslmode=disable"
@@ -43,6 +45,13 @@ func main() {
 		AppName:      "lala",
 	})
 
-	log.Trace("simple message")
-	log.Debug("one reference {Something}", "foo")
+	consumer, _ := messaging.NewConsumer(log, messaging.ConsumerOptions{
+		Broker:      "localhost:9092",
+		GroupId:     "test-consumer-1",
+		Topics:      []string{"hello"},
+		Credentials: nil,
+	})
+
+	log.Information("Starting consumer...")
+	consumer.Start(context.Background())
 }
