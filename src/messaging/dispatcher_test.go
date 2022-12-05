@@ -74,7 +74,7 @@ func NewMessageRegistryWithErrorStub(error error) MessageRegistry {
 	return &messageRegistryStub{error: error}
 }
 
-func (m *messageRegistryStub) RegisterMessageHandler(string, MessageHandler, interface{}) error {
+func (m *messageRegistryStub) RegisterMessageHandler(string, string, MessageHandler, interface{}) error {
 	panic("implement me")
 }
 
@@ -83,6 +83,10 @@ func (m *messageRegistryStub) GetMessageHandler(string) (MessageHandler, error) 
 }
 
 func (m *messageRegistryStub) GetMessageType(string) (reflect.Type, error) {
+	panic("implement me")
+}
+
+func (m *messageRegistryStub) GetTopics() []string {
 	panic("implement me")
 }
 

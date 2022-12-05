@@ -16,26 +16,37 @@ func TestNewMessageRegistry(t *testing.T) {
 func TestRegisterMessageHandler(t *testing.T) {
 	tests := []struct {
 		name    string
+		topic   string
 		message interface{}
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "pointer to struct",
+			topic:   "some_topic",
 			message: &dummyMessage{},
 			wantErr: assert.NoError,
 		},
 		{
 			name:    "struct",
+			topic:   "some_topic",
 			message: dummyMessage{},
 			wantErr: assert.NoError,
 		},
 		{
 			name:    "illegal type",
+			topic:   "some_topic",
 			message: make(map[string]string),
 			wantErr: assert.Error,
 		},
 		{
+			name:    "no topic",
+			topic:   "",
+			message: &dummyMessage{},
+			wantErr: assert.Error,
+		},
+		{
 			name:    "nil",
+			topic:   "some_topic",
 			message: nil,
 			wantErr: assert.Error,
 		},
@@ -44,7 +55,7 @@ func TestRegisterMessageHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sut := NewMessageRegistry()
 
-			tt.wantErr(t, sut.RegisterMessageHandler("some_event", &dummyMessageHandler{}, tt.message), fmt.Sprintf("RegisterMessageHandler(%v, dummyMessage, %v)", "some_event", tt.message))
+			tt.wantErr(t, sut.RegisterMessageHandler(tt.topic, "some_event", &dummyMessageHandler{}, tt.message), fmt.Sprintf("RegisterMessageHandler(%v, dummyMessage, %v)", "some_event", tt.message))
 		})
 	}
 }
@@ -52,8 +63,8 @@ func TestRegisterMessageHandler(t *testing.T) {
 func TestRegisterMessageHandlerWithDuplicateRegistrations(t *testing.T) {
 
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_event", &dummyMessageHandler{}, &dummyMessage{})
-	err := sut.RegisterMessageHandler("some_event", &dummyMessageHandler{}, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
+	err := sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
 
 	assert.Error(t, err)
 }
@@ -62,7 +73,7 @@ func TestGetMessageHandler(t *testing.T) {
 	dummyHandler := &dummyMessageHandler{}
 
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", dummyHandler, &dummyMessage{})
 
 	handler, err := sut.GetMessageHandler("some_event")
 
@@ -74,7 +85,7 @@ func TestGetMessageHandlerWithUnregisteredMessageType(t *testing.T) {
 	dummyHandler := &dummyMessageHandler{}
 
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", dummyHandler, &dummyMessage{})
 
 	handler, err := sut.GetMessageHandler("another_event")
 
@@ -84,7 +95,7 @@ func TestGetMessageHandlerWithUnregisteredMessageType(t *testing.T) {
 
 func TestGetMessageType(t *testing.T) {
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_event", &dummyMessageHandler{}, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
 
 	messageType, err := sut.GetMessageType("some_event")
 
@@ -96,12 +107,24 @@ func TestGetMessageTypeWithUnregisteredMessageType(t *testing.T) {
 	dummyHandler := &dummyMessageHandler{}
 
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", dummyHandler, &dummyMessage{})
 
 	messageType, err := sut.GetMessageType("another_event")
 
 	assert.Error(t, err)
 	assert.Nil(t, messageType)
+}
+
+func TestGetTopics(t *testing.T) {
+	dummyHandler := &dummyMessageHandler{}
+
+	sut := NewMessageRegistry()
+	_ = sut.RegisterMessageHandler("topicA", "some_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("topicB", "another_event", dummyHandler, &dummyMessage{})
+
+	topics := sut.GetTopics()
+
+	assert.ElementsMatch(t, []string{"topicA", "topicB"}, topics)
 }
 
 // region Test Doubles

@@ -13,7 +13,7 @@ func TestNewDefaultDeserializer(t *testing.T) {
 
 func TestDeserialize(t *testing.T) {
 	registry := NewMessageRegistry()
-	_ = registry.RegisterMessageHandler("event", &dummyMessageHandler{}, &someMessage{})
+	_ = registry.RegisterMessageHandler("some_topic", "event", &dummyMessageHandler{}, &someMessage{})
 	sut := NewDefaultDeserializer(registry)
 
 	got, err := sut.Deserialize(RawMessage{
@@ -34,7 +34,7 @@ func TestDeserialize(t *testing.T) {
 
 func TestDeserializeOverrideRawMessageHeaders(t *testing.T) {
 	registry := NewMessageRegistry()
-	_ = registry.RegisterMessageHandler("event", &dummyMessageHandler{}, &someMessage{})
+	_ = registry.RegisterMessageHandler("some_topic", "event", &dummyMessageHandler{}, &someMessage{})
 	sut := NewDefaultDeserializer(registry)
 
 	got, err := sut.Deserialize(RawMessage{
@@ -56,7 +56,7 @@ func TestDeserializeOverrideRawMessageHeaders(t *testing.T) {
 
 func TestDeserializeWithError(t *testing.T) {
 	registry := NewMessageRegistry()
-	_ = registry.RegisterMessageHandler("event", &dummyMessageHandler{}, &someMessage{})
+	_ = registry.RegisterMessageHandler("some_topic", "event", &dummyMessageHandler{}, &someMessage{})
 
 	tests := []struct {
 		name string

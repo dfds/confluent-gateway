@@ -45,7 +45,7 @@ func main() {
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler("topic_requested", NewTopicRequestedHandler(process), &TopicRequested{}); err != nil {
+	if err := registry.RegisterMessageHandler("hello", "topic_requested", NewTopicRequestedHandler(process), &TopicRequested{}); err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
@@ -53,7 +53,7 @@ func main() {
 	consumer, _ := messaging.NewConsumer(logger, dispatcher, messaging.ConsumerOptions{
 		Broker:      "localhost:9092",
 		GroupId:     "test-consumer-1",
-		Topics:      []string{"hello"},
+		Topics:      registry.GetTopics(),
 		Credentials: nil,
 	})
 
