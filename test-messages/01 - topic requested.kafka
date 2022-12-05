@@ -1,0 +1,9 @@
+PRODUCER json-output
+topic: hello
+{
+    "messageId": "1",
+    "type": "lala",
+    "data": {
+        "foo": "bar"
+    }
+}
