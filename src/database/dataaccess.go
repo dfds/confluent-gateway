@@ -66,19 +66,19 @@ func (l *databaseLogger) LogMode(level logger.LogLevel) logger.Interface {
 
 func (l *databaseLogger) Info(_ context.Context, s string, i ...interface{}) {
 	if l.level >= logger.Info {
-		l.logger.Information(fmt.Sprintf(s, i))
+		l.logger.Information(fmt.Sprintf(s, i...))
 	}
 }
 
 func (l *databaseLogger) Warn(_ context.Context, s string, i ...interface{}) {
 	if l.level >= logger.Warn {
-		l.logger.Warning(fmt.Sprintf(s, i))
+		l.logger.Warning(fmt.Sprintf(s, i...))
 	}
 }
 
 func (l *databaseLogger) Error(_ context.Context, s string, i ...interface{}) {
 	if l.level >= logger.Error {
-		l.logger.Error(nil, fmt.Sprintf(s, i))
+		l.logger.Error(nil, fmt.Sprintf(s, i...))
 	}
 }
 

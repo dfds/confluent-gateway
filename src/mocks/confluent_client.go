@@ -22,7 +22,7 @@ func (m MockClient) CreateACLEntry(ctx context.Context, clusterId models.Cluster
 }
 
 func (m MockClient) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
-	fmt.Printf("Creating API key for %s on %s [%s]\n", clusterId, serviceAccountId)
+	fmt.Printf("Creating API key for %s on %s\n", clusterId, serviceAccountId)
 	return &m.ApiKey, nil
 }
 

@@ -120,10 +120,10 @@ func NewConsumer(logger logging.Logger, dispatcher Dispatcher, options ConsumerO
 		GroupID:     options.GroupId,
 		GroupTopics: options.Topics,
 		Logger: kafka.LoggerFunc(func(s string, i ...interface{}) {
-			logger.Trace(fmt.Sprintf(s, i))
+			logger.Trace(fmt.Sprintf(s, i...))
 		}),
 		ErrorLogger: kafka.LoggerFunc(func(s string, i ...interface{}) {
-			logger.Error(nil, fmt.Sprintf(s, i))
+			logger.Error(nil, fmt.Sprintf(s, i...))
 		}),
 		Dialer: &dialer,
 	})
