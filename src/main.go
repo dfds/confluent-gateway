@@ -15,11 +15,12 @@ import (
 const dsn = "host=localhost user=postgres password=p dbname=db port=5432 sslmode=disable"
 
 func main() {
-	db, err := database.NewDatabase(dsn)
-	if err != nil {
-		panic(err)
-	}
+	logger := logging.NewLogger(logging.LoggerOptions{
+		IsProduction: false,
+		AppName:      "lala",
+	})
 
+	db, err := database.NewDatabase(dsn, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -48,11 +49,6 @@ func main() {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
-
-	logger := logging.NewLogger(logging.LoggerOptions{
-		IsProduction: false,
-		AppName:      "lala",
-	})
 
 	consumer, _ := messaging.NewConsumer(logger, dispatcher, messaging.ConsumerOptions{
 		Broker:      "localhost:9092",
