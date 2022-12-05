@@ -1,0 +1,2 @@
+id,name,admin_api_endpoint,admin_api_key_username,admin_api_key_password,bootstrap_endpoint
+abc-1234,prod,http://localhost:5051,admin_user,admin_pass,localhost:9092
