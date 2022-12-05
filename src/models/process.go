@@ -119,7 +119,7 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 			_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 		}
 
-		state := &ProcessState{
+		state = &ProcessState{
 			Id:                uuid.NewV4(),
 			CapabilityRootId:  capabilityRootId,
 			ClusterId:         clusterId,
