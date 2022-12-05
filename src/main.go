@@ -20,7 +20,6 @@ func main() {
 		panic(err)
 	}
 
-	clusterRepo, err := database.NewClusterRepository(dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +28,7 @@ func main() {
 		ApiEndpoint: "http://localhost:5051",
 		Username:    "user",
 		Password:    "pass",
-	}, clusterRepo)
+	}, db)
 
 	awsClient := &mocks.MockAwsClient{}
 

@@ -43,3 +43,8 @@ func (da *dataSession) ServiceAccounts() models.ServiceAccountRepository {
 func (da *dataSession) Processes() models.ProcessRepository {
 	return NewProcessRepository(da.db)
 }
+
+func (da *dataSession) Clusters() models.ClusterRepository {
+	return NewClusterRepository(da.db)
+}
+

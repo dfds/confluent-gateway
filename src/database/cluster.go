@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"github.com/dfds/confluent-gateway/models"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -22,25 +21,8 @@ func (r *clusterRepository) Get(ctx context.Context, id models.ClusterId) (model
 	return cluster, nil
 }
 
-func (r *clusterRepository) GetAll(ctx context.Context) ([]models.Cluster, error) {
-
-	var clusters []models.Cluster
-
-	err := r.db.WithContext(ctx).Find(&clusters).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return clusters, nil
-}
-
-func NewClusterRepository(dsn string) (models.ClusterRepository, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
-
+func NewClusterRepository(db *gorm.DB) models.ClusterRepository {
 	return &clusterRepository{
 		db: db,
-	}, nil
+	}
 }

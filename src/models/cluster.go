@@ -18,5 +18,4 @@ func (*Cluster) TableName() string {
 
 type ClusterRepository interface {
 	Get(ctx context.Context, id ClusterId) (Cluster, error)
-	GetAll(ctx context.Context) ([]Cluster, error)
 }
