@@ -20,13 +20,15 @@ func main() {
 	//	},
 	//}, &mocks.MockAwsClient{})
 	//
-	//process.ProcessLogic(context.TODO(), models.NewTopicHasBeenRequested{
+	//if err := process.ProcessLogic(context.TODO(), models.NewTopicHasBeenRequested{
 	//	CapabilityRootId: "new-cap",
 	//	ClusterId:        "cluster-id",
 	//	TopicName:        "new-topic",
 	//	Partitions:       1,
 	//	Retention:        -1,
-	//})
+	//}); err != nil {
+	//	panic(err)
+	//}
 
 	//r := gin.Default()
 	//r.GET("/ping", func(c *gin.Context) {

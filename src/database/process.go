@@ -23,7 +23,7 @@ func (r *processRepository) FindById(id uuid.UUID) (*models.ProcessState, error)
 }
 
 func (r *processRepository) query() *gorm.DB {
-	return r.db.Model(&models.ProcessState{}).Preload("Acl").Preload("ServiceAccount")
+	return r.db.Model(&models.ProcessState{})
 }
 
 func (r *processRepository) FindNextIncomplete() (*models.ProcessState, error) {

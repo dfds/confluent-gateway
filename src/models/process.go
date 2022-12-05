@@ -42,6 +42,7 @@ func (p *ProcessState) MarkAsCompleted() {
 type ProcessRepository interface {
 	Create(process *ProcessState) error
 	Update(process *ProcessState) error
+	Find(capabilityRootId CapabilityRootId, clusterId ClusterId, topicName string) (*ProcessState, error)
 }
 
 //endregion
@@ -56,7 +57,7 @@ func NewTopicCreationProcess(data DataAccess, client ConfluentClient, aws AwsCli
 	return &TopicCreationProcess{data, client, aws}
 }
 
-func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) {
+func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) error {
 	p, err := tcp.prepareProcess(ctx, request)
 	if err != nil {
 		panic(err)
@@ -64,30 +65,32 @@ func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTo
 
 	if p.State.IsCompleted() {
 		// already completed => skip
-		return
+		return nil
 	}
 
 	//1. Ensure capability has cluster access
 	//  1.2. Ensure capability has service account
 	if err := p.execute(ensureServiceAccount); err != nil {
-		panic(err)
+		return err
 	}
 	//	1.3. Ensure service account has all acls
 	if err := p.executeWhile(ensureServiceAccountAcl, p.HasPendingClusterAccess); err != nil {
-		panic(err)
+		return err
 	}
 	//	1.4. Ensure service account has api keys
 	if err := p.execute(ensureServiceAccountApiKey); err != nil {
-		panic(err)
+		return err
 	}
 	//	1.5. Ensure api keys are stored in vault
 	if err := p.execute(ensureServiceAccountApiKeyAreStoredInVault); err != nil {
-		panic(err)
+		return err
 	}
 	//2. Ensure topic is created
 	if err := p.execute(ensureTopicIsCreated); err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request NewTopicHasBeenRequested) (*process, error) {
@@ -97,41 +100,49 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 
 	session := tcp.data.NewSession(ctx)
 
-	serviceAccount, err := session.ServiceAccounts().GetByCapabilityRootId(capabilityRootId)
+	state, err := session.Processes().Find(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	hasServiceAccount := false
-	hasClusterAccess := false
-	hasApiKey := false
-	hasApiKeyInVault := false
+	if state == nil {
+		serviceAccount, err := session.ServiceAccounts().GetByCapabilityRootId(capabilityRootId)
+		if err != nil {
+			return nil, err
+		}
 
-	if serviceAccount != nil {
-		hasServiceAccount = true
-		_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
-		hasApiKey = hasClusterAccess
-		hasApiKeyInVault = hasClusterAccess
+		hasServiceAccount := false
+		hasClusterAccess := false
+
+		if serviceAccount != nil {
+			hasServiceAccount = true
+			_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
+		}
+
+		state := &ProcessState{
+			Id:                uuid.NewV4(),
+			CapabilityRootId:  capabilityRootId,
+			ClusterId:         clusterId,
+			Topic:             topic,
+			HasServiceAccount: hasServiceAccount,
+			HasClusterAccess:  hasClusterAccess,
+			HasApiKey:         hasClusterAccess,
+			HasApiKeyInVault:  hasClusterAccess,
+			CreatedAt:         time.Now(),
+			CompletedAt:       nil,
+		}
+
+		if err := session.Processes().Create(state); err != nil {
+			return nil, err
+		}
 	}
 
-	state := &ProcessState{
-		Id:                uuid.NewV4(),
-		CapabilityRootId:  capabilityRootId,
-		ClusterId:         clusterId,
-		Topic:             topic,
-		HasServiceAccount: hasServiceAccount,
-		HasClusterAccess:  hasClusterAccess,
-		HasApiKey:         hasApiKey,
-		HasApiKeyInVault:  hasApiKeyInVault,
-		CreatedAt:         time.Now(),
-		CompletedAt:       nil,
-	}
-
-	if err := session.Processes().Create(state); err != nil {
-		return nil, err
-	}
-
-	return &process{session, state, tcp.client, tcp.aws}, nil
+	return &process{
+		Session: session,
+		State:   state,
+		Client:  tcp.client,
+		Aws:     tcp.aws,
+	}, nil
 }
 
 type process struct {
