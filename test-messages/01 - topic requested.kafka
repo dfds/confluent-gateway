@@ -2,8 +2,13 @@ PRODUCER json-output
 topic: hello
 {
     "messageId": "1",
-    "type": "lala",
+    "type": "topic_requested",
     "data": {
-        "foo": "bar"
+        "capabilityRootId": "new-cap",
+        "clusterId": "abc-1234",
+        "topicName": "new-topic",
+        "partitions": 1,
+        "retention": -1
     }
 }
+

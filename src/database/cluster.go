@@ -12,8 +12,14 @@ type clusterRepository struct {
 }
 
 func (r *clusterRepository) Get(ctx context.Context, id models.ClusterId) (models.Cluster, error) {
-	//TODO implement me
-	panic("implement me")
+	var cluster models.Cluster
+
+	err := r.db.WithContext(ctx).Find(&cluster, id).Error
+	if err != nil {
+		return models.Cluster{}, err
+	}
+
+	return cluster, nil
 }
 
 func (r *clusterRepository) GetAll(ctx context.Context) ([]models.Cluster, error) {

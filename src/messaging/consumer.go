@@ -25,6 +25,7 @@ type consumer struct {
 	isStarted        bool
 	cancellation     *context.CancelFunc
 	interruptChannel chan os.Signal
+	dispatcher       Dispatcher
 }
 
 func (c *consumer) Start(ctx context.Context) {
@@ -49,6 +50,13 @@ func (c *consumer) Start(ctx context.Context) {
 		// handle message here!
 		json := string(m.Value)
 		c.logger.Information("Message received: {Message}", json)
+
+		err = c.dispatcher.Dispatch(RawMessage{Data: m.Value})
+		if err != nil {
+			c.logger.Error(&err, "Consumer {GroupId} could not dispatch {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
+			break
+		}
+
 		// *************************************************************************
 
 		err = c.kafkaReader.CommitMessages(cancellationContext, m)
@@ -93,7 +101,7 @@ type ConsumerOptions struct {
 	Credentials *ConsumerCredentials
 }
 
-func NewConsumer(logger logging.Logger, options ConsumerOptions) (Consumer, error) {
+func NewConsumer(logger logging.Logger, dispatcher Dispatcher, options ConsumerOptions) (Consumer, error) {
 	dialer := kafka.Dialer{
 		Timeout:   10 * time.Second, // connection timeout could be taken in as part of options instead
 		DualStack: true,
@@ -125,6 +133,7 @@ func NewConsumer(logger logging.Logger, options ConsumerOptions) (Consumer, erro
 		groupId:          options.GroupId,
 		kafkaReader:      reader,
 		interruptChannel: make(chan os.Signal, 1),
+		dispatcher:       dispatcher,
 	}
 
 	signal.Notify(consumer.interruptChannel, syscall.SIGINT, syscall.SIGTERM)

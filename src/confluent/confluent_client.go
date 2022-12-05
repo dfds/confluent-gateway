@@ -56,7 +56,10 @@ func (c *client) CreateServiceAccount(ctx context.Context, name string, descript
 }
 
 func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
-	cluster, _ := c.clusterRepository.Get(ctx, clusterId)
+	cluster, err := c.clusterRepository.Get(ctx, clusterId)
+	if err != nil {
+		return err
+	}
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/acls", cluster.AdminApiEndpoint, clusterId)
 
 	payload := `{
