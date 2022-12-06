@@ -3,19 +3,19 @@ package messaging
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 )
 
 func TestNewDispatcher(t *testing.T) {
-	sut := NewDispatcher(NewMessageRegistryStub(), NewDeserializerStub())
+	sut := NewDispatcher(&messageHandlerRegistryStub{}, NewDeserializerStub())
 
 	assert.IsType(t, &dispatcher{}, sut)
 }
 
 func TestDispatch(t *testing.T) {
-	spy := &messageHandlerMock{}
-	d := NewDispatcher(NewMessageRegistryWithHandlerStub(spy), NewDeserializerStub())
+	spy := &messageHandlerSpy{}
+
+	d := NewDispatcher(&messageHandlerRegistryStub{spy}, NewDeserializerStub())
 
 	err := d.Dispatch(RawMessage{})
 
@@ -27,22 +27,22 @@ func TestDispatchWithError(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		registry     MessageRegistry
+		registry     MessageHandlerRegistry
 		deserializer Deserializer
 	}{
 		{
 			name:         "deserialization",
-			registry:     NewMessageRegistryStub(),
-			deserializer: NewDeserializerWithErrorStub(errors.New("deserialization error")),
+			registry:     &messageHandlerRegistryStub{},
+			deserializer: &errorStub{error: errors.New("deserialization error")},
 		},
 		{
 			name:         "registry",
-			registry:     NewMessageRegistryWithErrorStub(errors.New("get message handler error")),
+			registry:     &errorStub{errors.New("get message handler error")},
 			deserializer: NewDeserializerStub(),
 		},
 		{
 			name:         "handler",
-			registry:     NewMessageRegistryWithHandlerStub(NewMessageHandlerWithErrorStub(errors.New("handler error"))),
+			registry:     &messageHandlerRegistryStub{&errorStub{errors.New("handler error")}},
 			deserializer: NewDeserializerStub(),
 		},
 	}
@@ -57,68 +57,49 @@ func TestDispatchWithError(t *testing.T) {
 
 // region Test Doubles
 
-type messageRegistryStub struct {
+type messageHandlerRegistryStub struct {
 	handler MessageHandler
-	error   error
 }
 
-func NewMessageRegistryStub() MessageRegistry {
-	return &messageRegistryStub{}
+func (m *messageHandlerRegistryStub) GetMessageHandler(string) (MessageHandler, error) {
+	return m.handler, nil
 }
 
-func NewMessageRegistryWithHandlerStub(handler MessageHandler) MessageRegistry {
-	return &messageRegistryStub{handler: handler}
+type errorStub struct {
+	error error
 }
 
-func NewMessageRegistryWithErrorStub(error error) MessageRegistry {
-	return &messageRegistryStub{error: error}
+func (s *errorStub) GetMessageHandler(string) (MessageHandler, error) {
+	return nil, s.error
 }
 
-func (m *messageRegistryStub) RegisterMessageHandler(string, string, MessageHandler, interface{}) error {
-	panic("implement me")
+func (s *errorStub) Deserialize(RawMessage) (*IncomingMessage, error) {
+	return nil, s.error
 }
 
-func (m *messageRegistryStub) GetMessageHandler(string) (MessageHandler, error) {
-	return m.handler, m.error
+func (s *errorStub) Handle(MessageContext) error {
+	return s.error
 }
 
-func (m *messageRegistryStub) GetMessageType(string) (reflect.Type, error) {
-	panic("implement me")
-}
-
-func (m *messageRegistryStub) GetTopics() []string {
-	panic("implement me")
-}
-
-type messageHandlerMock struct {
+type messageHandlerSpy struct {
 	wasCalled bool
-	error     error
 }
 
-func NewMessageHandlerWithErrorStub(err error) MessageHandler {
-	return &messageHandlerMock{error: err}
-}
-
-func (h *messageHandlerMock) Handle(MessageContext) error {
+func (h *messageHandlerSpy) Handle(MessageContext) error {
 	h.wasCalled = true
-	return h.error
+	return nil
 }
 
 type deserializerStub struct {
 	incomingMessage *IncomingMessage
-	error           error
 }
 
 func NewDeserializerStub() Deserializer {
-	return &deserializerStub{incomingMessage: &IncomingMessage{}}
-}
-
-func NewDeserializerWithErrorStub(err error) Deserializer {
-	return &deserializerStub{error: err}
+	return &deserializerStub{&IncomingMessage{}}
 }
 
 func (d *deserializerStub) Deserialize(RawMessage) (*IncomingMessage, error) {
-	return d.incomingMessage, d.error
+	return d.incomingMessage, nil
 }
 
 // endregion

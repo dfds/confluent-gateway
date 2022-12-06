@@ -17,12 +17,16 @@ type IncomingMessage struct {
 	Message   interface{}
 }
 
-func NewDefaultDeserializer(registry MessageRegistry) Deserializer {
+type MessageTypeRegistry interface {
+	GetMessageType(messageType string) (reflect.Type, error)
+}
+
+func NewDefaultDeserializer(registry MessageTypeRegistry) Deserializer {
 	return &deserializer{registry}
 }
 
 type deserializer struct {
-	registry MessageRegistry
+	registry MessageTypeRegistry
 }
 
 func (d *deserializer) Deserialize(msg RawMessage) (*IncomingMessage, error) {

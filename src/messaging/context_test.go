@@ -16,7 +16,6 @@ func TestHeaders(t *testing.T) {
 	sut := NewMessageContext(headers, &dummyMessage{})
 
 	assert.Equal(t, headers, sut.Headers())
-
 }
 
 func TestMessage(t *testing.T) {
@@ -24,5 +23,4 @@ func TestMessage(t *testing.T) {
 	sut := NewMessageContext(map[string]string{}, message)
 
 	assert.Equal(t, message, sut.Message())
-
 }

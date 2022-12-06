@@ -10,7 +10,11 @@ type Dispatcher interface {
 	Dispatch(RawMessage) error
 }
 
-func NewDispatcher(registry MessageRegistry, deserializer Deserializer) Dispatcher {
+type MessageHandlerRegistry interface {
+	GetMessageHandler(messageType string) (MessageHandler, error)
+}
+
+func NewDispatcher(registry MessageHandlerRegistry, deserializer Deserializer) Dispatcher {
 	return &dispatcher{
 		registry:     registry,
 		deserializer: deserializer,
@@ -22,7 +26,7 @@ type MessageHandler interface {
 }
 
 type dispatcher struct {
-	registry     MessageRegistry
+	registry     MessageHandlerRegistry
 	deserializer Deserializer
 }
 

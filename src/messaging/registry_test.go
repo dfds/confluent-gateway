@@ -55,13 +55,14 @@ func TestRegisterMessageHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sut := NewMessageRegistry()
 
-			tt.wantErr(t, sut.RegisterMessageHandler(tt.topic, "some_event", &dummyMessageHandler{}, tt.message), fmt.Sprintf("RegisterMessageHandler(%v, dummyMessage, %v)", "some_event", tt.message))
+			err := sut.RegisterMessageHandler(tt.topic, "some_event", &dummyMessageHandler{}, tt.message)
+
+			tt.wantErr(t, err, fmt.Sprintf("RegisterMessageHandler(%v, dummyMessage, %v)", "some_event", tt.message))
 		})
 	}
 }
 
 func TestRegisterMessageHandlerWithDuplicateRegistrations(t *testing.T) {
-
 	sut := NewMessageRegistry()
 	_ = sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
 	err := sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
@@ -82,10 +83,8 @@ func TestGetMessageHandler(t *testing.T) {
 }
 
 func TestGetMessageHandlerWithUnregisteredMessageType(t *testing.T) {
-	dummyHandler := &dummyMessageHandler{}
-
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_topic", "some_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
 
 	handler, err := sut.GetMessageHandler("another_event")
 
@@ -104,10 +103,8 @@ func TestGetMessageType(t *testing.T) {
 }
 
 func TestGetMessageTypeWithUnregisteredMessageType(t *testing.T) {
-	dummyHandler := &dummyMessageHandler{}
-
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_topic", "some_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
 
 	messageType, err := sut.GetMessageType("another_event")
 
@@ -116,11 +113,9 @@ func TestGetMessageTypeWithUnregisteredMessageType(t *testing.T) {
 }
 
 func TestGetTopics(t *testing.T) {
-	dummyHandler := &dummyMessageHandler{}
-
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("topicA", "some_event", dummyHandler, &dummyMessage{})
-	_ = sut.RegisterMessageHandler("topicB", "another_event", dummyHandler, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("topicA", "some_event", &dummyMessageHandler{}, &dummyMessage{})
+	_ = sut.RegisterMessageHandler("topicB", "another_event", &dummyMessageHandler{}, &dummyMessage{})
 
 	topics := sut.GetTopics()
 
