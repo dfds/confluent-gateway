@@ -68,7 +68,7 @@ func (n *nilLogger) Trace(message string, args ...string) {
 // endregion
 
 func (l *logger) Error(error *error, message string, args ...string) {
-	logger := l.innerLog.Error()
+	logger := l.innerLog.Error().CallerSkipFrame(1)
 
 	if error != nil {
 		logger = logger.Err(*error)
@@ -83,7 +83,7 @@ func (l *logger) Error(error *error, message string, args ...string) {
 }
 
 func (l *logger) Warning(message string, args ...string) {
-	logger := l.innerLog.Warn()
+	logger := l.innerLog.Warn().CallerSkipFrame(1)
 
 	msg := convertToMessage(message, args...)
 	for _, v := range msg.fields {
@@ -94,7 +94,7 @@ func (l *logger) Warning(message string, args ...string) {
 }
 
 func (l *logger) Information(message string, args ...string) {
-	logger := l.innerLog.Info()
+	logger := l.innerLog.Info().CallerSkipFrame(1)
 
 	msg := convertToMessage(message, args...)
 	for _, v := range msg.fields {
@@ -105,7 +105,7 @@ func (l *logger) Information(message string, args ...string) {
 }
 
 func (l *logger) Debug(message string, args ...string) {
-	logger := l.innerLog.Debug()
+	logger := l.innerLog.Debug().CallerSkipFrame(1)
 
 	msg := convertToMessage(message, args...)
 	for _, v := range msg.fields {
@@ -116,7 +116,7 @@ func (l *logger) Debug(message string, args ...string) {
 }
 
 func (l *logger) Trace(message string, args ...string) {
-	logger := l.innerLog.Trace()
+	logger := l.innerLog.Trace().CallerSkipFrame(1)
 
 	msg := convertToMessage(message, args...)
 	for _, v := range msg.fields {
@@ -149,6 +149,7 @@ func NewLogger(options LoggerOptions) Logger {
 
 	l = l.With().
 		Str("Application", options.AppName).
+		Caller().
 		Logger()
 
 	return &logger{innerLog: l}
