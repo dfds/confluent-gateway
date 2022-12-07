@@ -51,7 +51,7 @@ func (v *vault) StoreApiKey(ctx context.Context, capabilityRootId models.Capabil
 	return nil
 }
 
-func NewVaultClient(logger logging.Logger) (models.Vault, error) {
+func NewVaultClient(logger logging.Logger) (models.VaultClient, error) {
 	config, err := config.LoadDefaultConfig(context.Background())
 
 	if err != nil {
