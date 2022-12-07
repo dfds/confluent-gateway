@@ -19,7 +19,6 @@ restore:
 
 build:
 	@cd src && GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_BUILD=0 go build \
-		-x \
 		-v \
 		-ldflags='-extldflags=-static -w -s' \
 		-tags netgo,osusergo \
