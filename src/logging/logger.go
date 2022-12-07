@@ -45,6 +45,28 @@ type logger struct {
 	innerLog zerolog.Logger
 }
 
+type nilLogger struct {
+}
+
+// region nilLogger
+
+func (n *nilLogger) Error(error *error, message string, args ...string) {
+}
+
+func (n *nilLogger) Warning(message string, args ...string) {
+}
+
+func (n *nilLogger) Information(message string, args ...string) {
+}
+
+func (n *nilLogger) Debug(message string, args ...string) {
+}
+
+func (n *nilLogger) Trace(message string, args ...string) {
+}
+
+// endregion
+
 func (l *logger) Error(error *error, message string, args ...string) {
 	logger := l.innerLog.Error()
 
@@ -130,4 +152,8 @@ func NewLogger(options LoggerOptions) Logger {
 		Logger()
 
 	return &logger{innerLog: l}
+}
+
+func NilLogger() Logger {
+	return &nilLogger{}
 }
