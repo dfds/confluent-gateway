@@ -50,10 +50,10 @@ type ProcessRepository interface {
 type TopicCreationProcess struct {
 	data   DataAccess
 	client ConfluentClient
-	aws    AwsClient
+	aws    VaultClient
 }
 
-func NewTopicCreationProcess(data DataAccess, client ConfluentClient, aws AwsClient) *TopicCreationProcess {
+func NewTopicCreationProcess(data DataAccess, client ConfluentClient, aws VaultClient) *TopicCreationProcess {
 	return &TopicCreationProcess{data, client, aws}
 }
 
@@ -149,7 +149,7 @@ type process struct {
 	Session DataSession
 	State   *ProcessState
 	Client  ConfluentClient
-	Aws     AwsClient
+	Aws     VaultClient
 }
 
 func (p *process) HasPendingClusterAccess() bool {
@@ -285,7 +285,7 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *process) error {
 
 	clusterAccess, _ := serviceAccount.TryGetClusterAccess(process.State.ClusterId)
 
-	if err := process.Aws.PutApiKey(clusterAccess.ApiKey); err != nil {
+	if err := process.Aws.StoreApiKey(context.TODO(), process.State.CapabilityRootId, clusterAccess.ClusterId, clusterAccess.ApiKey); err != nil {
 		return err
 	}
 
