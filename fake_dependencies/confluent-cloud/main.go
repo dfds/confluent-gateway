@@ -14,7 +14,6 @@ func main() {
 	})
 
 	r.POST("/iam/v2/service-accounts", func(c *gin.Context) {
-		time.Now().Format("")
 		c.JSON(200, gin.H{
 			"id": fmt.Sprintf("sa-%s", time.Now().Format("150405")),
 		})
@@ -25,7 +24,6 @@ func main() {
 	})
 
 	r.POST("/iam/v2/api-keys", func(c *gin.Context) {
-		time.Now().Format("")
 		c.JSON(200, gin.H{
 			"id": fmt.Sprintf("username-%s", time.Now().Format("150405")),
 			"spec": gin.H{
@@ -35,6 +33,16 @@ func main() {
 				},
 			},
 		})
+	})
+
+	r.POST("/aws-ssm-put", func(c *gin.Context) {
+
+		c.Data(200, "application/x-amz-json-1.1", []byte(`
+			{
+			   "Tier": "Standard",
+			   "Version": 1
+			}
+		`))
 	})
 
 	fmt.Println("Fake Confluent Cloud!")

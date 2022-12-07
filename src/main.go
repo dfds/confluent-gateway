@@ -3,11 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/dfds/confluent-gateway/confluent"
-	"github.com/dfds/confluent-gateway/database"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
-	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/dfds/confluent-gateway/models"
 	"log"
 )
@@ -20,45 +17,47 @@ func main() {
 		AppName:      "lala",
 	})
 
-	db, err := database.NewDatabase(dsn, logger)
-	if err != nil {
-		panic(err)
-	}
-
-	confluentClient := confluent.NewConfluentClient(models.CloudApiAccess{
-		ApiEndpoint: "http://localhost:5051",
-		Username:    "user",
-		Password:    "pass",
-	}, db)
-
-	awsClient := &mocks.MockAwsClient{}
-
-	process := models.NewTopicCreationProcess(db, confluentClient, awsClient)
-
-	//r := gin.Default()
-	//r.GET("/ping", func(c *gin.Context) {
-	//	c.JSON(200, gin.H{
-	//		"message": "pong",
-	//	})
+	//db, err := database.NewDatabase(dsn, logger)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//confluentClient := confluent.NewConfluentClient(models.CloudApiAccess{
+	//	ApiEndpoint: "http://localhost:5051",
+	//	Username:    "user",
+	//	Password:    "pass",
+	//}, db)
+	//
+	//awsClient := &mocks.MockAwsClient{}
+	//
+	//process := models.NewTopicCreationProcess(db, confluentClient, awsClient)
+	//
+	////r := gin.Default()
+	////r.GET("/ping", func(c *gin.Context) {
+	////	c.JSON(200, gin.H{
+	////		"message": "pong",
+	////	})
+	////})
+	////_ = r.Run() // listen and serve on 0.0.0.0:8080
+	//
+	//registry := messaging.NewMessageRegistry()
+	//deserializer := messaging.NewDefaultDeserializer(registry)
+	//if err := registry.RegisterMessageHandler("hello", "topic_requested", NewTopicRequestedHandler(process), &TopicRequested{}); err != nil {
+	//	panic(err)
+	//}
+	//dispatcher := messaging.NewDispatcher(registry, deserializer)
+	//
+	//consumer, _ := messaging.NewConsumer(logger, dispatcher, messaging.ConsumerOptions{
+	//	Broker:      "localhost:9092",
+	//	GroupId:     "test-consumer-1",
+	//	Topics:      registry.GetTopics(),
+	//	Credentials: nil,
 	//})
-	//_ = r.Run() // listen and serve on 0.0.0.0:8080
+	//
+	//logger.Information("Starting consumer...")
+	//consumer.Start(context.Background())
 
-	registry := messaging.NewMessageRegistry()
-	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler("hello", "topic_requested", NewTopicRequestedHandler(process), &TopicRequested{}); err != nil {
-		panic(err)
-	}
-	dispatcher := messaging.NewDispatcher(registry, deserializer)
-
-	consumer, _ := messaging.NewConsumer(logger, dispatcher, messaging.ConsumerOptions{
-		Broker:      "localhost:9092",
-		GroupId:     "test-consumer-1",
-		Topics:      registry.GetTopics(),
-		Credentials: nil,
-	})
-
-	logger.Information("Starting consumer...")
-	consumer.Start(context.Background())
+	logger.Information("DONE!")
 }
 
 // region TopicRequestedHandler
