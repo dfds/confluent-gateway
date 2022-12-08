@@ -13,7 +13,8 @@ import (
 )
 
 func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
-	ctx, _ := context.WithTimeout(context.TODO(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*5)
+	defer cancel()
 
 	sentRequest := ""
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -24,9 +25,10 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 
 	defer server.Close()
 
+	config, _ := NewTestConfig(server.URL)
 	sut := vault{
 		logger: logging.NilLogger(),
-		config: *NewTestConfig(server.URL),
+		config: *config,
 	}
 
 	stubCapabilityRootId := models.CapabilityRootId("foo")
@@ -64,7 +66,8 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 }
 
 func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
-	ctx, _ := context.WithTimeout(context.TODO(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*5)
+	defer cancel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -72,9 +75,10 @@ func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
 
 	defer server.Close()
 
+	config, _ := NewTestConfig(server.URL)
 	sut := vault{
 		logger: logging.NilLogger(),
-		config: *NewTestConfig(server.URL),
+		config: *config,
 	}
 
 	// act
