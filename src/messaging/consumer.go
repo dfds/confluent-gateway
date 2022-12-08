@@ -7,86 +7,78 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/plain"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
 type Consumer interface {
-	Start(ctx context.Context)
-	Stop()
+	Start(ctx context.Context) error
+	Stop() error
 }
 
 type consumer struct {
-	logger           logging.Logger
-	groupId          string
-	kafkaReader      *kafka.Reader
-	isStarted        bool
-	cancellation     *context.CancelFunc
-	interruptChannel chan os.Signal
-	dispatcher       Dispatcher
+	logger      logging.Logger
+	groupId     string
+	kafkaReader *kafka.Reader
+	isStarted   bool
+	dispatcher  Dispatcher
 }
 
-func (c *consumer) Start(ctx context.Context) {
-	cancellationContext, cancel := context.WithCancel(ctx)
-	c.cancellation = &cancel
+func (c *consumer) Start(ctx context.Context) error {
 	c.isStarted = true
 
-	for c.isStarted {
-		c.logger.Trace("Consumer {GroupId} is waiting for next message...", c.groupId)
+	for {
+		c.logger.Trace("[START] Consumer {GroupId} is waiting for next message...", c.groupId)
 
-		m, err := c.kafkaReader.FetchMessage(cancellationContext)
+		m, err := c.kafkaReader.FetchMessage(ctx)
 		if err != nil {
-			if !c.isStarted {
-				c.logger.Debug("Waiting for messages has been cancelled for consumer {GroupId}", c.groupId)
-				c.isStarted = false
-				break
+			if err == context.Canceled {
+				c.logger.Information("[START] Waiting for messages has been cancelled for consumer {GroupId}", c.groupId)
+				return nil
 			}
-			c.logger.Error(&err, "Fatal error when consumer {GroupId} is fetching next message", c.groupId)
+
+			c.logger.Error(&err, "[START] Fatal error when consumer {GroupId} is fetching next message", c.groupId)
+			return err
 		}
 
 		// *************************************************************************
 		// handle message here!
 		json := string(m.Value)
-		c.logger.Information("Message received: {Message}", json)
+		c.logger.Information("[START] Message received: {Message}", json)
 
-		err = c.dispatcher.Dispatch(RawMessage{Data: m.Value})
-		if err != nil {
-			c.logger.Error(&err, "Consumer {GroupId} could not dispatch {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
-			break
+		if err := c.dispatcher.Dispatch(RawMessage{Data: m.Value}); err != nil {
+			c.logger.Error(&err, "[START] Consumer {GroupId} could not dispatch {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
+			return err
 		}
-
 		// *************************************************************************
 
-		err = c.kafkaReader.CommitMessages(cancellationContext, m)
-		if err != nil {
-			c.logger.Error(&err, "Consumer {GroupId} could not commit offset {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
-			break
+		if err := c.kafkaReader.CommitMessages(ctx, m); err != nil {
+			c.logger.Error(&err, "[START] Consumer {GroupId} could not commit offset {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
+			return err
 		}
 
-		c.logger.Debug("Consumer {GroupId} has committed offset {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
+		c.logger.Debug("[START] Consumer {GroupId} has committed offset {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
 	}
-
-	c.logger.Debug("Consumer {GroupId} has ended its consumer loop!", c.groupId)
 }
 
-func (c *consumer) Stop() {
-	c.logger.Debug("Trying to stop consumer {GroupId}...", c.groupId)
+func (c *consumer) Stop() error {
+	c.logger.Debug("[STOP] Trying to stop consumer {GroupId}...", c.groupId)
 
-	if c.isStarted {
-		c.isStarted = false
-
-		c.logger.Trace("Cancelling the consumer loop context for consumer {GroupId}", c.groupId)
-		(*c.cancellation)()
-
-		c.logger.Trace("Closing internal kafka reader for consumer {GroupId}", c.groupId)
-		c.kafkaReader.Close()
-
-		c.logger.Information("Consumer {GroupId} has now been stopped!", c.groupId)
-	} else {
-		c.logger.Debug("Consumer {GroupId} has not been started!", c.groupId)
+	if !c.isStarted {
+		c.logger.Debug("[STOP] Consumer {GroupId} has not been started!", c.groupId)
+		return nil
 	}
+
+	c.isStarted = false
+
+	c.logger.Trace("[STOP] Closing internal kafka reader for consumer {GroupId}", c.groupId)
+
+	if err := c.kafkaReader.Close(); err != nil {
+		c.logger.Error(&err, "[STOP] Error while closing kafka reader for consumer {GroupId}", c.groupId)
+		return err
+	}
+
+	c.logger.Information("[STOP] Consumer {GroupId} has now been stopped!", c.groupId)
+	return nil
 }
 
 type ConsumerCredentials struct {
@@ -129,20 +121,11 @@ func NewConsumer(logger logging.Logger, dispatcher Dispatcher, options ConsumerO
 	})
 
 	consumer := consumer{
-		logger:           logger,
-		groupId:          options.GroupId,
-		kafkaReader:      reader,
-		interruptChannel: make(chan os.Signal, 1),
-		dispatcher:       dispatcher,
+		logger:      logger,
+		groupId:     options.GroupId,
+		kafkaReader: reader,
+		dispatcher:  dispatcher,
 	}
-
-	signal.Notify(consumer.interruptChannel, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		sig := <-consumer.interruptChannel
-		logger.Information("Caught signal {Signal}, stopping consumer {GroupId}...", sig.String(), consumer.groupId)
-		consumer.Stop()
-	}()
 
 	return &consumer, nil
 }
