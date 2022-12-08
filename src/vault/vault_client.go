@@ -2,6 +2,7 @@ package vault
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -52,34 +53,12 @@ func (v *vault) StoreApiKey(ctx context.Context, capabilityRootId models.Capabil
 	return nil
 }
 
-func NewVaultClient(logger logging.Logger) (models.VaultClient, error) {
+func NewDefaultConfig() (*aws.Config, error) {
 	config, err := config.LoadDefaultConfig(context.Background())
-
-	if err != nil {
-		logger.Error(&err, "Error when loading AWS config!")
-		return nil, err
-	}
-
-	return &vault{
-		logger: logger,
-		config: config,
-	}, nil
+	return &config, err
 }
 
-func NewVaultClientWithConfig(logger logging.Logger, cfg *aws.Config) (models.VaultClient, error) {
-	config, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		logger.Error(&err, "Error when loading AWS config!")
-		return nil, err
-	}
-
-	return &vault{
-		logger: logger,
-		config: config,
-	}, nil
-}
-
-func NewTestConfig(url string) *aws.Config {
+func NewTestConfig(url string) (*aws.Config, error) {
 	cfg := aws.NewConfig()
 	cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
@@ -93,5 +72,16 @@ func NewTestConfig(url string) *aws.Config {
 		}, nil
 	})
 
-	return cfg
+	return cfg, nil
+}
+
+func NewVaultClient(logger logging.Logger, cfg *aws.Config) (models.VaultClient, error) {
+	if cfg == nil {
+		return nil, errors.New("cannot create a valid vault client with a nil config")
+	}
+
+	return &vault{
+		logger: logger,
+		config: *cfg,
+	}, nil
 }
