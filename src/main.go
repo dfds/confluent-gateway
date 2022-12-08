@@ -58,6 +58,7 @@ func main() {
 	//consumer.Start(context.Background())
 
 	logger.Information("DONE!")
+	
 }
 
 // region TopicRequestedHandler

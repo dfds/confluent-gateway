@@ -2,7 +2,6 @@ package vault
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
@@ -25,22 +24,9 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 
 	defer server.Close()
 
-	cfg := aws.NewConfig()
-	cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL: server.URL,
-		}, nil
-	})
-	cfg.Credentials = aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
-		return aws.Credentials{
-			CanExpire: false,
-			Expires:   time.Time{},
-		}, nil
-	})
-
 	sut := vault{
 		logger: logging.NilLogger(),
-		config: *cfg,
+		config: *NewTestConfig(server.URL),
 	}
 
 	stubCapabilityRootId := models.CapabilityRootId("foo")
@@ -86,22 +72,9 @@ func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
 
 	defer server.Close()
 
-	cfg := aws.NewConfig()
-	cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL: server.URL,
-		}, nil
-	})
-	cfg.Credentials = aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
-		return aws.Credentials{
-			CanExpire: false,
-			Expires:   time.Time{},
-		}, nil
-	})
-
 	sut := vault{
 		logger: logging.NilLogger(),
-		config: *cfg,
+		config: *NewTestConfig(server.URL),
 	}
 
 	// act

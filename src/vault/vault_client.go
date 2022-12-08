@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
+	"time"
 )
 
 type vault struct {
@@ -63,4 +64,34 @@ func NewVaultClient(logger logging.Logger) (models.VaultClient, error) {
 		logger: logger,
 		config: config,
 	}, nil
+}
+
+func NewVaultClientWithConfig(logger logging.Logger, cfg *aws.Config) (models.VaultClient, error) {
+	config, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		logger.Error(&err, "Error when loading AWS config!")
+		return nil, err
+	}
+
+	return &vault{
+		logger: logger,
+		config: config,
+	}, nil
+}
+
+func NewTestConfig(url string) *aws.Config {
+	cfg := aws.NewConfig()
+	cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL: url,
+		}, nil
+	})
+	cfg.Credentials = aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
+		return aws.Credentials{
+			CanExpire: false,
+			Expires:   time.Time{},
+		}, nil
+	})
+
+	return cfg
 }
