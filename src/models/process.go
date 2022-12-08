@@ -219,7 +219,8 @@ func ensureServiceAccountAcl(process *process) error {
 	if !hasClusterAccess {
 		clusterAccess = NewClusterAccess(serviceAccount.Id, process.State.ClusterId, process.State.CapabilityRootId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, clusterAccess)
-		if err = process.Session.ServiceAccounts().Save(serviceAccount); err != nil {
+
+		if err = process.Session.ServiceAccounts().CreateClusterAccess(clusterAccess); err != nil {
 			return err
 		}
 	}
@@ -263,7 +264,8 @@ func ensureServiceAccountApiKey(process *process) error {
 	}
 
 	clusterAccess.ApiKey = *key
-	err = process.Session.ServiceAccounts().Save(serviceAccount)
+
+	err = process.Session.ServiceAccounts().UpdateClusterAccess(clusterAccess)
 	if err != nil {
 		return err
 	}

@@ -42,6 +42,14 @@ func (r *serviceAccountRepository) UpdateAclEntry(aclEntry *models.AclEntry) err
 	return r.db.Save(aclEntry).Error
 }
 
+func (r *serviceAccountRepository) CreateClusterAccess(clusterAccess models.ClusterAccess) error {
+	return r.db.Create(clusterAccess).Error
+}
+
+func (r *serviceAccountRepository) UpdateClusterAccess(clusterAccess models.ClusterAccess) error {
+	return r.db.Save(clusterAccess).Error
+}
+
 func NewServiceAccountRepository(db *gorm.DB) models.ServiceAccountRepository {
 	return &serviceAccountRepository{db}
 }

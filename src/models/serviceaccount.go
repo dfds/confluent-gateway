@@ -97,4 +97,6 @@ type ServiceAccountRepository interface {
 	Create(serviceAccount *ServiceAccount) error
 	Save(serviceAccount *ServiceAccount) error
 	UpdateAclEntry(aclEntry *AclEntry) error
+	CreateClusterAccess(clusterAccess ClusterAccess) error
+	UpdateClusterAccess(clusterAccess ClusterAccess) error
 }
