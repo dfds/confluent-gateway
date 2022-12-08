@@ -94,8 +94,7 @@ func (*AclEntry) TableName() string {
 
 type ServiceAccountRepository interface {
 	GetByCapabilityRootId(capabilityRootId CapabilityRootId) (*ServiceAccount, error)
-	Create(serviceAccount *ServiceAccount) error
-	Save(serviceAccount *ServiceAccount) error
+	CreateServiceAccount(serviceAccount *ServiceAccount) error
 	UpdateAclEntry(aclEntry *AclEntry) error
 	CreateClusterAccess(clusterAccess ClusterAccess) error
 	UpdateClusterAccess(clusterAccess ClusterAccess) error

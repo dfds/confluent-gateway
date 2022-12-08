@@ -35,23 +35,25 @@ type dataSession struct {
 	db *gorm.DB
 }
 
-func (da *dataSession) Transaction(f func(models.DataSession) error) error {
-	return da.db.Debug().Transaction(func(tx *gorm.DB) error {
+func (s *dataSession) Transaction(f func(models.DataSession) error) error {
+	return s.db.Debug().Transaction(func(tx *gorm.DB) error {
 		return f(&dataSession{tx})
 	})
 }
 
-func (da *dataSession) ServiceAccounts() models.ServiceAccountRepository {
-	return NewServiceAccountRepository(da.db)
+func (s *dataSession) ServiceAccounts() models.ServiceAccountRepository {
+	return s
 }
 
-func (da *dataSession) Processes() models.ProcessRepository {
-	return NewProcessRepository(da.db)
+func (s *dataSession) Processes() models.ProcessRepository {
+	return s
 }
 
-func (da *dataSession) Clusters() models.ClusterRepository {
-	return NewClusterRepository(da.db)
+func (s *dataSession) Clusters() models.ClusterRepository {
+	return s
 }
+
+// region logging
 
 type databaseLogger struct {
 	logger                    logging.Logger
@@ -112,3 +114,5 @@ func (l *databaseLogger) Trace(_ context.Context, begin time.Time, fc func() (sq
 		}
 	}
 }
+
+// endregion

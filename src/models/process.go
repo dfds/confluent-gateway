@@ -200,7 +200,7 @@ func ensureServiceAccount(process *process) error {
 
 	process.State.HasServiceAccount = true
 
-	return process.Session.ServiceAccounts().Create(newServiceAccount)
+	return process.Session.ServiceAccounts().CreateServiceAccount(newServiceAccount)
 }
 
 func ensureServiceAccountAcl(process *process) error {
