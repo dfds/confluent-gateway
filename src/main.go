@@ -8,8 +8,8 @@ import (
 	"github.com/dfds/confluent-gateway/http"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
-	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/vault"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
@@ -39,7 +39,15 @@ func main() {
 		Password:    "pass",
 	}, db)
 
-	awsClient := &mocks.MockAwsClient{}
+	config, err := vault.NewTestConfig("http://localhost:5051/aws-ssm-put")
+	if err != nil {
+		panic(err)
+	}
+
+	awsClient, err := vault.NewVaultClient(logger, config)
+	if err != nil {
+		panic(err)
+	}
 
 	process := models.NewTopicCreationProcess(db, confluentClient, awsClient)
 
