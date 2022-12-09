@@ -45,6 +45,17 @@ func main() {
 		`))
 	})
 
+	// [THFIS] trailing slash (!!) because of AWS SDK
+	r.POST("/aws-ssm-put/", func(c *gin.Context) {
+
+		c.Data(200, "application/x-amz-json-1.1", []byte(`
+			{
+			   "Tier": "Standard",
+			   "Version": 1
+			}
+		`))
+	})
+
 	fmt.Println("Fake Confluent Cloud!")
 	r.Run() // listen and serve on 0.0.0.0:8080
 
