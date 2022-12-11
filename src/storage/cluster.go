@@ -5,7 +5,7 @@ import (
 	"github.com/dfds/confluent-gateway/models"
 )
 
-func (d *database) Get(ctx context.Context, id models.ClusterId) (models.Cluster, error) {
+func (d *Database) Get(ctx context.Context, id models.ClusterId) (models.Cluster, error) {
 	var cluster models.Cluster
 
 	err := d.db.WithContext(ctx).Find(&cluster, id).Error

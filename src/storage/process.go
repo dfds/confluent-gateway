@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (d *database) Find(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error) {
+func (d *Database) Find(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error) {
 	var process = models.ProcessState{}
 	err := d.db.
 		Model(&models.ProcessState{}).
@@ -24,10 +24,10 @@ func (d *database) Find(capabilityRootId models.CapabilityRootId, clusterId mode
 	return &process, nil
 }
 
-func (d *database) Create(process *models.ProcessState) error {
+func (d *Database) Create(process *models.ProcessState) error {
 	return d.db.Create(process).Error
 }
 
-func (d *database) Update(process *models.ProcessState) error {
+func (d *Database) Update(process *models.ProcessState) error {
 	return d.db.Save(process).Error
 }
