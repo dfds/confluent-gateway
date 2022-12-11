@@ -40,9 +40,9 @@ func (p *ProcessState) MarkAsCompleted() {
 }
 
 type ProcessRepository interface {
-	Create(process *ProcessState) error
-	Update(process *ProcessState) error
-	Find(capabilityRootId CapabilityRootId, clusterId ClusterId, topicName string) (*ProcessState, error)
+	CreateProcessState(state *ProcessState) error
+	UpdateProcessState(state *ProcessState) error
+	GetProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topicName string) (*ProcessState, error)
 }
 
 //endregion
@@ -100,13 +100,13 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 
 	session := tcp.data.NewSession(ctx)
 
-	state, err := session.Processes().Find(capabilityRootId, clusterId, topic.Name)
+	state, err := session.Processes().GetProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	if state == nil {
-		serviceAccount, err := session.ServiceAccounts().GetByCapabilityRootId(capabilityRootId)
+		serviceAccount, err := session.ServiceAccounts().GetServiceAccount(capabilityRootId)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 			CompletedAt:       nil,
 		}
 
-		if err := session.Processes().Create(state); err != nil {
+		if err := session.Processes().CreateProcessState(state); err != nil {
 			return nil, err
 		}
 	}
@@ -164,7 +164,7 @@ func (p *process) execute(stepFunc func(*process) error) error {
 			return err
 		}
 
-		return session.Processes().Update(p.State)
+		return session.Processes().UpdateProcessState(p.State)
 	})
 }
 
@@ -209,7 +209,7 @@ func ensureServiceAccountAcl(process *process) error {
 		return nil
 	}
 
-	serviceAccount, err := process.Session.ServiceAccounts().GetByCapabilityRootId(process.State.CapabilityRootId)
+	serviceAccount, err := process.Session.ServiceAccounts().GetServiceAccount(process.State.CapabilityRootId)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func ensureServiceAccountApiKey(process *process) error {
 		return nil
 	}
 
-	serviceAccount, err := process.Session.ServiceAccounts().GetByCapabilityRootId(process.State.CapabilityRootId)
+	serviceAccount, err := process.Session.ServiceAccounts().GetServiceAccount(process.State.CapabilityRootId)
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *process) error {
 		return nil
 	}
 
-	serviceAccount, err := process.Session.ServiceAccounts().GetByCapabilityRootId(process.State.CapabilityRootId)
+	serviceAccount, err := process.Session.ServiceAccounts().GetServiceAccount(process.State.CapabilityRootId)
 	if err != nil {
 		return err
 	}
