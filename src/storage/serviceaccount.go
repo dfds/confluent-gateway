@@ -6,14 +6,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func (d *database) saQuery() *gorm.DB {
-	return d.db.Model(&models.ServiceAccount{}).Preload("ClusterAccesses").Preload("ClusterAccesses.Acl")
-}
-
 func (d *database) GetByCapabilityRootId(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
 	var serviceAccount models.ServiceAccount
 
-	err := d.saQuery().First(&serviceAccount, "capability_root_id = ?", capabilityRootId).Error
+	err := d.db.
+		Model(&serviceAccount).
+		Preload("ClusterAccesses").
+		Preload("ClusterAccesses.Acl").
+		First(&serviceAccount, "capability_root_id = ?", capabilityRootId).
+		Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
