@@ -9,3 +9,8 @@ type NewTopicHasBeenRequested struct {
 }
 
 type CapabilityRootId string
+
+type ApiKey struct {
+	Username string
+	Password string
+}
