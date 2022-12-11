@@ -12,45 +12,41 @@ import (
 	"time"
 )
 
-type dataAccess struct {
+type database struct {
 	db *gorm.DB
 }
 
-func (da *dataAccess) NewSession(ctx context.Context) models.DataSession {
-	return &dataSession{da.db.Session(&gorm.Session{Context: ctx})}
-}
-
-func NewDatabase(dsn string, log logging.Logger) (models.DataAccess, error) {
+func NewDatabase(dsn string, log logging.Logger) (*database, error) {
 	config := gorm.Config{
 		Logger: &databaseLogger{logger: log},
 	}
 	if db, err := gorm.Open(postgres.Open(dsn), &config); err != nil {
 		return nil, err
 	} else {
-		return &dataAccess{db}, nil
+		return &database{db}, nil
 	}
 }
 
-type dataSession struct {
-	db *gorm.DB
+func (d *database) NewSession(ctx context.Context) models.DataSession {
+	return &database{d.db.Session(&gorm.Session{Context: ctx})}
 }
 
-func (s *dataSession) Transaction(f func(models.DataSession) error) error {
-	return s.db.Debug().Transaction(func(tx *gorm.DB) error {
-		return f(&dataSession{tx})
+func (d *database) Transaction(f func(models.DataSession) error) error {
+	return d.db.Debug().Transaction(func(tx *gorm.DB) error {
+		return f(&database{tx})
 	})
 }
 
-func (s *dataSession) ServiceAccounts() models.ServiceAccountRepository {
-	return s
+func (d *database) ServiceAccounts() models.ServiceAccountRepository {
+	return d
 }
 
-func (s *dataSession) Processes() models.ProcessRepository {
-	return s
+func (d *database) Processes() models.ProcessRepository {
+	return d
 }
 
-func (s *dataSession) Clusters() models.ClusterRepository {
-	return s
+func (d *database) Clusters() models.ClusterRepository {
+	return d
 }
 
 // region logging

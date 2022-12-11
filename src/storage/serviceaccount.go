@@ -6,14 +6,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *dataSession) saQuery() *gorm.DB {
-	return s.db.Model(&models.ServiceAccount{}).Preload("ClusterAccesses").Preload("ClusterAccesses.Acl")
+func (d *database) saQuery() *gorm.DB {
+	return d.db.Model(&models.ServiceAccount{}).Preload("ClusterAccesses").Preload("ClusterAccesses.Acl")
 }
 
-func (s *dataSession) GetByCapabilityRootId(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
+func (d *database) GetByCapabilityRootId(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
 	var serviceAccount models.ServiceAccount
 
-	err := s.saQuery().First(&serviceAccount, "capability_root_id = ?", capabilityRootId).Error
+	err := d.saQuery().First(&serviceAccount, "capability_root_id = ?", capabilityRootId).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -26,18 +26,18 @@ func (s *dataSession) GetByCapabilityRootId(capabilityRootId models.CapabilityRo
 	return &serviceAccount, nil
 }
 
-func (s *dataSession) CreateServiceAccount(serviceAccount *models.ServiceAccount) error {
-	return s.db.Create(serviceAccount).Error
+func (d *database) CreateServiceAccount(serviceAccount *models.ServiceAccount) error {
+	return d.db.Create(serviceAccount).Error
 }
 
-func (s *dataSession) UpdateAclEntry(aclEntry *models.AclEntry) error {
-	return s.db.Save(aclEntry).Error
+func (d *database) UpdateAclEntry(aclEntry *models.AclEntry) error {
+	return d.db.Save(aclEntry).Error
 }
 
-func (s *dataSession) CreateClusterAccess(clusterAccess models.ClusterAccess) error {
-	return s.db.Create(clusterAccess).Error
+func (d *database) CreateClusterAccess(clusterAccess models.ClusterAccess) error {
+	return d.db.Create(clusterAccess).Error
 }
 
-func (s *dataSession) UpdateClusterAccess(clusterAccess models.ClusterAccess) error {
-	return s.db.Save(clusterAccess).Error
+func (d *database) UpdateClusterAccess(clusterAccess models.ClusterAccess) error {
+	return d.db.Save(clusterAccess).Error
 }
