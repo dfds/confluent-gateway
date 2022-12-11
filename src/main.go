@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/dfds/confluent-gateway/confluent"
-	"github.com/dfds/confluent-gateway/database"
 	"github.com/dfds/confluent-gateway/http"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/storage"
 	"github.com/dfds/confluent-gateway/vault"
 	"golang.org/x/sync/errgroup"
 	"log"
@@ -28,7 +28,7 @@ func main() {
 		AppName:      "lala",
 	})
 
-	db, err := database.NewDatabase(dsn, logger)
+	db, err := storage.NewDatabase(dsn, logger)
 	if err != nil {
 		panic(err)
 	}
