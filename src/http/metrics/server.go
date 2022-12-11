@@ -1,4 +1,4 @@
-package http
+package metrics
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-type MetricsServer struct {
+type Server struct {
 	logger logging.Logger
 	server *http.Server
 }
 
-func NewMetricsServer(logger logging.Logger) *MetricsServer {
+func NewServer(logger logging.Logger) *Server {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
@@ -22,14 +22,14 @@ func NewMetricsServer(logger logging.Logger) *MetricsServer {
 		Handler: mux,
 	}
 
-	return &MetricsServer{
+	return &Server{
 		logger: logger,
 		server: server,
 	}
 }
 
-func (s *MetricsServer) Open() error {
-	s.logger.Debug("Starting HTTP MetricsServer")
+func (s *Server) Open() error {
+	s.logger.Debug("Starting HTTP Server")
 
 	if err := s.server.ListenAndServe(); err != nil {
 		if err != http.ErrServerClosed {
@@ -39,11 +39,11 @@ func (s *MetricsServer) Open() error {
 	return nil
 }
 
-func (s *MetricsServer) Close() error {
+func (s *Server) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	s.logger.Debug("Shutting down HTTP MetricsServer")
+	s.logger.Debug("Shutting down HTTP Server")
 
 	return s.server.Shutdown(ctx)
 }

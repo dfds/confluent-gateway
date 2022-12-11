@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dfds/confluent-gateway/confluent"
-	"github.com/dfds/confluent-gateway/http"
+	"github.com/dfds/confluent-gateway/http/metrics"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
@@ -89,14 +89,14 @@ func main() {
 type Main struct {
 	Logger        logging.Logger
 	Consumer      messaging.Consumer
-	MetricsServer *http.MetricsServer
+	MetricsServer *metrics.Server
 }
 
 func NewMain(logger logging.Logger, consumer messaging.Consumer) *Main {
 	return &Main{
 		Logger:        logger,
 		Consumer:      consumer,
-		MetricsServer: http.NewMetricsServer(logger),
+		MetricsServer: metrics.NewServer(logger),
 	}
 }
 
