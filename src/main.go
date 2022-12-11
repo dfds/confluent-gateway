@@ -33,7 +33,7 @@ func main() {
 		panic(err)
 	}
 
-	confluentClient := confluent.NewConfluentClient(models.CloudApiAccess{
+	confluentClient := confluent.NewConfluentClient(confluent.CloudApiAccess{
 		ApiEndpoint: "http://localhost:5051",
 		Username:    "user",
 		Password:    "pass",

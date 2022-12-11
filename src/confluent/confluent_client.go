@@ -10,8 +10,14 @@ import (
 	"strconv"
 )
 
+type CloudApiAccess struct {
+	ApiEndpoint string
+	Username    string
+	Password    string
+}
+
 type client struct {
-	cloudApiAccess models.CloudApiAccess
+	cloudApiAccess CloudApiAccess
 	repo           ClusterRepository
 }
 
@@ -157,6 +163,6 @@ type ClusterRepository interface {
 	GetClusterById(ctx context.Context, id models.ClusterId) (models.Cluster, error)
 }
 
-func NewConfluentClient(cloudApiAccess models.CloudApiAccess, repo ClusterRepository) models.ConfluentClient {
+func NewConfluentClient(cloudApiAccess CloudApiAccess, repo ClusterRepository) models.ConfluentClient {
 	return &client{cloudApiAccess: cloudApiAccess, repo: repo}
 }
