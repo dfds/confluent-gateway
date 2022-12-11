@@ -48,12 +48,12 @@ type ProcessRepository interface {
 //endregion
 
 type TopicCreationProcess struct {
-	data   DataAccess
+	data   Database
 	client ConfluentClient
 	aws    VaultClient
 }
 
-func NewTopicCreationProcess(data DataAccess, client ConfluentClient, aws VaultClient) *TopicCreationProcess {
+func NewTopicCreationProcess(data Database, client ConfluentClient, aws VaultClient) *TopicCreationProcess {
 	return &TopicCreationProcess{data, client, aws}
 }
 

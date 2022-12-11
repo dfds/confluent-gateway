@@ -12,7 +12,7 @@ import (
 
 type client struct {
 	cloudApiAccess models.CloudApiAccess
-	dataAccess     models.DataAccess
+	dataAccess     models.Database
 }
 
 type createServiceAccountResponse struct {
@@ -158,6 +158,6 @@ func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	return err
 }
 
-func NewConfluentClient(cloudApiAccess models.CloudApiAccess, dataAccess models.DataAccess) models.ConfluentClient {
+func NewConfluentClient(cloudApiAccess models.CloudApiAccess, dataAccess models.Database) models.ConfluentClient {
 	return &client{cloudApiAccess: cloudApiAccess, dataAccess: dataAccess}
 }

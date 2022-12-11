@@ -2,7 +2,7 @@ package models
 
 import "context"
 
-type DataAccess interface {
+type Database interface {
 	NewSession(context.Context) DataSession
 }
 
