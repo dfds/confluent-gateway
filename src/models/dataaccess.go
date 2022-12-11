@@ -10,5 +10,4 @@ type DataSession interface {
 	Transaction(func(DataSession) error) error
 	ServiceAccounts() ServiceAccountRepository
 	Processes() ProcessRepository
-	Clusters() ClusterRepository
 }

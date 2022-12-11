@@ -1,7 +1,5 @@
 package models
 
-import "context"
-
 type ClusterId string
 
 type Cluster struct {
@@ -14,8 +12,4 @@ type Cluster struct {
 
 func (*Cluster) TableName() string {
 	return "cluster"
-}
-
-type ClusterRepository interface {
-	Get(ctx context.Context, id ClusterId) (Cluster, error)
 }

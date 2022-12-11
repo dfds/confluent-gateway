@@ -12,7 +12,7 @@ import (
 
 type client struct {
 	cloudApiAccess models.CloudApiAccess
-	dataAccess     models.Database
+	repo           ClusterRepository
 }
 
 type createServiceAccountResponse struct {
@@ -56,7 +56,7 @@ func (c *client) CreateServiceAccount(ctx context.Context, name string, descript
 }
 
 func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
-	cluster, err := c.getCluster(ctx, clusterId)
+	cluster, err := c.repo.GetClusterById(ctx, clusterId)
 	if err != nil {
 		return err
 	}
@@ -84,11 +84,6 @@ func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 	}
 
 	return err
-}
-
-func (c *client) getCluster(ctx context.Context, clusterId models.ClusterId) (models.Cluster, error) {
-	session := c.dataAccess.NewSession(ctx)
-	return session.Clusters().Get(ctx, clusterId)
 }
 
 func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
@@ -131,7 +126,7 @@ func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 }
 
 func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) error {
-	cluster, _ := c.getCluster(ctx, clusterId)
+	cluster, _ := c.repo.GetClusterById(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
 	payload := `{
@@ -158,6 +153,10 @@ func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	return err
 }
 
-func NewConfluentClient(cloudApiAccess models.CloudApiAccess, dataAccess models.Database) models.ConfluentClient {
-	return &client{cloudApiAccess: cloudApiAccess, dataAccess: dataAccess}
+type ClusterRepository interface {
+	GetClusterById(ctx context.Context, id models.ClusterId) (models.Cluster, error)
+}
+
+func NewConfluentClient(cloudApiAccess models.CloudApiAccess, repo ClusterRepository) models.ConfluentClient {
+	return &client{cloudApiAccess: cloudApiAccess, repo: repo}
 }

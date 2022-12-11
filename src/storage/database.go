@@ -40,7 +40,3 @@ func (d *Database) ServiceAccounts() models.ServiceAccountRepository {
 func (d *Database) Processes() models.ProcessRepository {
 	return d
 }
-
-func (d *Database) Clusters() models.ClusterRepository {
-	return d
-}

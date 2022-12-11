@@ -4,7 +4,6 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -12,18 +11,6 @@ import (
 	"net/http/httptest"
 	"testing"
 )
-
-type stubClusterRepository struct {
-	cluster models.Cluster
-}
-
-func (stub stubClusterRepository) Get(ctx context.Context, id models.ClusterId) (models.Cluster, error) {
-	return stub.cluster, nil
-}
-
-func (stub stubClusterRepository) GetAll(ctx context.Context) ([]models.Cluster, error) {
-	return []models.Cluster{stub.cluster}, nil
-}
 
 func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 	tests := []string{"foo", "bar", "baz", "qux"}
@@ -50,7 +37,7 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 
 			stubClient := client{
 				cloudApiAccess: models.CloudApiAccess{},
-				dataAccess:     &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{Cluster: stubCluster}},
+				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 			}
 
 			// act
@@ -87,7 +74,7 @@ func TestCreateTopicSendsExpectedPayload(t *testing.T) {
 
 	stubClient := client{
 		cloudApiAccess: models.CloudApiAccess{},
-		dataAccess:     &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{Cluster: stubCluster}},
+		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
 	// act
@@ -133,7 +120,7 @@ func TestCreateTopicUsesExpectedApiKey(t *testing.T) {
 
 	stubClient := client{
 		cloudApiAccess: models.CloudApiAccess{},
-		dataAccess:     &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{Cluster: stubCluster}},
+		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
 	// act
@@ -162,7 +149,7 @@ func TestCreateServiceAccountCallsExpectedEndpoint(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -188,7 +175,7 @@ func TestCreateServiceAccountSendsExpectedPayload(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -222,7 +209,7 @@ func TestCreateServiceAccountUsesExpectedApiKey(t *testing.T) {
 			Username:    "foo",
 			Password:    "bar",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -247,7 +234,7 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -275,7 +262,7 @@ func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -301,7 +288,7 @@ func TestCreateApiKeySendsExpectedPayload(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -343,7 +330,7 @@ func TestCreateApiKeyUsesExpectedApiKey(t *testing.T) {
 			Username:    "foo",
 			Password:    "bar",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -377,7 +364,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		dataAccess: &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{}},
+		repo: &ClusterRepositoryStub{},
 	}
 
 	// act
@@ -414,7 +401,7 @@ func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 
 			stubClient := client{
 				cloudApiAccess: models.CloudApiAccess{},
-				dataAccess:     &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{Cluster: stubCluster}},
+				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 			}
 
 			stubAclDefinition := models.AclDefinition{}
@@ -452,7 +439,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 
 	stubClient := client{
 		cloudApiAccess: models.CloudApiAccess{},
-		dataAccess:     &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{Cluster: stubCluster}},
+		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
 	stubAclDefinition := models.AclDefinition{
@@ -506,7 +493,7 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 
 	stubClient := client{
 		cloudApiAccess: models.CloudApiAccess{},
-		dataAccess:     &mocks.DataAccess{ClusterRepo: &mocks.ClusterRepositoryStub{Cluster: stubCluster}},
+		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
 	// act
@@ -514,4 +501,12 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 
 	// assert
 	assert.Equal(t, expected, usedApiKey)
+}
+
+type ClusterRepositoryStub struct {
+	Cluster models.Cluster
+}
+
+func (s *ClusterRepositoryStub) GetClusterById(context.Context, models.ClusterId) (models.Cluster, error) {
+	return s.Cluster, nil
 }
