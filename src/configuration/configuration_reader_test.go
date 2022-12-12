@@ -31,3 +31,8 @@ func TestReader_LoadConfigurationInto_InsertsExpectedValuesFromValueSource(t *te
 	assert.Equal(t, "", cfg.Bar)
 	assert.Equal(t, true, cfg.Baz)
 }
+
+func TestReader_newValueSourceFromHandlesValuesContainingEqualSignsWithGrace(t *testing.T) {
+	sut := newValueSourceFrom([]string{"FOO=1=1, 2=2"})
+	assert.Equal(t, "1=1, 2=2", sut.Get("FOO"))
+}

@@ -120,8 +120,10 @@ func readLinesFromFile(filePath string) []string {
 func newValueSourceFrom(lines []string) ValueSource {
 	envVars := make(map[string]string)
 	for _, line := range lines {
-		args := strings.Split(line, "=")
-		envVars[args[0]] = args[1]
+		before, after, wasFound := strings.Cut(line, "=")
+		if wasFound {
+			envVars[before] = after
+		}
 	}
 
 	return &inMemoryValueSource{values: envVars}
