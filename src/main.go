@@ -37,6 +37,17 @@ func (c *Configuration) IsProduction() bool {
 	return strings.EqualFold(c.Environment, "production")
 }
 
+func (c *Configuration) CreateConsumerCredentials() *messaging.ConsumerCredentials {
+	if !c.IsProduction() {
+		return nil
+	}
+
+	return &messaging.ConsumerCredentials{
+		UserName: c.KafkaUserName,
+		Password: c.KafkaPassword,
+	}
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
@@ -91,14 +102,7 @@ func main() {
 		Broker:      config.KafkaBroker,
 		GroupId:     "test-consumer-1",
 		Topics:      []string{"hello"}, //registry.GetTopics(),
-		Credentials: nil,
-	}
-
-	if config.IsProduction() {
-		consumerOptions.Credentials = &messaging.ConsumerCredentials{
-			UserName: config.KafkaUserName,
-			Password: config.KafkaPassword,
-		}
+		Credentials: config.CreateConsumerCredentials(),
 	}
 
 	consumer, _ := messaging.NewConsumer(logger, dispatcher, consumerOptions)
