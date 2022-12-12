@@ -33,6 +33,8 @@ type Configuration struct {
 	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
 }
 
+// region configuration helper functions
+
 func (c *Configuration) IsProduction() bool {
 	return strings.EqualFold(c.Environment, "production")
 }
@@ -47,6 +49,16 @@ func (c *Configuration) CreateConsumerCredentials() *messaging.ConsumerCredentia
 		Password: c.KafkaPassword,
 	}
 }
+
+func (c *Configuration) CreateVaultConfig() (*aws.Config, error) {
+	if c.IsProduction() {
+		return vault.NewDefaultConfig()
+	} else {
+		return vault.NewTestConfig(c.VaultApiUrl)
+	}
+}
+
+// endregion
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
@@ -72,13 +84,7 @@ func main() {
 		Password:    config.ConfluentCloudApiPassword,
 	}, db)
 
-	var vaultCfg = &aws.Config{}
-	if config.IsProduction() {
-		vaultCfg, err = vault.NewDefaultConfig()
-	} else {
-		vaultCfg, err = vault.NewTestConfig(config.VaultApiUrl)
-	}
-
+	vaultCfg, err := config.CreateVaultConfig()
 	if err != nil {
 		panic(err)
 	}
