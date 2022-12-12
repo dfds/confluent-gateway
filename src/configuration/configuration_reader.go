@@ -139,7 +139,7 @@ func NewConfigurationReader() ConfigurationReader {
 }
 
 func LoadInto(cfg any) {
-	NewConfigurationReader().LoadConfigurationInto(&cfg)
+	NewConfigurationReader().LoadConfigurationInto(cfg)
 }
 
 //func NewConfigurationReaderWithSources(sources ...ValueSource) ConfigurationReader {
