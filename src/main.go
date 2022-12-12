@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/confluent"
 	"github.com/dfds/confluent-gateway/http/metrics"
 	"github.com/dfds/confluent-gateway/logging"
@@ -14,18 +16,39 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
 const dsn = "host=localhost user=postgres password=p dbname=db port=5432 sslmode=disable"
 
+type Configuration struct {
+	ApplicationName           string `env:"CG_APPLICATION_NAME"`
+	Environment               string `env:"CG_ENVIRONMENT"`
+	ConfluentCloudApiUrl      string `env:"CG_CONFLUENT_CLOUD_API_URL"`
+	ConfluentCloudApiUserName string `env:"CG_CONFLUENT_CLOUD_API_USERNAME"`
+	ConfluentCloudApiPassword string `env:"CG_CONFLUENT_CLOUD_API_PASSWORD"`
+	VaultApiUrl               string `env:"CG_VAULT_API_URL"`
+	KafkaBroker               string `env:"CG_KAFKA_BROKER"`
+	KafkaUserName             string `env:"SELFSERVICE_KAFKA_USERNAME"`
+	KafkaPassword             string `env:"SELFSERVICE_KAFKA_PASSWORD"`
+}
+
+func (c *Configuration) IsProduction() bool {
+	return strings.EqualFold(c.Environment, "production")
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
+	// load configuration from .env and/or environment files
+	var config = Configuration{}
+	configuration.LoadInto(&config)
+
 	logger := logging.NewLogger(logging.LoggerOptions{
-		IsProduction: false,
-		AppName:      "lala",
+		IsProduction: config.IsProduction(),
+		AppName:      config.ApplicationName,
 	})
 
 	db, err := storage.NewDatabase(dsn, logger)
@@ -34,17 +57,23 @@ func main() {
 	}
 
 	confluentClient := confluent.NewConfluentClient(confluent.CloudApiAccess{
-		ApiEndpoint: "http://localhost:5051",
-		Username:    "user",
-		Password:    "pass",
+		ApiEndpoint: config.ConfluentCloudApiUrl,
+		Username:    config.ConfluentCloudApiUserName,
+		Password:    config.ConfluentCloudApiPassword,
 	}, db)
 
-	config, err := vault.NewTestConfig("http://localhost:5051/aws-ssm-put")
+	var vaultCfg = &aws.Config{}
+	if config.IsProduction() {
+		vaultCfg, err = vault.NewDefaultConfig()
+	} else {
+		vaultCfg, err = vault.NewTestConfig(config.VaultApiUrl)
+	}
+
 	if err != nil {
 		panic(err)
 	}
 
-	awsClient, err := vault.NewVaultClient(logger, config)
+	awsClient, err := vault.NewVaultClient(logger, vaultCfg)
 	if err != nil {
 		panic(err)
 	}
@@ -59,12 +88,21 @@ func main() {
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
 
 	logger.Information("New consumer")
-	consumer, _ := messaging.NewConsumer(logger, dispatcher, messaging.ConsumerOptions{
-		Broker:      "localhost:9092",
+	consumerOptions := messaging.ConsumerOptions{
+		Broker:      config.KafkaBroker,
 		GroupId:     "test-consumer-1",
 		Topics:      []string{"hello"}, //registry.GetTopics(),
 		Credentials: nil,
-	})
+	}
+
+	if config.IsProduction() {
+		consumerOptions.Credentials = &messaging.ConsumerCredentials{
+			UserName: config.KafkaUserName,
+			Password: config.KafkaPassword,
+		}
+	}
+
+	consumer, _ := messaging.NewConsumer(logger, dispatcher, consumerOptions)
 
 	m := NewMain(logger, consumer)
 

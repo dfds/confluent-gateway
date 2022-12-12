@@ -29,3 +29,20 @@ spec:
             limits:
               memory: "100Mi"
               cpu: "100m"
+          env:
+            - name: CG_APPLICATION_NAME
+              value: Confluent Gateway
+            - name: CG_ENVIRONMENT
+              value: Production
+            - name: CG_CONFLUENT_CLOUD_API_URL
+              value: https://api.confluent.cloud
+
+            - name: CG_CONFLUENT_CLOUD_API_USERNAME
+              value: foo
+            - name: CG_CONFLUENT_CLOUD_API_PASSWORD
+              value: bar
+            - name: CG_KAFKA_BROKER
+              value: pkc-e8wrm.eu-central-1.aws.confluent.cloud:9092
+          envFrom:
+            - secretRef:
+                name: kafka-credentials
