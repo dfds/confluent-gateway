@@ -36,7 +36,7 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			}
 
 			stubClient := client{
-				cloudApiAccess: models.CloudApiAccess{},
+				cloudApiAccess: CloudApiAccess{},
 				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 			}
 
@@ -73,7 +73,7 @@ func TestCreateTopicSendsExpectedPayload(t *testing.T) {
 	}
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{},
+		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
@@ -119,7 +119,7 @@ func TestCreateTopicUsesExpectedApiKey(t *testing.T) {
 	}
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{},
+		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
@@ -144,7 +144,7 @@ func TestCreateServiceAccountCallsExpectedEndpoint(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
 			Password:    "dummy",
@@ -170,7 +170,7 @@ func TestCreateServiceAccountSendsExpectedPayload(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
 			Password:    "dummy",
@@ -204,7 +204,7 @@ func TestCreateServiceAccountUsesExpectedApiKey(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "foo",
 			Password:    "bar",
@@ -229,7 +229,7 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
 			Password:    "dummy",
@@ -257,7 +257,7 @@ func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
 			Password:    "dummy",
@@ -283,7 +283,7 @@ func TestCreateApiKeySendsExpectedPayload(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
 			Password:    "dummy",
@@ -325,7 +325,7 @@ func TestCreateApiKeyUsesExpectedApiKey(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "foo",
 			Password:    "bar",
@@ -359,7 +359,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 	defer server.Close()
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{
+		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
 			Password:    "dummy",
@@ -400,7 +400,7 @@ func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			}
 
 			stubClient := client{
-				cloudApiAccess: models.CloudApiAccess{},
+				cloudApiAccess: CloudApiAccess{},
 				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 			}
 
@@ -438,7 +438,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 	}
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{},
+		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
@@ -492,7 +492,7 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 	}
 
 	stubClient := client{
-		cloudApiAccess: models.CloudApiAccess{},
+		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
 
