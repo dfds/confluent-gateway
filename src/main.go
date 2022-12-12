@@ -20,8 +20,6 @@ import (
 	"syscall"
 )
 
-const dsn = "host=localhost user=postgres password=p dbname=db port=5432 sslmode=disable"
-
 type Configuration struct {
 	ApplicationName           string `env:"CG_APPLICATION_NAME"`
 	Environment               string `env:"CG_ENVIRONMENT"`
@@ -32,6 +30,7 @@ type Configuration struct {
 	KafkaBroker               string `env:"CG_KAFKA_BROKER"`
 	KafkaUserName             string `env:"SELFSERVICE_KAFKA_USERNAME"`
 	KafkaPassword             string `env:"SELFSERVICE_KAFKA_PASSWORD"`
+	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
 }
 
 func (c *Configuration) IsProduction() bool {
@@ -51,7 +50,7 @@ func main() {
 		AppName:      config.ApplicationName,
 	})
 
-	db, err := storage.NewDatabase(dsn, logger)
+	db, err := storage.NewDatabase(config.DbConnectionString, logger)
 	if err != nil {
 		panic(err)
 	}
