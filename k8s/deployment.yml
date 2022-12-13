@@ -16,6 +16,12 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
+      initContainers:
+        - name: dbmigration
+          image: 579478677147.dkr.ecr.eu-west-1.amazonaws.com/selfservice/confluent-gateway/dbmigration:{{BUILD_NUMBER}}
+          envFrom:
+            - secretRef:
+                name: confluent-gateway-postgres
       containers:
         - name: app
           image: 579478677147.dkr.ecr.eu-central-1.amazonaws.com/selfservice/confluent-gateway:{{BUILD_NUMBER}}
@@ -30,13 +36,17 @@ spec:
               memory: "100Mi"
               cpu: "100m"
           env:
+            - name: CG_DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-gateway-postgres
+                  key: PGCONNSTRING
             - name: CG_APPLICATION_NAME
               value: Confluent Gateway
             - name: CG_ENVIRONMENT
               value: Production
             - name: CG_CONFLUENT_CLOUD_API_URL
               value: https://api.confluent.cloud
-
             - name: CG_CONFLUENT_CLOUD_API_USERNAME
               value: foo
             - name: CG_CONFLUENT_CLOUD_API_PASSWORD
