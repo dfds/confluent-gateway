@@ -98,7 +98,7 @@ func main() {
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler("hello", "topic_requested", NewTopicRequestedHandler(process), &TopicRequested{}); err != nil {
+	if err := registry.RegisterMessageHandler("hello", "topic_requested", models.NewTopicRequestedHandler(process), &models.TopicRequested{}); err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
@@ -220,53 +220,3 @@ func (m *Main) Close() {
 		}
 	}
 }
-
-// region TopicRequestedHandler
-
-type TopicRequestedHandler struct {
-	process *models.TopicCreationProcess
-}
-
-func NewTopicRequestedHandler(process *models.TopicCreationProcess) messaging.MessageHandler {
-	return &TopicRequestedHandler{process: process}
-}
-
-func (h *TopicRequestedHandler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
-
-	switch cmd := msgContext.Message().(type) {
-
-	case *TopicRequested:
-
-		fmt.Printf(
-			"TopicRequested:\n"+
-				" Capability: %s\n"+
-				" Cluster:    %s\n"+
-				" Topic:      %s\n"+
-				" Partitions: %d\n"+
-				" Retention:  %d\n",
-			cmd.CapabilityRootId, cmd.ClusterId, cmd.TopicName, cmd.Partitions, cmd.Retention)
-
-		return h.process.ProcessLogic(ctx, models.NewTopicHasBeenRequested{
-			CapabilityRootId: cmd.CapabilityRootId,
-			ClusterId:        cmd.ClusterId,
-			TopicName:        cmd.TopicName,
-			Partitions:       cmd.Partitions,
-			Retention:        cmd.Retention,
-		})
-
-	default:
-		log.Fatalf("Unknown message %#v", cmd)
-	}
-
-	return nil
-}
-
-type TopicRequested struct {
-	CapabilityRootId string `json:"capabilityRootId"`
-	ClusterId        string `json:"clusterId"`
-	TopicName        string `json:"topicName"`
-	Partitions       int    `json:"partitions"`
-	Retention        int    `json:"retention"`
-}
-
-// endregion
