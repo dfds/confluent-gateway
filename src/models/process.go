@@ -27,6 +27,14 @@ func NewTopicCreationProcess(database Database, confluent Confluent, vault Vault
 	return &TopicCreationProcess{database, confluent, vault}
 }
 
+type NewTopicHasBeenRequested struct {
+	CapabilityRootId string // example => logistics-somecapability-abcd
+	ClusterId        string
+	TopicName        string // full name => pub.logistics-somecapability-abcd.foo
+	Partitions       int
+	Retention        int // in ms
+}
+
 func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) error {
 	p, err := tcp.prepareProcess(ctx, request)
 	if err != nil {

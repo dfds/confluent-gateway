@@ -7,6 +7,8 @@ import (
 
 type ServiceAccountId string
 
+type CapabilityRootId string
+
 type ServiceAccount struct {
 	Id               ServiceAccountId `gorm:"primarykey"`
 	CapabilityRootId CapabilityRootId

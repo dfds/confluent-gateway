@@ -13,3 +13,8 @@ type Cluster struct {
 func (*Cluster) TableName() string {
 	return "cluster"
 }
+
+type ApiKey struct {
+	Username string
+	Password string
+}
