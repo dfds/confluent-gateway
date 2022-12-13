@@ -507,6 +507,6 @@ type ClusterRepositoryStub struct {
 	Cluster models.Cluster
 }
 
-func (s *ClusterRepositoryStub) GetClusterById(context.Context, models.ClusterId) (models.Cluster, error) {
-	return s.Cluster, nil
+func (s *ClusterRepositoryStub) GetClusterById(context.Context, models.ClusterId) (*models.Cluster, error) {
+	return &s.Cluster, nil
 }
