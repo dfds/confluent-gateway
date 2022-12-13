@@ -2,7 +2,7 @@ package models
 
 import "context"
 
-type ConfluentClient interface {
+type Confluent interface {
 	CreateServiceAccount(ctx context.Context, name string, description string) (*ServiceAccountId, error)
 	CreateACLEntry(ctx context.Context, clusterId ClusterId, serviceAccountId ServiceAccountId, entry AclDefinition) error
 	CreateApiKey(ctx context.Context, clusterId ClusterId, serviceAccountId ServiceAccountId) (*ApiKey, error)

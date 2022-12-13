@@ -6,16 +6,16 @@ import (
 )
 
 type Service struct {
-	client     ConfluentClient
+	confluent  Confluent
 	repository ServiceAccountRepository
 }
 
-func NewService(client ConfluentClient, repository ServiceAccountRepository) *Service {
-	return &Service{client: client, repository: repository}
+func NewService(confluent Confluent, repository ServiceAccountRepository) *Service {
+	return &Service{confluent: confluent, repository: repository}
 }
 
 func (s *Service) CreateServiceAccount(capabilityRootId CapabilityRootId, clusterId ClusterId) error {
-	serviceAccountId, err := s.client.CreateServiceAccount(context.TODO(), "sa-some-name", "sa description")
+	serviceAccountId, err := s.confluent.CreateServiceAccount(context.TODO(), "sa-some-name", "sa description")
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (s *Service) GetOrCreateClusterAccess(capabilityRootId CapabilityRootId, cl
 }
 
 func (s *Service) CreateAclEntry(clusterId ClusterId, clusterAccess *ClusterAccess, entry *AclEntry) error {
-	if err := s.client.CreateACLEntry(context.TODO(), clusterId, clusterAccess.ServiceAccountId, entry.AclDefinition); err != nil {
+	if err := s.confluent.CreateACLEntry(context.TODO(), clusterId, clusterAccess.ServiceAccountId, entry.AclDefinition); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (s *Service) CreateAclEntry(clusterId ClusterId, clusterAccess *ClusterAcce
 }
 
 func (s *Service) CreateApiKey(clusterAccess *ClusterAccess) error {
-	key, err := s.client.CreateApiKey(context.TODO(), clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+	key, err := s.confluent.CreateApiKey(context.TODO(), clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
 	}
@@ -71,5 +71,5 @@ func (s *Service) CreateApiKey(clusterAccess *ClusterAccess) error {
 }
 
 func (s *Service) CreateTopic(clusterId ClusterId, topic Topic) error {
-	return s.client.CreateTopic(context.TODO(), clusterId, topic.Name, topic.Partitions, topic.Retention)
+	return s.confluent.CreateTopic(context.TODO(), clusterId, topic.Name, topic.Partitions, topic.Retention)
 }

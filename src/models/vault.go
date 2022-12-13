@@ -2,6 +2,6 @@ package models
 
 import "context"
 
-type VaultClient interface {
+type Vault interface {
 	StoreApiKey(ctx context.Context, capabilityRootId CapabilityRootId, clusterId ClusterId, apiKey ApiKey) error
 }

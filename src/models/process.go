@@ -18,13 +18,13 @@ type ProcessRepository interface {
 //endregion
 
 type TopicCreationProcess struct {
-	data   Database
-	client ConfluentClient
-	aws    VaultClient
+	database  Database
+	confluent Confluent
+	vault     Vault
 }
 
-func NewTopicCreationProcess(data Database, client ConfluentClient, aws VaultClient) *TopicCreationProcess {
-	return &TopicCreationProcess{data, client, aws}
+func NewTopicCreationProcess(database Database, confluent Confluent, vault Vault) *TopicCreationProcess {
+	return &TopicCreationProcess{database, confluent, vault}
 }
 
 func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTopicHasBeenRequested) error {
@@ -52,7 +52,7 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 	clusterId := ClusterId(request.ClusterId)
 	topic := NewTopic(request.TopicName, request.Partitions, request.Retention)
 
-	session := tcp.data.NewSession(ctx)
+	session := tcp.database.NewSession(ctx)
 
 	state, err := session.Processes().GetProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
@@ -94,8 +94,8 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 	return &process{
 		Session: session,
 		State:   state,
-		Client:  tcp.client,
-		Aws:     tcp.aws,
+		Client:  tcp.confluent,
+		Aws:     tcp.vault,
 	}, nil
 }
 
@@ -105,8 +105,8 @@ type process struct {
 	Context context.Context
 	Session DataSession
 	State   *ProcessState
-	Client  ConfluentClient
-	Aws     VaultClient
+	Client  Confluent
+	Aws     Vault
 }
 
 func (p *process) NewSession(session DataSession) *process {
