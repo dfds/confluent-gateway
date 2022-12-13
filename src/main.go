@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/confluent"
@@ -118,18 +117,10 @@ func main() {
 
 	if err := m.Run(ctx); err != nil {
 		logger.Error(&err, "Exit reason {Reason}", err.Error())
+		os.Exit(1)
 	}
 
 	logger.Information("Done!")
-
-	//r := gin.Default()
-	//r.GET("/ping", func(c *gin.Context) {
-	//	c.JSON(200, gin.H{
-	//		"message": "pong",
-	//	})
-	//})
-	//_ = r.Run() // listen and serve on 0.0.0.0:8080
-
 }
 
 type Main struct {
@@ -151,13 +142,6 @@ func (m *Main) Run(ctx context.Context) error {
 
 	m.RunMetricsServer(g, gCtx)
 	m.RunConsumer(g, gCtx)
-
-	g.Go(func() error {
-		//return errors.New("FAILED")
-		<-gCtx.Done()
-		fmt.Println("loop done")
-		return nil
-	})
 
 	// wait for context or all go routines to finish
 	return g.Wait()
