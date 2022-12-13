@@ -8,7 +8,7 @@ import (
 	"github.com/dfds/confluent-gateway/http/metrics"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
-	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/process"
 	"github.com/dfds/confluent-gateway/storage"
 	"github.com/dfds/confluent-gateway/vault"
 	"golang.org/x/sync/errgroup"
@@ -95,10 +95,9 @@ func main() {
 		panic(err)
 	}
 
-	process := models.NewTopicCreationProcess(db, confluentClient, awsClient)
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler("hello", "topic_requested", models.NewTopicRequestedHandler(process), &models.TopicRequested{}).Error; err != nil {
+	if err := registry.RegisterMessageHandler(config.TopicName, "topic_requested", process.NewTopicRequestedHandler(db, confluentClient, awsClient), &process.TopicRequested{}).Error; err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)

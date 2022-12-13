@@ -1,17 +1,19 @@
-package models
+package process
 
 import (
 	"context"
 	"fmt"
 	"github.com/dfds/confluent-gateway/messaging"
+	"github.com/dfds/confluent-gateway/models"
 	"log"
 )
 
 type TopicRequestedHandler struct {
-	process *TopicCreationProcess
+	process *models.TopicCreationProcess
 }
 
-func NewTopicRequestedHandler(process *TopicCreationProcess) messaging.MessageHandler {
+func NewTopicRequestedHandler(db models.Database, confluent models.Confluent, vault models.Vault) messaging.MessageHandler {
+	process := models.NewTopicCreationProcess(db, confluent, vault)
 	return &TopicRequestedHandler{process: process}
 }
 
@@ -30,7 +32,7 @@ func (h *TopicRequestedHandler) Handle(ctx context.Context, msgContext messaging
 				" Retention:  %d\n",
 			cmd.CapabilityRootId, cmd.ClusterId, cmd.TopicName, cmd.Partitions, cmd.Retention)
 
-		return h.process.ProcessLogic(ctx, NewTopicHasBeenRequested{
+		return h.process.ProcessLogic(ctx, models.NewTopicHasBeenRequested{
 			CapabilityRootId: cmd.CapabilityRootId,
 			ClusterId:        cmd.ClusterId,
 			TopicName:        cmd.TopicName,

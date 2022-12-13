@@ -1,4 +1,4 @@
-package models
+package process
 
 type TopicRequested struct {
 	CapabilityRootId string `json:"capabilityRootId"`
