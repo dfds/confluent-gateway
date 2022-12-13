@@ -27,9 +27,11 @@ type Configuration struct {
 	ConfluentCloudApiPassword string `env:"CG_CONFLUENT_CLOUD_API_PASSWORD"`
 	VaultApiUrl               string `env:"CG_VAULT_API_URL"`
 	KafkaBroker               string `env:"CG_KAFKA_BROKER"`
+	KafkaGroupId              string `env:"CG_KAFKA_GROUP_ID"`
 	KafkaUserName             string `env:"SELFSERVICE_KAFKA_USERNAME"`
 	KafkaPassword             string `env:"SELFSERVICE_KAFKA_PASSWORD"`
 	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
+	TopicName                 string `env:"CB_TOPIC_NAME"`
 }
 
 // region configuration helper functions
@@ -104,9 +106,9 @@ func main() {
 	logger.Information("New consumer")
 	consumerOptions := messaging.ConsumerOptions{
 		Broker:      config.KafkaBroker,
-		GroupId:     "test-consumer-1",
-		Topics:      []string{"hello"}, //registry.GetTopics(),
+		GroupId:     config.KafkaGroupId,
 		Credentials: config.CreateConsumerCredentials(),
+		Topics:      registry.GetTopics(),
 	}
 
 	consumer, _ := messaging.NewConsumer(logger, dispatcher, consumerOptions)
