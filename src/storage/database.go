@@ -42,15 +42,15 @@ func (d *Database) Processes() models.ProcessRepository {
 	return d
 }
 
-func (d *Database) GetClusterById(ctx context.Context, id models.ClusterId) (models.Cluster, error) {
+func (d *Database) GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error) {
 	var cluster models.Cluster
 
-	err := d.db.WithContext(ctx).Find(&cluster, id).Error
+	err := d.db.WithContext(ctx).First(&cluster, id).Error
 	if err != nil {
-		return models.Cluster{}, err
+		return nil, err
 	}
 
-	return cluster, nil
+	return &cluster, nil
 }
 
 func (d *Database) GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error) {

@@ -160,7 +160,7 @@ func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 }
 
 type ClusterRepository interface {
-	GetClusterById(ctx context.Context, id models.ClusterId) (models.Cluster, error)
+	GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error)
 }
 
 func NewConfluentClient(cloudApiAccess CloudApiAccess, repo ClusterRepository) models.ConfluentClient {
