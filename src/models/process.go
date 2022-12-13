@@ -7,16 +7,6 @@ import (
 	"time"
 )
 
-//region ProcessState
-
-type ProcessRepository interface {
-	CreateProcessState(state *ProcessState) error
-	UpdateProcessState(state *ProcessState) error
-	GetProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topicName string) (*ProcessState, error)
-}
-
-//endregion
-
 type TopicCreationProcess struct {
 	database  Database
 	confluent Confluent

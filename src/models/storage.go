@@ -19,3 +19,9 @@ type ServiceAccountRepository interface {
 	CreateClusterAccess(clusterAccess *ClusterAccess) error
 	UpdateClusterAccess(clusterAccess *ClusterAccess) error
 }
+
+type ProcessRepository interface {
+	CreateProcessState(state *ProcessState) error
+	UpdateProcessState(state *ProcessState) error
+	GetProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topicName string) (*ProcessState, error)
+}
