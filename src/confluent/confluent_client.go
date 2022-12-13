@@ -16,6 +16,10 @@ type CloudApiAccess struct {
 	Password    string
 }
 
+type ClusterRepository interface {
+	GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error)
+}
+
 type Client struct {
 	cloudApiAccess CloudApiAccess
 	repo           ClusterRepository
@@ -157,10 +161,6 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	}
 
 	return err
-}
-
-type ClusterRepository interface {
-	GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error)
 }
 
 func NewConfluentClient(cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
