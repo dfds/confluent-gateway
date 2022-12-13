@@ -109,10 +109,10 @@ func (d *Database) UpdateAclEntry(aclEntry *models.AclEntry) error {
 	return d.db.Save(aclEntry).Error
 }
 
-func (d *Database) CreateClusterAccess(clusterAccess models.ClusterAccess) error {
+func (d *Database) CreateClusterAccess(clusterAccess *models.ClusterAccess) error {
 	return d.db.Create(clusterAccess).Error
 }
 
-func (d *Database) UpdateClusterAccess(clusterAccess models.ClusterAccess) error {
+func (d *Database) UpdateClusterAccess(clusterAccess *models.ClusterAccess) error {
 	return d.db.Save(clusterAccess).Error
 }

@@ -18,13 +18,13 @@ func (*ServiceAccount) TableName() string {
 	return "service_account"
 }
 
-func (sa *ServiceAccount) TryGetClusterAccess(clusterId ClusterId) (ClusterAccess, bool) {
+func (sa *ServiceAccount) TryGetClusterAccess(clusterId ClusterId) (*ClusterAccess, bool) {
 	for _, clusterAccess := range sa.ClusterAccesses {
 		if clusterAccess.ClusterId == clusterId {
-			return clusterAccess, true
+			return &clusterAccess, true
 		}
 	}
-	return ClusterAccess{}, false
+	return nil, false
 }
 
 type ClusterAccess struct {
@@ -52,10 +52,10 @@ func (ca *ClusterAccess) GetAclPendingCreation() []AclEntry {
 	return pending
 }
 
-func NewClusterAccess(serviceAccountId ServiceAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) ClusterAccess {
+func NewClusterAccess(serviceAccountId ServiceAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) *ClusterAccess {
 	clusterAccessId := uuid.NewV4()
 
-	return ClusterAccess{
+	return &ClusterAccess{
 		Id:               clusterAccessId,
 		ServiceAccountId: serviceAccountId,
 		ClusterId:        clusterId,
@@ -92,10 +92,7 @@ func (*AclEntry) TableName() string {
 	return "acl"
 }
 
-type ServiceAccountRepository interface {
-	GetServiceAccount(capabilityRootId CapabilityRootId) (*ServiceAccount, error)
-	CreateServiceAccount(serviceAccount *ServiceAccount) error
-	UpdateAclEntry(aclEntry *AclEntry) error
-	CreateClusterAccess(clusterAccess ClusterAccess) error
-	UpdateClusterAccess(clusterAccess ClusterAccess) error
+func (entry *AclEntry) Created() {
+	now := time.Now()
+	entry.CreatedAt = &now
 }

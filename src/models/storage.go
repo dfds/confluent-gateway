@@ -11,3 +11,11 @@ type DataSession interface {
 	ServiceAccounts() ServiceAccountRepository
 	Processes() ProcessRepository
 }
+
+type ServiceAccountRepository interface {
+	GetServiceAccount(capabilityRootId CapabilityRootId) (*ServiceAccount, error)
+	CreateServiceAccount(serviceAccount *ServiceAccount) error
+	UpdateAclEntry(aclEntry *AclEntry) error
+	CreateClusterAccess(clusterAccess *ClusterAccess) error
+	UpdateClusterAccess(clusterAccess *ClusterAccess) error
+}
