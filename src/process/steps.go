@@ -1,12 +1,12 @@
-package models
+package process
 
 type steps struct {
 	steps []stepWrapper
 }
 
-type stepWrapper func(*process) (bool, error)
+type stepWrapper func(*Process) (bool, error)
 
-type Step func(*process) error
+type Step func(*Process) error
 type Predicate func() bool
 
 type NextStepBuilder interface {
@@ -28,7 +28,7 @@ func PrepareSteps() NextStepBuilder {
 }
 
 func (s *steps) Step(step Step) StepBuilder {
-	s.steps = append(s.steps, func(p *process) (bool, error) {
+	s.steps = append(s.steps, func(p *Process) (bool, error) {
 		err := step(p)
 		return true, err
 	})
@@ -38,7 +38,7 @@ func (s *steps) Step(step Step) StepBuilder {
 func (s *steps) Until(isDone Predicate) NextStepBuilder {
 	lastStep := s.steps[len(s.steps)-1]
 
-	s.steps[len(s.steps)-1] = func(p *process) (bool, error) {
+	s.steps[len(s.steps)-1] = func(p *Process) (bool, error) {
 		if isDone() {
 			return true, nil
 		}
@@ -55,7 +55,7 @@ func (s *steps) Run(transaction Transaction) error {
 		for {
 			done := true
 
-			err := transaction.Execute(func(p *process) error {
+			err := transaction.Execute(func(p *Process) error {
 				var err error
 				done, err = step(p)
 				return err

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/process"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -24,21 +25,21 @@ func NewDatabase(dsn string, logger logging.Logger) (*Database, error) {
 	}
 }
 
-func (d *Database) NewSession(ctx context.Context) models.DataSession {
+func (d *Database) NewSession(ctx context.Context) process.DataSession {
 	return &Database{d.db.Session(&gorm.Session{Context: ctx})}
 }
 
-func (d *Database) Transaction(f func(models.DataSession) error) error {
+func (d *Database) Transaction(f func(process.DataSession) error) error {
 	return d.db.Debug().Transaction(func(tx *gorm.DB) error {
 		return f(&Database{tx})
 	})
 }
 
-func (d *Database) ServiceAccounts() models.ServiceAccountRepository {
+func (d *Database) ServiceAccounts() process.ServiceAccountRepository {
 	return d
 }
 
-func (d *Database) Processes() models.ProcessRepository {
+func (d *Database) Processes() process.ProcessRepository {
 	return d
 }
 

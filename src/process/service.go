@@ -1,7 +1,8 @@
-package models
+package process
 
 import (
 	"context"
+	"github.com/dfds/confluent-gateway/models"
 	"time"
 )
 
@@ -14,23 +15,23 @@ func NewService(confluent Confluent, repository ServiceAccountRepository) *Servi
 	return &Service{confluent: confluent, repository: repository}
 }
 
-func (s *Service) CreateServiceAccount(capabilityRootId CapabilityRootId, clusterId ClusterId) error {
+func (s *Service) CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error {
 	serviceAccountId, err := s.confluent.CreateServiceAccount(context.TODO(), "sa-some-name", "sa description")
 	if err != nil {
 		return err
 	}
 
-	newServiceAccount := &ServiceAccount{
+	newServiceAccount := &models.ServiceAccount{
 		Id:               *serviceAccountId,
 		CapabilityRootId: capabilityRootId,
-		ClusterAccesses:  []ClusterAccess{*NewClusterAccess(*serviceAccountId, clusterId, capabilityRootId)},
+		ClusterAccesses:  []models.ClusterAccess{*models.NewClusterAccess(*serviceAccountId, clusterId, capabilityRootId)},
 		CreatedAt:        time.Now(),
 	}
 
 	return s.repository.CreateServiceAccount(newServiceAccount)
 }
 
-func (s *Service) GetOrCreateClusterAccess(capabilityRootId CapabilityRootId, clusterId ClusterId) (*ClusterAccess, error) {
+func (s *Service) GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
 	serviceAccount, err := s.repository.GetServiceAccount(capabilityRootId)
 	if err != nil {
 		return nil, err
@@ -39,7 +40,7 @@ func (s *Service) GetOrCreateClusterAccess(capabilityRootId CapabilityRootId, cl
 	clusterAccess, hasClusterAccess := serviceAccount.TryGetClusterAccess(clusterId)
 
 	if !hasClusterAccess {
-		clusterAccess = NewClusterAccess(serviceAccount.Id, clusterId, capabilityRootId)
+		clusterAccess = models.NewClusterAccess(serviceAccount.Id, clusterId, capabilityRootId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, *clusterAccess)
 
 		if err = s.repository.CreateClusterAccess(clusterAccess); err != nil {
@@ -49,7 +50,7 @@ func (s *Service) GetOrCreateClusterAccess(capabilityRootId CapabilityRootId, cl
 	return clusterAccess, nil
 }
 
-func (s *Service) CreateAclEntry(clusterId ClusterId, clusterAccess *ClusterAccess, entry *AclEntry) error {
+func (s *Service) CreateAclEntry(clusterId models.ClusterId, clusterAccess *models.ClusterAccess, entry *models.AclEntry) error {
 	if err := s.confluent.CreateACLEntry(context.TODO(), clusterId, clusterAccess.ServiceAccountId, entry.AclDefinition); err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func (s *Service) CreateAclEntry(clusterId ClusterId, clusterAccess *ClusterAcce
 	return s.repository.UpdateAclEntry(entry)
 }
 
-func (s *Service) CreateApiKey(clusterAccess *ClusterAccess) error {
+func (s *Service) CreateApiKey(clusterAccess *models.ClusterAccess) error {
 	key, err := s.confluent.CreateApiKey(context.TODO(), clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
@@ -70,6 +71,6 @@ func (s *Service) CreateApiKey(clusterAccess *ClusterAccess) error {
 	return s.repository.UpdateClusterAccess(clusterAccess)
 }
 
-func (s *Service) CreateTopic(clusterId ClusterId, topic Topic) error {
+func (s *Service) CreateTopic(clusterId models.ClusterId, topic models.Topic) error {
 	return s.confluent.CreateTopic(context.TODO(), clusterId, topic.Name, topic.Partitions, topic.Retention)
 }

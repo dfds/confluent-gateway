@@ -1,8 +1,9 @@
-package models
+package process
 
 import (
 	"context"
 	"fmt"
+	"github.com/dfds/confluent-gateway/models"
 	uuid "github.com/satori/go.uuid"
 	"time"
 )
@@ -45,10 +46,10 @@ func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTo
 		Run(p)
 }
 
-func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request NewTopicHasBeenRequested) (*process, error) {
-	capabilityRootId := CapabilityRootId(request.CapabilityRootId)
-	clusterId := ClusterId(request.ClusterId)
-	topic := NewTopic(request.TopicName, request.Partitions, request.Retention)
+func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request NewTopicHasBeenRequested) (*Process, error) {
+	capabilityRootId := models.CapabilityRootId(request.CapabilityRootId)
+	clusterId := models.ClusterId(request.ClusterId)
+	topic := models.NewTopic(request.TopicName, request.Partitions, request.Retention)
 
 	session := tcp.database.NewSession(ctx)
 
@@ -71,7 +72,7 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 			_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 		}
 
-		state = &ProcessState{
+		state = &models.ProcessState{
 			Id:                uuid.NewV4(),
 			CapabilityRootId:  capabilityRootId,
 			ClusterId:         clusterId,
@@ -89,7 +90,7 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 		}
 	}
 
-	return &process{
+	return &Process{
 		Session: session,
 		State:   state,
 		Client:  tcp.confluent,
@@ -97,18 +98,18 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 	}, nil
 }
 
-// region process
+// region Process
 
-type process struct {
+type Process struct {
 	Context context.Context
 	Session DataSession
-	State   *ProcessState
+	State   *models.ProcessState
 	Client  Confluent
 	Aws     Vault
 }
 
-func (p *process) NewSession(session DataSession) *process {
-	return &process{
+func (p *Process) NewSession(session DataSession) *Process {
+	return &Process{
 		Session: session,
 		Context: p.Context,
 		State:   p.State,
@@ -117,7 +118,7 @@ func (p *process) NewSession(session DataSession) *process {
 	}
 }
 
-func (p *process) Execute(step Step) error {
+func (p *Process) Execute(step Step) error {
 	return p.Session.Transaction(func(session DataSession) error {
 		np := p.NewSession(session)
 
@@ -130,7 +131,7 @@ func (p *process) Execute(step Step) error {
 	})
 }
 
-func (p *process) service() *Service {
+func (p *Process) service() *Service {
 	client := p.Client
 	repository := p.Session.ServiceAccounts()
 	service := NewService(client, repository)
@@ -141,7 +142,7 @@ func (p *process) service() *Service {
 
 // region Steps
 
-func ensureServiceAccount(process *process) error {
+func ensureServiceAccount(process *Process) error {
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
 	service := process.service()
@@ -162,7 +163,7 @@ func ensureServiceAccount(process *process) error {
 	return err
 }
 
-func ensureServiceAccountAcl(process *process) error {
+func ensureServiceAccountAcl(process *Process) error {
 	service := process.service()
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
@@ -190,7 +191,7 @@ func ensureServiceAccountAcl(process *process) error {
 	}
 }
 
-func ensureServiceAccountApiKey(process *process) error {
+func ensureServiceAccountApiKey(process *Process) error {
 	service := process.service()
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
@@ -214,7 +215,7 @@ func ensureServiceAccountApiKey(process *process) error {
 	return nil
 }
 
-func ensureServiceAccountApiKeyAreStoredInVault(process *process) error {
+func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
 	service := process.service()
 	aws := process.Aws
 	capabilityRootId := process.State.CapabilityRootId
@@ -239,7 +240,7 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *process) error {
 	return nil
 }
 
-func ensureTopicIsCreated(process *process) error {
+func ensureTopicIsCreated(process *Process) error {
 	service := process.service()
 	clusterId := process.State.ClusterId
 	topic := process.State.Topic
