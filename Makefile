@@ -1,4 +1,5 @@
 APP_IMAGE_NAME=selfservice/confluent-gateway
+DB_IMAGE_NAME=selfservice/confluent-gateway/dbmigrations
 BUILD_NUMBER=n/a
 OUTPUT_DIR=${PWD}/.output
 OUTPUT_DIR_APP=${OUTPUT_DIR}/app
@@ -37,6 +38,7 @@ tests:
 
 container:
 	@docker build -t $(APP_IMAGE_NAME) .
+	@docker build -t ${DB_IMAGE_NAME} ./db
 
 manifests:
 	@cp -r ./k8s/. $(OUTPUT_DIR_MANIFESTS)
@@ -44,6 +46,7 @@ manifests:
 
 deliver:
 	@sh ./tools/push-container.sh "${APP_IMAGE_NAME}" "${BUILD_NUMBER}"
+	@sh ./tools/push-container.sh "${DB_IMAGE_NAME}" "${BUILD_NUMBER}"
 
 ci: clean restore build tests container manifests
 cd: ci deliver
