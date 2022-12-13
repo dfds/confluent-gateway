@@ -4,44 +4,28 @@ import (
 	"context"
 	"fmt"
 	"github.com/dfds/confluent-gateway/messaging"
-	"log"
+	"github.com/dfds/confluent-gateway/models"
 )
 
 type TopicRequestedHandler struct {
-	process *TopicCreationProcess
+	process *CreateTopicProcess
 }
 
-func NewTopicRequestedHandler(db Database, confluent Confluent, vault Vault) messaging.MessageHandler {
-	process := NewTopicCreationProcess(db, confluent, vault)
+func NewTopicRequestedHandler(process *CreateTopicProcess) messaging.MessageHandler {
 	return &TopicRequestedHandler{process: process}
 }
 
 func (h *TopicRequestedHandler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
-
-	switch cmd := msgContext.Message().(type) {
+	switch message := msgContext.Message().(type) {
 
 	case *TopicRequested:
-
-		fmt.Printf(
-			"TopicRequested:\n"+
-				" Capability: %s\n"+
-				" Cluster:    %s\n"+
-				" Topic:      %s\n"+
-				" Partitions: %d\n"+
-				" Retention:  %d\n",
-			cmd.CapabilityRootId, cmd.ClusterId, cmd.TopicName, cmd.Partitions, cmd.Retention)
-
-		return h.process.ProcessLogic(ctx, NewTopicHasBeenRequested{
-			CapabilityRootId: cmd.CapabilityRootId,
-			ClusterId:        cmd.ClusterId,
-			TopicName:        cmd.TopicName,
-			Partitions:       cmd.Partitions,
-			Retention:        cmd.Retention,
+		return h.process.Process(ctx, CreateTopicProcessInput{
+			CapabilityRootId: models.CapabilityRootId(message.CapabilityRootId),
+			ClusterId:        models.ClusterId(message.ClusterId),
+			Topic:            models.NewTopic(message.TopicName, message.Partitions, message.Retention),
 		})
 
 	default:
-		log.Fatalf("Unknown message %#v", cmd)
+		return fmt.Errorf("unknown message %#v", message)
 	}
-
-	return nil
 }
