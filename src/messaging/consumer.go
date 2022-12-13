@@ -45,7 +45,7 @@ func (c *consumer) Start(ctx context.Context) error {
 		json := string(m.Value)
 		c.logger.Information("[START] Message received: {Message}", json)
 
-		if err := c.dispatcher.Dispatch(RawMessage{Data: m.Value}); err != nil {
+		if err := c.dispatcher.Dispatch(ctx, RawMessage{Data: m.Value}); err != nil {
 			c.logger.Error(&err, "[START] Consumer {GroupId} could not dispatch {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
 			return err
 		}

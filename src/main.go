@@ -231,7 +231,7 @@ func NewTopicRequestedHandler(process *models.TopicCreationProcess) messaging.Me
 	return &TopicRequestedHandler{process: process}
 }
 
-func (h *TopicRequestedHandler) Handle(msgContext messaging.MessageContext) error {
+func (h *TopicRequestedHandler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
 
 	switch cmd := msgContext.Message().(type) {
 
@@ -246,7 +246,7 @@ func (h *TopicRequestedHandler) Handle(msgContext messaging.MessageContext) erro
 				" Retention:  %d\n",
 			cmd.CapabilityRootId, cmd.ClusterId, cmd.TopicName, cmd.Partitions, cmd.Retention)
 
-		return h.process.ProcessLogic(context.TODO(), models.NewTopicHasBeenRequested{
+		return h.process.ProcessLogic(ctx, models.NewTopicHasBeenRequested{
 			CapabilityRootId: cmd.CapabilityRootId,
 			ClusterId:        cmd.ClusterId,
 			TopicName:        cmd.TopicName,

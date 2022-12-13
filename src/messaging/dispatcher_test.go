@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"context"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -17,7 +18,7 @@ func TestDispatch(t *testing.T) {
 
 	d := NewDispatcher(&messageHandlerRegistryStub{spy}, NewDeserializerStub())
 
-	err := d.Dispatch(RawMessage{})
+	err := d.Dispatch(context.TODO(), RawMessage{})
 
 	assert.NoError(t, err)
 	assert.True(t, spy.wasCalled)
@@ -50,7 +51,7 @@ func TestDispatchWithError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := NewDispatcher(tt.registry, tt.deserializer)
 
-			assert.Error(t, d.Dispatch(RawMessage{}))
+			assert.Error(t, d.Dispatch(context.TODO(), RawMessage{}))
 		})
 	}
 }
@@ -77,7 +78,7 @@ func (s *errorStub) Deserialize(RawMessage) (*IncomingMessage, error) {
 	return nil, s.error
 }
 
-func (s *errorStub) Handle(MessageContext) error {
+func (s *errorStub) Handle(context.Context, MessageContext) error {
 	return s.error
 }
 
@@ -85,7 +86,7 @@ type messageHandlerSpy struct {
 	wasCalled bool
 }
 
-func (h *messageHandlerSpy) Handle(MessageContext) error {
+func (h *messageHandlerSpy) Handle(context.Context, MessageContext) error {
 	h.wasCalled = true
 	return nil
 }

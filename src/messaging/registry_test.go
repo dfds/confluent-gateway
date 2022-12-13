@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"reflect"
@@ -127,7 +128,7 @@ func TestGetTopics(t *testing.T) {
 type dummyMessageHandler struct {
 }
 
-func (d *dummyMessageHandler) Handle(MessageContext) error {
+func (d *dummyMessageHandler) Handle(context.Context, MessageContext) error {
 	return nil
 }
 

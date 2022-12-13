@@ -1,5 +1,7 @@
 package messaging
 
+import "context"
+
 type RawMessage struct {
 	Key     string
 	Headers map[string]string
@@ -7,7 +9,7 @@ type RawMessage struct {
 }
 
 type Dispatcher interface {
-	Dispatch(RawMessage) error
+	Dispatch(context.Context, RawMessage) error
 }
 
 type MessageHandlerRegistry interface {
@@ -22,7 +24,7 @@ func NewDispatcher(registry MessageHandlerRegistry, deserializer Deserializer) D
 }
 
 type MessageHandler interface {
-	Handle(MessageContext) error
+	Handle(context.Context, MessageContext) error
 }
 
 type dispatcher struct {
@@ -30,7 +32,7 @@ type dispatcher struct {
 	deserializer Deserializer
 }
 
-func (d *dispatcher) Dispatch(msg RawMessage) error {
+func (d *dispatcher) Dispatch(ctx context.Context, msg RawMessage) error {
 	incomingMessage, err := d.deserializer.Deserialize(msg)
 	if err != nil {
 		return err
@@ -41,5 +43,5 @@ func (d *dispatcher) Dispatch(msg RawMessage) error {
 		return err
 	}
 
-	return handler.Handle(NewMessageContext(msg.Headers, incomingMessage.Message))
+	return handler.Handle(ctx, NewMessageContext(msg.Headers, incomingMessage.Message))
 }
