@@ -33,7 +33,7 @@ func TestConvertToTransportMessageAssignsExpectedHeadersWhenContainingMultiple(t
 		{Key: "foo", Value: []byte("bar")},
 		{Key: "baz", Value: []byte("qux")},
 	}
-	assert.Equal(t, expected, result.Headers)
+	assert.ElementsMatch(t, expected, result.Headers)
 }
 
 func TestConvertToTransportMessageAssignsExpectedValue(t *testing.T) {
