@@ -26,7 +26,7 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 	defer server.Close()
 
 	config, _ := NewTestConfig(server.URL)
-	sut := vault{
+	sut := Vault{
 		logger: logging.NilLogger(),
 		config: *config,
 	}
@@ -76,7 +76,7 @@ func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
 	defer server.Close()
 
 	config, _ := NewTestConfig(server.URL)
-	sut := vault{
+	sut := Vault{
 		logger: logging.NilLogger(),
 		config: *config,
 	}

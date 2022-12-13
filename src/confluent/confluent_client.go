@@ -16,7 +16,7 @@ type CloudApiAccess struct {
 	Password    string
 }
 
-type client struct {
+type Client struct {
 	cloudApiAccess CloudApiAccess
 	repo           ClusterRepository
 }
@@ -32,7 +32,7 @@ type createApiKeyResponse struct {
 	} `json:"spec"`
 }
 
-func (c *client) CreateServiceAccount(ctx context.Context, name string, description string) (*models.ServiceAccountId, error) {
+func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (*models.ServiceAccountId, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
 	payload := `{
 		"display_name": "` + name + `",
@@ -61,7 +61,7 @@ func (c *client) CreateServiceAccount(ctx context.Context, name string, descript
 	return &serviceAccountId, nil
 }
 
-func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
+func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
 	cluster, err := c.repo.GetClusterById(ctx, clusterId)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (c *client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 	return err
 }
 
-func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
 	payload := `{
 		"spec": {
@@ -131,7 +131,7 @@ func (c *client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 	}, nil
 }
 
-func (c *client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) error {
+func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) error {
 	cluster, _ := c.repo.GetClusterById(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
@@ -163,6 +163,6 @@ type ClusterRepository interface {
 	GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error)
 }
 
-func NewConfluentClient(cloudApiAccess CloudApiAccess, repo ClusterRepository) models.ConfluentClient {
-	return &client{cloudApiAccess: cloudApiAccess, repo: repo}
+func NewConfluentClient(cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
+	return &Client{cloudApiAccess: cloudApiAccess, repo: repo}
 }

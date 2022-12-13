@@ -13,12 +13,12 @@ import (
 	"time"
 )
 
-type vault struct {
+type Vault struct {
 	logger logging.Logger
 	config aws.Config
 }
 
-func (v *vault) StoreApiKey(ctx context.Context, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+func (v *Vault) StoreApiKey(ctx context.Context, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, apiKey models.ApiKey) error {
 
 	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityRootId, clusterId)
 	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityRootId} in cluster {ClusterId} at location {ParameterName}", apiKey.Username, string(capabilityRootId), string(clusterId), parameterName)
@@ -75,12 +75,12 @@ func NewTestConfig(url string) (*aws.Config, error) {
 	return cfg, nil
 }
 
-func NewVaultClient(logger logging.Logger, cfg *aws.Config) (models.VaultClient, error) {
+func NewVaultClient(logger logging.Logger, cfg *aws.Config) (*Vault, error) {
 	if cfg == nil {
 		return nil, errors.New("cannot create a valid vault client with a nil config")
 	}
 
-	return &vault{
+	return &Vault{
 		logger: logger,
 		config: *cfg,
 	}, nil
