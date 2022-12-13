@@ -8,7 +8,7 @@ import (
 )
 
 type MessageRegistry interface {
-	RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) error
+	RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) *Registration
 	GetMessageHandler(messageType string) (MessageHandler, error)
 	GetMessageType(messageType string) (reflect.Type, error)
 	GetTopics() []string
@@ -32,18 +32,31 @@ type messageRegistry struct {
 	topics        map[string]string
 }
 
-func (r *messageRegistry) RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) error {
+type Registration struct {
+	registry *messageRegistry
+	Error    error
+}
+
+func (r *Registration) RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) *Registration {
+	if r.Error != nil {
+		return r
+	}
+
+	return r.registry.RegisterMessageHandler(topicName, eventType, handler, message)
+}
+
+func (r *messageRegistry) RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) *Registration {
 	if len(topicName) == 0 {
-		return errors.New("topic name must be specified")
+		return r.error(errors.New("topic name must be specified"))
 	}
 
 	if _, ok := r.registrations[eventType]; ok {
-		return fmt.Errorf("duplicate message handler registration for message of type: %s", eventType)
+		return r.error(fmt.Errorf("duplicate message handler registration for message of type: %s", eventType))
 	}
 
 	messageType, err := getMessageType(message)
 	if err != nil {
-		return err
+		return r.error(err)
 	}
 
 	r.registrations[eventType] = MessageRegistration{
@@ -54,7 +67,21 @@ func (r *messageRegistry) RegisterMessageHandler(topicName string, eventType str
 
 	r.topics[strings.ToUpper(topicName)] = topicName
 
-	return nil
+	return r.ok()
+}
+
+func (r *messageRegistry) ok() *Registration {
+	return &Registration{
+		registry: r,
+		Error:    nil,
+	}
+}
+
+func (r *messageRegistry) error(err error) *Registration {
+	return &Registration{
+		registry: r,
+		Error:    err,
+	}
 }
 
 func getMessageType(example interface{}) (reflect.Type, error) {

@@ -56,7 +56,7 @@ func TestRegisterMessageHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sut := NewMessageRegistry()
 
-			err := sut.RegisterMessageHandler(tt.topic, "some_event", &dummyMessageHandler{}, tt.message)
+			err := sut.RegisterMessageHandler(tt.topic, "some_event", &dummyMessageHandler{}, tt.message).Error
 
 			tt.wantErr(t, err, fmt.Sprintf("RegisterMessageHandler(%v, dummyMessage, %v)", "some_event", tt.message))
 		})
@@ -65,8 +65,10 @@ func TestRegisterMessageHandler(t *testing.T) {
 
 func TestRegisterMessageHandlerWithDuplicateRegistrations(t *testing.T) {
 	sut := NewMessageRegistry()
-	_ = sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
-	err := sut.RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{})
+	err := sut.
+		RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{}).
+		RegisterMessageHandler("some_topic", "some_event", &dummyMessageHandler{}, &dummyMessage{}).
+		Error
 
 	assert.Error(t, err)
 }

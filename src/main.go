@@ -95,10 +95,9 @@ func main() {
 	}
 
 	process := models.NewTopicCreationProcess(db, confluentClient, awsClient)
-
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler("hello", "topic_requested", models.NewTopicRequestedHandler(process), &models.TopicRequested{}); err != nil {
+	if err := registry.RegisterMessageHandler("hello", "topic_requested", models.NewTopicRequestedHandler(process), &models.TopicRequested{}).Error; err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
