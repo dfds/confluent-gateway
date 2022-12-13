@@ -38,29 +38,13 @@ func (tcp *TopicCreationProcess) ProcessLogic(ctx context.Context, request NewTo
 		return nil
 	}
 
-	//1. Ensure capability has cluster access
-	//  1.2. Ensure capability has service account
-	if err := p.execute(ensureServiceAccount); err != nil {
-		return err
-	}
-	//	1.3. Ensure service account has all acls
-	if err := p.executeWhile(ensureServiceAccountAcl, p.HasPendingClusterAccess); err != nil {
-		return err
-	}
-	//	1.4. Ensure service account has api keys
-	if err := p.execute(ensureServiceAccountApiKey); err != nil {
-		return err
-	}
-	//	1.5. Ensure api keys are stored in vault
-	if err := p.execute(ensureServiceAccountApiKeyAreStoredInVault); err != nil {
-		return err
-	}
-	//2. Ensure topic is created
-	if err := p.execute(ensureTopicIsCreated); err != nil {
-		return err
-	}
-
-	return nil
+	return PrepareSteps().
+		Step(ensureServiceAccount).
+		Step(ensureServiceAccountAcl).Until(func() bool { return p.State.HasClusterAccess }).
+		Step(ensureServiceAccountApiKey).
+		Step(ensureServiceAccountApiKeyAreStoredInVault).
+		Step(ensureTopicIsCreated).
+		Run(p)
 }
 
 func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request NewTopicHasBeenRequested) (*process, error) {
@@ -115,22 +99,32 @@ func (tcp *TopicCreationProcess) prepareProcess(ctx context.Context, request New
 	}, nil
 }
 
+// region process
+
 type process struct {
+	Context context.Context
 	Session DataSession
 	State   *ProcessState
 	Client  ConfluentClient
 	Aws     VaultClient
 }
 
-func (p *process) HasPendingClusterAccess() bool {
-	return !p.State.HasClusterAccess
+func (p *process) NewSession(session DataSession) *process {
+	return &process{
+		Session: session,
+		Context: p.Context,
+		State:   p.State,
+		Client:  p.Client,
+		Aws:     p.Aws,
+	}
 }
 
-func (p *process) execute(stepFunc func(*process) error) error {
+func (p *process) Execute(step Step) error {
 	return p.Session.Transaction(func(session DataSession) error {
-		process := &process{session, p.State, p.Client, p.Aws}
+		np := p.NewSession(session)
 
-		if err := stepFunc(process); err != nil {
+		err := step(np)
+		if err != nil {
 			return err
 		}
 
@@ -138,23 +132,16 @@ func (p *process) execute(stepFunc func(*process) error) error {
 	})
 }
 
-func (p *process) executeWhile(stepFunc func(*process) error, predicate func() bool) error {
-	for predicate() {
-		if err := p.execute(stepFunc); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// region Steps
-
 func (p *process) service() *Service {
 	client := p.Client
 	repository := p.Session.ServiceAccounts()
 	service := NewService(client, repository)
 	return service
 }
+
+// endregion
+
+// region Steps
 
 func ensureServiceAccount(process *process) error {
 	capabilityRootId := process.State.CapabilityRootId
