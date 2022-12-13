@@ -103,7 +103,6 @@ func main() {
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
 
-	logger.Information("New consumer")
 	consumerOptions := messaging.ConsumerOptions{
 		Broker:      config.KafkaBroker,
 		GroupId:     config.KafkaGroupId,
@@ -111,7 +110,10 @@ func main() {
 		Topics:      registry.GetTopics(),
 	}
 
-	consumer, _ := messaging.NewConsumer(logger, dispatcher, consumerOptions)
+	consumer, err := messaging.NewConsumer(logger, dispatcher, consumerOptions)
+	if err != nil {
+		panic(err)
+	}
 
 	m := NewMain(logger, consumer)
 
