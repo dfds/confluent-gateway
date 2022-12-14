@@ -83,10 +83,5 @@ func (ctp *CreateTopicProcess) prepareProcess(ctx context.Context, input CreateT
 		}
 	}
 
-	return &Process{
-		Session:   session,
-		State:     state,
-		Confluent: ctp.confluent,
-		Vault:     ctp.vault,
-	}, nil
+	return NewProcess(ctx, session, ctp.confluent, ctp.vault, state), nil
 }

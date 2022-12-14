@@ -7,16 +7,21 @@ import (
 )
 
 type Service struct {
+	context    context.Context
 	confluent  Confluent
 	repository ServiceAccountRepository
 }
 
-func NewService(confluent Confluent, repository ServiceAccountRepository) *Service {
-	return &Service{confluent: confluent, repository: repository}
+func NewService(ctx context.Context, confluent Confluent, repository ServiceAccountRepository) *Service {
+	return &Service{
+		context:    ctx,
+		confluent:  confluent,
+		repository: repository,
+	}
 }
 
 func (s *Service) CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error {
-	serviceAccountId, err := s.confluent.CreateServiceAccount(context.TODO(), "sa-some-name", "sa description")
+	serviceAccountId, err := s.confluent.CreateServiceAccount(s.context, "sa-some-name", "sa description")
 	if err != nil {
 		return err
 	}
@@ -51,7 +56,7 @@ func (s *Service) GetOrCreateClusterAccess(capabilityRootId models.CapabilityRoo
 }
 
 func (s *Service) CreateAclEntry(clusterId models.ClusterId, clusterAccess *models.ClusterAccess, entry *models.AclEntry) error {
-	if err := s.confluent.CreateACLEntry(context.TODO(), clusterId, clusterAccess.ServiceAccountId, entry.AclDefinition); err != nil {
+	if err := s.confluent.CreateACLEntry(s.context, clusterId, clusterAccess.ServiceAccountId, entry.AclDefinition); err != nil {
 		return err
 	}
 
@@ -61,7 +66,7 @@ func (s *Service) CreateAclEntry(clusterId models.ClusterId, clusterAccess *mode
 }
 
 func (s *Service) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	key, err := s.confluent.CreateApiKey(context.TODO(), clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+	key, err := s.confluent.CreateApiKey(s.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
 	}
@@ -72,5 +77,5 @@ func (s *Service) CreateApiKey(clusterAccess *models.ClusterAccess) error {
 }
 
 func (s *Service) CreateTopic(clusterId models.ClusterId, topic models.Topic) error {
-	return s.confluent.CreateTopic(context.TODO(), clusterId, topic.Name, topic.Partitions, topic.Retention)
+	return s.confluent.CreateTopic(s.context, clusterId, topic.Name, topic.Partitions, topic.Retention)
 }

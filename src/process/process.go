@@ -8,10 +8,20 @@ import (
 
 type Process struct {
 	Context   context.Context
-	State     *models.ProcessState
 	Session   DataSession
 	Confluent Confluent
 	Vault     Vault
+	State     *models.ProcessState
+}
+
+func NewProcess(ctx context.Context, session DataSession, confluent Confluent, vault Vault, state *models.ProcessState) *Process {
+	return &Process{
+		Context:   ctx,
+		Session:   session,
+		Confluent: confluent,
+		Vault:     vault,
+		State:     state,
+	}
 }
 
 func (p *Process) NewSession(session DataSession) *Process {
@@ -38,7 +48,7 @@ func (p *Process) Execute(step Step) error {
 }
 
 func (p *Process) service() *Service {
-	return NewService(p.Confluent, p.Session.ServiceAccounts())
+	return NewService(p.Context, p.Confluent, p.Session.ServiceAccounts())
 }
 
 // region Steps
