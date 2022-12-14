@@ -43,12 +43,12 @@ func (p *Process) Execute(step Step) error {
 			return err
 		}
 
-		return session.Processes().UpdateProcessState(p.State)
+		return session.UpdateProcessState(p.State)
 	})
 }
 
 func (p *Process) service() *Service {
-	return NewService(p.Context, p.Confluent, p.Session.ServiceAccounts())
+	return NewService(p.Context, p.Confluent, p.Session)
 }
 
 // region Steps

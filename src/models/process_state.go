@@ -18,6 +18,21 @@ type ProcessState struct {
 	CompletedAt       *time.Time
 }
 
+func NewProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topic Topic, hasServiceAccount bool, hasClusterAccess bool) *ProcessState {
+	return &ProcessState{
+		Id:                uuid.NewV4(),
+		CapabilityRootId:  capabilityRootId,
+		ClusterId:         clusterId,
+		Topic:             topic,
+		HasServiceAccount: hasServiceAccount,
+		HasClusterAccess:  hasClusterAccess,
+		HasApiKey:         hasClusterAccess,
+		HasApiKeyInVault:  hasClusterAccess,
+		CreatedAt:         time.Now(),
+		CompletedAt:       nil,
+	}
+}
+
 func (*ProcessState) TableName() string {
 	return "process"
 }

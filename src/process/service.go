@@ -9,10 +9,10 @@ import (
 type Service struct {
 	context    context.Context
 	confluent  Confluent
-	repository ServiceAccountRepository
+	repository serviceAccountRepository
 }
 
-func NewService(ctx context.Context, confluent Confluent, repository ServiceAccountRepository) *Service {
+func NewService(ctx context.Context, confluent Confluent, repository serviceAccountRepository) *Service {
 	return &Service{
 		context:    ctx,
 		confluent:  confluent,

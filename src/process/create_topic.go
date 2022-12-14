@@ -3,8 +3,6 @@ package process
 import (
 	"context"
 	"github.com/dfds/confluent-gateway/models"
-	"github.com/satori/go.uuid"
-	"time"
 )
 
 type CreateTopicProcess struct {
@@ -24,35 +22,44 @@ type CreateTopicProcessInput struct {
 }
 
 func (ctp *CreateTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
-	p, err := ctp.prepareProcess(ctx, input)
+	process, err := ctp.prepareProcess(ctx, input)
 	if err != nil {
 		return err
 	}
 
-	if p.State.IsCompleted() {
+	if process.State.IsCompleted() {
 		// already completed => skip
 		return nil
 	}
 
 	return PrepareSteps().
 		Step(ensureServiceAccount).
-		Step(ensureServiceAccountAcl).Until(func() bool { return p.State.HasClusterAccess }).
+		Step(ensureServiceAccountAcl).Until(func() bool { return process.State.HasClusterAccess }).
 		Step(ensureServiceAccountApiKey).
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
-		Run(p)
+		Run(process)
 }
 
 func (ctp *CreateTopicProcess) prepareProcess(ctx context.Context, input CreateTopicProcessInput) (*Process, error) {
 	session := ctp.database.NewSession(ctx)
 
-	state, err := session.Processes().GetProcessState(input.CapabilityRootId, input.ClusterId, input.Topic.Name)
+	state, err := getOrCreateProcessState(session, input.CapabilityRootId, input.ClusterId, input.Topic)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewProcess(ctx, session, ctp.confluent, ctp.vault, state), nil
+}
+
+func getOrCreateProcessState(repository stateRepository, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topic models.Topic) (*models.ProcessState, error) {
+	state, err := repository.GetProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	if state == nil {
-		serviceAccount, err := session.ServiceAccounts().GetServiceAccount(input.CapabilityRootId)
+		serviceAccount, err := repository.GetServiceAccount(capabilityRootId)
 		if err != nil {
 			return nil, err
 		}
@@ -62,26 +69,14 @@ func (ctp *CreateTopicProcess) prepareProcess(ctx context.Context, input CreateT
 
 		if serviceAccount != nil {
 			hasServiceAccount = true
-			_, hasClusterAccess = serviceAccount.TryGetClusterAccess(input.ClusterId)
+			_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 		}
 
-		state = &models.ProcessState{
-			Id:                uuid.NewV4(),
-			CapabilityRootId:  input.CapabilityRootId,
-			ClusterId:         input.ClusterId,
-			Topic:             input.Topic,
-			HasServiceAccount: hasServiceAccount,
-			HasClusterAccess:  hasClusterAccess,
-			HasApiKey:         hasClusterAccess,
-			HasApiKeyInVault:  hasClusterAccess,
-			CreatedAt:         time.Now(),
-			CompletedAt:       nil,
-		}
+		state = models.NewProcessState(capabilityRootId, clusterId, topic, hasServiceAccount, hasClusterAccess)
 
-		if err := session.Processes().CreateProcessState(state); err != nil {
+		if err := repository.CreateProcessState(state); err != nil {
 			return nil, err
 		}
 	}
-
-	return NewProcess(ctx, session, ctp.confluent, ctp.vault, state), nil
+	return state, nil
 }

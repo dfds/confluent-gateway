@@ -35,14 +35,6 @@ func (d *Database) Transaction(f func(process.DataSession) error) error {
 	})
 }
 
-func (d *Database) ServiceAccounts() process.ServiceAccountRepository {
-	return d
-}
-
-func (d *Database) Processes() process.ProcessRepository {
-	return d
-}
-
 func (d *Database) GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error) {
 	var cluster models.Cluster
 
