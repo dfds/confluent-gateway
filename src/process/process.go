@@ -14,6 +14,51 @@ type Process struct {
 	State     *models.ProcessState
 }
 
+func (p *Process) CapabilityRootId() models.CapabilityRootId {
+	return p.State.CapabilityRootId
+}
+
+func (p *Process) ClusterId() models.ClusterId {
+	return p.State.ClusterId
+}
+
+func (p *Process) createTopic() error {
+	topic := p.State.Topic
+	return p.Confluent.CreateTopic(p.Context, p.State.ClusterId, topic.Name, topic.Partitions, topic.Retention)
+}
+
+func (p *Process) CreateServiceAccount() (*models.ServiceAccountId, error) {
+	return p.Confluent.CreateServiceAccount(p.Context, "sa-some-name", "sa description")
+}
+
+func (p *Process) SaveServiceAccount(newServiceAccount *models.ServiceAccount) error {
+	return p.Session.CreateServiceAccount(newServiceAccount)
+}
+
+func (p *Process) GetServiceAccount() (*models.ServiceAccount, error) {
+	return p.Session.GetServiceAccount(p.State.CapabilityRootId)
+}
+
+func (p *Process) CreateClusterAccess(clusterAccess *models.ClusterAccess) error {
+	return p.Session.CreateClusterAccess(clusterAccess)
+}
+
+func (p *Process) UpdateClusterAccess(access *models.ClusterAccess) error {
+	return p.Session.UpdateClusterAccess(access)
+}
+
+func (p *Process) CreateAclEntry(serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error {
+	return p.Confluent.CreateACLEntry(p.Context, p.ClusterId(), serviceAccountId, entry.AclDefinition)
+}
+
+func (p *Process) UpdateAclEntry(entry *models.AclEntry) error {
+	return p.Session.UpdateAclEntry(entry)
+}
+
+func (p *Process) CreateApiKey(clusterAccess *models.ClusterAccess) (*models.ApiKey, error) {
+	return p.Confluent.CreateApiKey(p.Context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+}
+
 func NewProcess(ctx context.Context, session DataSession, confluent Confluent, vault Vault, state *models.ProcessState) *Process {
 	return &Process{
 		Context:   ctx,
@@ -47,24 +92,16 @@ func (p *Process) Execute(step Step) error {
 	})
 }
 
-func (p *Process) service() *Service {
-	return NewService(p.Context, p.Confluent, p.Session)
-}
-
 // region Steps
 
 func ensureServiceAccount(process *Process) error {
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
-	service := process.service()
-
 	fmt.Println("### EnsureServiceAccount")
 
 	if process.State.HasServiceAccount {
 		return nil
 	}
 
-	err := service.CreateServiceAccount(capabilityRootId, clusterId)
+	err := NewAccountHelper(process).CreateServiceAccount()
 	if err != nil {
 		return err
 	}
@@ -75,16 +112,12 @@ func ensureServiceAccount(process *Process) error {
 }
 
 func ensureServiceAccountAcl(process *Process) error {
-	service := process.service()
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
-
 	fmt.Println("### EnsureServiceAccountAcl")
 	if process.State.HasClusterAccess {
 		return nil
 	}
 
-	clusterAccess, err := service.GetOrCreateClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := NewAccountHelper(process).GetOrCreateClusterAccess()
 	if err != nil {
 		return err
 	}
@@ -98,26 +131,23 @@ func ensureServiceAccountAcl(process *Process) error {
 	} else {
 		nextEntry := entries[0]
 
-		return service.CreateAclEntry(clusterId, clusterAccess, &nextEntry)
+		return NewAccountHelper(process).CreateAclEntry(clusterAccess.ServiceAccountId, &nextEntry)
 	}
 }
 
 func ensureServiceAccountApiKey(process *Process) error {
-	service := process.service()
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
 
 	fmt.Println("### EnsureServiceAccountApiKey")
 	if process.State.HasApiKey {
 		return nil
 	}
 
-	clusterAccess, err := service.GetOrCreateClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := NewAccountHelper(process).GetOrCreateClusterAccess()
 	if err != nil {
 		return err
 	}
 
-	err2 := service.CreateApiKey(clusterAccess)
+	err2 := NewAccountHelper(process).CreateApiKey(clusterAccess)
 	if err2 != nil {
 		return err2
 	}
@@ -127,17 +157,15 @@ func ensureServiceAccountApiKey(process *Process) error {
 }
 
 func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
-	service := process.service()
 	aws := process.Vault
 	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
 
 	fmt.Println("### EnsureServiceAccountApiKeyAreStoredInVault")
 	if process.State.HasApiKeyInVault {
 		return nil
 	}
 
-	clusterAccess, err := service.GetOrCreateClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := NewAccountHelper(process).GetOrCreateClusterAccess()
 	if err != nil {
 		return err
 	}
@@ -152,16 +180,13 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
 }
 
 func ensureTopicIsCreated(process *Process) error {
-	service := process.service()
-	clusterId := process.State.ClusterId
-	topic := process.State.Topic
 
 	fmt.Println("### EnsureTopicIsCreated")
 	if process.State.IsCompleted() {
 		return nil
 	}
 
-	err := service.CreateTopic(clusterId, topic)
+	err := process.createTopic()
 	if err != nil {
 		return err
 	}
