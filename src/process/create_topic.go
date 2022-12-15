@@ -5,14 +5,14 @@ import (
 	"github.com/dfds/confluent-gateway/models"
 )
 
-type CreateTopicProcess struct {
+type createTopicProcess struct {
 	database  Database
 	confluent Confluent
 	vault     Vault
 }
 
-func NewCreateTopicProcess(database Database, confluent Confluent, vault Vault) *CreateTopicProcess {
-	return &CreateTopicProcess{database, confluent, vault}
+func NewCreateTopicProcess(database Database, confluent Confluent, vault Vault) CreateTopicProcess {
+	return &createTopicProcess{database, confluent, vault}
 }
 
 type CreateTopicProcessInput struct {
@@ -21,7 +21,7 @@ type CreateTopicProcessInput struct {
 	Topic            models.Topic
 }
 
-func (ctp *CreateTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
+func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
 	process, err := ctp.prepareProcess(ctx, input)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (ctp *CreateTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		Run(process)
 }
 
-func (ctp *CreateTopicProcess) prepareProcess(ctx context.Context, input CreateTopicProcessInput) (*Process, error) {
+func (ctp *createTopicProcess) prepareProcess(ctx context.Context, input CreateTopicProcessInput) (*Process, error) {
 	session := ctp.database.NewSession(ctx)
 
 	state, err := getOrCreateProcessState(session, input.CapabilityRootId, input.ClusterId, input.Topic)

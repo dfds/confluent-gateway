@@ -7,15 +7,19 @@ import (
 	"github.com/dfds/confluent-gateway/models"
 )
 
-type TopicRequestedHandler struct {
-	process *CreateTopicProcess
+type handler struct {
+	process CreateTopicProcess
 }
 
-func NewTopicRequestedHandler(process *CreateTopicProcess) messaging.MessageHandler {
-	return &TopicRequestedHandler{process: process}
+func NewTopicRequestedHandler(process CreateTopicProcess) messaging.MessageHandler {
+	return &handler{process: process}
 }
 
-func (h *TopicRequestedHandler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
+type CreateTopicProcess interface {
+	Process(context.Context, CreateTopicProcessInput) error
+}
+
+func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
 	switch message := msgContext.Message().(type) {
 
 	case *TopicRequested:
