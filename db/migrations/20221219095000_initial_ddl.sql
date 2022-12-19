@@ -1,3 +1,5 @@
+-- 2022-12-19 09:50:00 : initial ddl
+
 CREATE TABLE cluster (
     id varchar(255) NOT NULL,
     name varchar(255) NOT NULL,
