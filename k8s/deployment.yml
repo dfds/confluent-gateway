@@ -47,12 +47,16 @@ spec:
               value: Production
             - name: CG_CONFLUENT_CLOUD_API_URL
               value: https://api.confluent.cloud
-            - name: CG_CONFLUENT_CLOUD_API_USERNAME
-              value: foo
-            - name: CG_CONFLUENT_CLOUD_API_PASSWORD
-              value: bar
             - name: CG_KAFKA_BROKER
               value: pkc-e8wrm.eu-central-1.aws.confluent.cloud:9092
+            - name: CG_KAFKA_GROUP_ID
+              value: cloudengineering.confluentgateway.consumer
+            - name: CB_TOPIC_NAME_SELF_SERVICE
+              value: ccloudengineering.selfservice.kafkatopic
+            - name: CB_TOPIC_NAME_PROVISIONING
+              value: cloudengineering.confluentgateway.provisioning
           envFrom:
             - secretRef:
                 name: kafka-credentials
+            - secretRef:
+                name: confluent-gateway-cloud-credentials

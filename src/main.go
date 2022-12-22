@@ -31,7 +31,8 @@ type Configuration struct {
 	KafkaUserName             string `env:"SELFSERVICE_KAFKA_USERNAME"`
 	KafkaPassword             string `env:"SELFSERVICE_KAFKA_PASSWORD"`
 	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
-	TopicName                 string `env:"CB_TOPIC_NAME"`
+	TopicNameSelfService      string `env:"CB_TOPIC_NAME_SELF_SERVICE"`
+	TopicNameProvisioning     string `env:"CB_TOPIC_NAME_PROVISIONING"`
 }
 
 // region configuration helper functions
@@ -99,7 +100,7 @@ func main() {
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler(config.TopicName, "topic_requested", process.NewTopicRequestedHandler(newTopic), &process.TopicRequested{}).Error; err != nil {
+	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", process.NewTopicRequestedHandler(newTopic), &process.TopicRequested{}).Error; err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
