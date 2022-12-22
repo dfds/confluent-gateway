@@ -59,20 +59,27 @@ func getOrCreateProcessState(repository stateRepository, capabilityRootId models
 	}
 
 	if state == nil {
-		serviceAccount, err := repository.GetServiceAccount(capabilityRootId)
-		if err != nil {
-			return nil, err
-		}
+		//serviceAccount, err := repository.GetServiceAccount(capabilityRootId)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//
+		//hasServiceAccount := false
+		//hasClusterAccess := false
+		//
+		//if serviceAccount != nil {
+		//	hasServiceAccount = true
+		//	_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
+		//}
+		//
+		//state = models.NewProcessState(capabilityRootId, clusterId, topic, hasServiceAccount, hasClusterAccess)
 
-		hasServiceAccount := false
-		hasClusterAccess := false
+		// TODO -- stop faking
 
-		if serviceAccount != nil {
-			hasServiceAccount = true
-			_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
-		}
-
-		state = models.NewProcessState(capabilityRootId, clusterId, topic, hasServiceAccount, hasClusterAccess)
+		state = models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
+		state.HasApiKey = true
+		state.HasApiKeyInVault = true
+		state.MarkAsCompleted()
 
 		if err := repository.CreateProcessState(state); err != nil {
 			return nil, err
