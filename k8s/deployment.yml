@@ -50,9 +50,9 @@ spec:
             - name: CG_KAFKA_BROKER
               value: pkc-e8wrm.eu-central-1.aws.confluent.cloud:9092
             - name: CG_KAFKA_GROUP_ID
-              value: cloudengineering.confluentgateway.consumer
+              value: build.selfservice.confluentgateway
             - name: CB_TOPIC_NAME_SELF_SERVICE
-              value: ccloudengineering.selfservice.kafkatopic
+              value: cloudengineering.selfservice.kafkatopic
             - name: CB_TOPIC_NAME_PROVISIONING
               value: cloudengineering.confluentgateway.provisioning
           envFrom:
