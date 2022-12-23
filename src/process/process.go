@@ -23,8 +23,8 @@ func (p *Process) ClusterId() models.ClusterId {
 }
 
 func (p *Process) createTopic() error {
-	topic := p.State.Topic
-	return p.Confluent.CreateTopic(p.Context, p.State.ClusterId, topic.Name, topic.Partitions, topic.Retention)
+	topic := p.State.Topic()
+	return p.Confluent.CreateTopic(p.Context, p.State.ClusterId, topic.Name, topic.Partitions, topic.Retention.Milliseconds())
 }
 
 func (p *Process) CreateServiceAccount() (*models.ServiceAccountId, error) {

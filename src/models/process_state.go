@@ -9,7 +9,9 @@ type ProcessState struct {
 	Id                uuid.UUID `gorm:"type:uuid;primarykey"`
 	CapabilityRootId  CapabilityRootId
 	ClusterId         ClusterId
-	Topic             Topic `gorm:"embedded;embeddedPrefix:topic_"`
+	TopicName         string
+	TopicPartitions   int
+	TopicRetention    int64
 	HasServiceAccount bool
 	HasClusterAccess  bool
 	HasApiKey         bool
@@ -23,7 +25,9 @@ func NewProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, top
 		Id:                uuid.NewV4(),
 		CapabilityRootId:  capabilityRootId,
 		ClusterId:         clusterId,
-		Topic:             topic,
+		TopicName:         topic.Name,
+		TopicPartitions:   topic.Partitions,
+		TopicRetention:    int64(topic.Retention / time.Millisecond),
 		HasServiceAccount: hasServiceAccount,
 		HasClusterAccess:  hasClusterAccess,
 		HasApiKey:         hasClusterAccess,
@@ -48,4 +52,8 @@ func (p *ProcessState) MarkAsCompleted() {
 
 	now := time.Now()
 	p.CompletedAt = &now
+}
+
+func (p *ProcessState) Topic() Topic {
+	return NewTopic(p.TopicName, p.TopicPartitions, time.Duration(p.TopicRetention)*time.Millisecond)
 }

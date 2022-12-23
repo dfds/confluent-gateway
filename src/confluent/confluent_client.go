@@ -135,7 +135,7 @@ func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 	}, nil
 }
 
-func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int) error {
+func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error {
 	cluster, _ := c.repo.GetClusterById(ctx, clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
@@ -145,7 +145,7 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 		"replication_factor": 3,
 		"configs": [{
 			"name": "retention.ms",
-			"value": "` + strconv.Itoa(retention) + `"
+			"value": "` + strconv.FormatInt(retention, 10) + `"
 		}]
 	}`
 

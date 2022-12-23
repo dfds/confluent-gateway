@@ -5,5 +5,5 @@ type TopicRequested struct {
 	ClusterId        string `json:"clusterId"`
 	TopicName        string `json:"topicName"`
 	Partitions       int    `json:"partitions"`
-	Retention        int    `json:"retention"`
+	Retention        string `json:"retention"`
 }
