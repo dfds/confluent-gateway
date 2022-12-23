@@ -8,7 +8,7 @@ topic: hello
         "clusterId": "abc-1234",
         "topicName": "new-topic",
         "partitions": 1,
-        "retention": "-1ms"
+        "retention": "-1"
     }
 }
 
