@@ -76,10 +76,10 @@ func TestProcess_createTopic(t *testing.T) {
 
 			tt.wantErr(t, p.createTopic(), fmt.Sprintf("createTopic()"))
 
-			assert.Equal(t, tt.wantClusterId, spy.ClusterId)
-			assert.Equal(t, tt.wantName, spy.Name)
-			assert.Equal(t, tt.wantPartitions, spy.Partitions)
-			assert.Equal(t, tt.wantRetention, spy.Retention)
+			assert.Equal(t, tt.wantClusterId, spy.GotClusterId)
+			assert.Equal(t, tt.wantName, spy.GotName)
+			assert.Equal(t, tt.wantPartitions, spy.GotPartitions)
+			assert.Equal(t, tt.wantRetention, spy.GotRetention)
 
 		})
 	}

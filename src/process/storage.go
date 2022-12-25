@@ -12,13 +12,17 @@ type Database interface {
 type DataSession interface {
 	Transaction(func(DataSession) error) error
 
+	serviceAccountRepository
+	stateRepository
+	UpdateProcessState(state *models.ProcessState) error
+}
+
+type serviceAccountRepository interface {
 	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
 	CreateServiceAccount(serviceAccount *models.ServiceAccount) error
 	UpdateAclEntry(aclEntry *models.AclEntry) error
 	CreateClusterAccess(clusterAccess *models.ClusterAccess) error
 	UpdateClusterAccess(clusterAccess *models.ClusterAccess) error
-	stateRepository
-	UpdateProcessState(state *models.ProcessState) error
 }
 
 type stateRepository interface {
