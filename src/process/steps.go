@@ -11,7 +11,7 @@ type Predicate func() bool
 
 type NextStepBuilder interface {
 	Step(Step) StepBuilder
-	Run(Transaction) error
+	Run(StepExecutor) error
 }
 
 type StepBuilder interface {
@@ -19,7 +19,7 @@ type StepBuilder interface {
 	Until(Predicate) NextStepBuilder
 }
 
-type Transaction interface {
+type StepExecutor interface {
 	Execute(Step) error
 }
 
@@ -50,12 +50,12 @@ func (s *steps) Until(isDone Predicate) NextStepBuilder {
 	return s
 }
 
-func (s *steps) Run(transaction Transaction) error {
+func (s *steps) Run(executor StepExecutor) error {
 	for _, step := range s.steps {
 		for {
 			done := true
 
-			err := transaction.Execute(func(p *Process) error {
+			err := executor.Execute(func(p *Process) error {
 				var err error
 				done, err = step(p)
 				return err
