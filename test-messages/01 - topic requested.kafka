@@ -1,5 +1,5 @@
 PRODUCER json-output
-topic: hello
+topic: cloudengineering.selfservice.kafkatopic
 {
     "messageId": "1",
     "type": "topic_requested",
