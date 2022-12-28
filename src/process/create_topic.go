@@ -37,7 +37,7 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 
 	return PrepareSteps().
 		Step(ensureServiceAccount).
-		Step(ensureServiceAccountAcl).Until(func() bool { return state.HasClusterAccess }).
+		Step(ensureServiceAccountAcl).Until(func(p *Process) bool { return p.HasClusterAccess() }).
 		Step(ensureServiceAccountApiKey).
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
@@ -54,22 +54,6 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 				return tx.UpdateProcessState(state)
 			})
 		})
-}
-
-type Process struct {
-	State   *models.ProcessState
-	Account AccountService
-	Vault   VaultService
-	Topic   TopicService
-}
-
-func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, state *models.ProcessState) *Process {
-	return &Process{
-		State:   state,
-		Account: NewAccountService(ctx, ctp.confluent, tx),
-		Vault:   NewVaultService(ctx, ctp.vault),
-		Topic:   NewTopicService(ctx, ctp.confluent),
-	}
 }
 
 func getOrCreateProcessState(repository stateRepository, input CreateTopicProcessInput) (*models.ProcessState, error) {
@@ -108,6 +92,26 @@ func getOrCreateProcessState(repository stateRepository, input CreateTopicProces
 		}
 	}
 	return state, nil
+}
+
+type Process struct {
+	State   *models.ProcessState
+	Account AccountService
+	Vault   VaultService
+	Topic   TopicService
+}
+
+func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, state *models.ProcessState) *Process {
+	return &Process{
+		State:   state,
+		Account: NewAccountService(ctx, ctp.confluent, tx),
+		Vault:   NewVaultService(ctx, ctp.vault),
+		Topic:   NewTopicService(ctx, ctp.confluent),
+	}
+}
+
+func (p *Process) HasClusterAccess() bool {
+	return p.State.HasClusterAccess
 }
 
 // region Steps

@@ -58,7 +58,7 @@ func (c *Collector) DummyStep() Step {
 
 func (c *Collector) Count(maxCnt int) Predicate {
 	cnt := 0
-	return func() bool {
+	return func(*Process) bool {
 		if cnt <= maxCnt {
 			cnt++
 			return false

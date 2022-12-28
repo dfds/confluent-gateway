@@ -6,7 +6,7 @@ type steps struct {
 
 type stepWrapper func(*Process) (bool, error)
 type Step func(*Process) error
-type Predicate func() bool
+type Predicate func(*Process) bool
 type PerformStep func(Step) error
 
 type NextStepBuilder interface {
@@ -35,7 +35,7 @@ func (s *steps) Until(isDone Predicate) NextStepBuilder {
 	lastStep := s.steps[len(s.steps)-1]
 
 	s.steps[len(s.steps)-1] = func(p *Process) (bool, error) {
-		if isDone() {
+		if isDone(p) {
 			return true, nil
 		}
 
