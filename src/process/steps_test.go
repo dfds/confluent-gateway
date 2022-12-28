@@ -14,7 +14,7 @@ func TestSteps_Run(t *testing.T) {
 		Step(c.DummyStep()).
 		Step(c.DummyStep()).
 		Step(c.DummyStep()).
-		Run(c)
+		Run(c.Execute)
 
 	assert.NoError(t, err)
 	assert.Equal(t, []int{1, 2, 3, 4, 5}, c.steps)
@@ -29,7 +29,7 @@ func TestSteps_Until(t *testing.T) {
 		Step(c.DummyStep()).
 		Step(c.DummyStep()).
 		Step(c.DummyStep()).
-		Run(c)
+		Run(c.Execute)
 
 	assert.NoError(t, err)
 	assert.Equal(t, []int{1, 2, 2, 3, 4, 5}, c.steps)

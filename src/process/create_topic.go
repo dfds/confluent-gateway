@@ -23,37 +23,58 @@ type CreateTopicProcessInput struct {
 }
 
 func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
-	process, err := ctp.prepareProcess(ctx, input)
+	database := ctp.database.WithContext(ctx)
+
+	state, err := getOrCreateProcessState(database, input)
 	if err != nil {
 		return err
 	}
 
-	if process.State.IsCompleted() {
+	if state.IsCompleted() {
 		// already completed => skip
 		return nil
 	}
 
 	return PrepareSteps().
 		Step(ensureServiceAccount).
-		Step(ensureServiceAccountAcl).Until(func() bool { return process.State.HasClusterAccess }).
+		Step(ensureServiceAccountAcl).Until(func() bool { return state.HasClusterAccess }).
 		Step(ensureServiceAccountApiKey).
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
-		Run(process)
+		Run(func(step Step) error {
+			return database.Transaction(func(tx Transaction) error {
+
+				process := ctp.NewProcess(ctx, tx, state)
+
+				err := step(process)
+				if err != nil {
+					return err
+				}
+
+				return tx.UpdateProcessState(state)
+			})
+		})
 }
 
-func (ctp *createTopicProcess) prepareProcess(ctx context.Context, input CreateTopicProcessInput) (*Process, error) {
-	session := ctp.database.NewSession(ctx)
+type Process struct {
+	State   *models.ProcessState
+	Account AccountService
+	Vault   VaultService
+	Topic   TopicService
+}
 
-	state, err := getOrCreateProcessState(session, input.CapabilityRootId, input.ClusterId, input.Topic)
-	if err != nil {
-		return nil, err
+func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, state *models.ProcessState) *Process {
+	return &Process{
+		State:   state,
+		Account: NewAccountService(ctx, ctp.confluent, tx),
+		Vault:   NewVaultService(ctx, ctp.vault),
+		Topic:   NewTopicService(ctx, ctp.confluent),
 	}
-
-	return NewProcess(ctx, session, ctp.confluent, ctp.vault, state), nil
 }
 
-func getOrCreateProcessState(repository stateRepository, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topic models.Topic) (*models.ProcessState, error) {
+func getOrCreateProcessState(repository stateRepository, input CreateTopicProcessInput) (*models.ProcessState, error) {
+	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
+
 	state, err := repository.GetProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
@@ -94,15 +115,13 @@ func getOrCreateProcessState(repository stateRepository, capabilityRootId models
 func ensureServiceAccount(process *Process) error {
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
-	service := process.service()
-
 	fmt.Println("### EnsureServiceAccount")
 
 	if process.State.HasServiceAccount {
 		return nil
 	}
 
-	err := service.CreateServiceAccount(capabilityRootId, clusterId)
+	err := process.Account.CreateServiceAccount(capabilityRootId, clusterId)
 	if err != nil {
 		return err
 	}
@@ -113,7 +132,7 @@ func ensureServiceAccount(process *Process) error {
 }
 
 func ensureServiceAccountAcl(process *Process) error {
-	service := process.service()
+	service := process.Account
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
 
@@ -141,7 +160,7 @@ func ensureServiceAccountAcl(process *Process) error {
 }
 
 func ensureServiceAccountApiKey(process *Process) error {
-	service := process.service()
+	service := process.Account
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
 
@@ -165,8 +184,6 @@ func ensureServiceAccountApiKey(process *Process) error {
 }
 
 func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
-	service := process.service()
-	aws := process.Vault
 	capabilityRootId := process.State.CapabilityRootId
 	clusterId := process.State.ClusterId
 
@@ -175,12 +192,12 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
 		return nil
 	}
 
-	clusterAccess, err := service.GetClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := process.Account.GetClusterAccess(capabilityRootId, clusterId)
 	if err != nil {
 		return err
 	}
 
-	if err := aws.StoreApiKey(context.TODO(), capabilityRootId, clusterAccess.ClusterId, clusterAccess.ApiKey); err != nil {
+	if err := process.Vault.StoreApiKey(capabilityRootId, clusterAccess); err != nil {
 		return err
 	}
 
@@ -190,12 +207,15 @@ func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
 }
 
 func ensureTopicIsCreated(process *Process) error {
+	clusterId := process.State.ClusterId
+	topic := process.State.Topic()
+
 	fmt.Println("### EnsureTopicIsCreated")
 	if process.State.IsCompleted() {
 		return nil
 	}
 
-	err := process.createTopic()
+	err := process.Topic.CreateTopic(clusterId, topic)
 	if err != nil {
 		return err
 	}

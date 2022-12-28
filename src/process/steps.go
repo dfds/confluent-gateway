@@ -5,22 +5,18 @@ type steps struct {
 }
 
 type stepWrapper func(*Process) (bool, error)
-
 type Step func(*Process) error
 type Predicate func() bool
+type PerformStep func(Step) error
 
 type NextStepBuilder interface {
 	Step(Step) StepBuilder
-	Run(StepExecutor) error
+	Run(PerformStep) error
 }
 
 type StepBuilder interface {
 	NextStepBuilder
 	Until(Predicate) NextStepBuilder
-}
-
-type StepExecutor interface {
-	Execute(Step) error
 }
 
 func PrepareSteps() NextStepBuilder {
@@ -50,12 +46,12 @@ func (s *steps) Until(isDone Predicate) NextStepBuilder {
 	return s
 }
 
-func (s *steps) Run(executor StepExecutor) error {
+func (s *steps) Run(perform PerformStep) error {
 	for _, step := range s.steps {
 		for {
 			done := true
 
-			err := executor.Execute(func(p *Process) error {
+			err := perform(func(p *Process) error {
 				var err error
 				done, err = step(p)
 				return err

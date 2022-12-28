@@ -7,21 +7,29 @@ import (
 	"time"
 )
 
-type AccountService struct {
+type AccountService interface {
+	CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error
+	GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
+	GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
+	CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error
+	CreateApiKey(clusterAccess *models.ClusterAccess) error
+}
+
+type accountService struct {
 	context    context.Context
 	confluent  Confluent
 	repository serviceAccountRepository
 }
 
-func NewAccountService(ctx context.Context, confluent Confluent, repository serviceAccountRepository) *AccountService {
-	return &AccountService{
+func NewAccountService(ctx context.Context, confluent Confluent, repository serviceAccountRepository) *accountService {
+	return &accountService{
 		context:    ctx,
 		confluent:  confluent,
 		repository: repository,
 	}
 }
 
-func (h *AccountService) CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error {
+func (h *accountService) CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error {
 	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, "sa-some-name", "sa description")
 	if err != nil {
 		return err
@@ -37,7 +45,7 @@ func (h *AccountService) CreateServiceAccount(capabilityRootId models.Capability
 	return h.repository.CreateServiceAccount(newServiceAccount)
 }
 
-func (h *AccountService) GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
+func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
 	serviceAccount, err := h.repository.GetServiceAccount(capabilityRootId)
 	if err != nil {
 		return nil, err
@@ -59,7 +67,7 @@ func (h *AccountService) GetOrCreateClusterAccess(capabilityRootId models.Capabi
 	return clusterAccess, nil
 }
 
-func (h *AccountService) GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
+func (h *accountService) GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
 	serviceAccount, err := h.repository.GetServiceAccount(capabilityRootId)
 	if err != nil {
 		return nil, err
@@ -76,7 +84,7 @@ func (h *AccountService) GetClusterAccess(capabilityRootId models.CapabilityRoot
 	return clusterAccess, nil
 }
 
-func (h *AccountService) CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error {
+func (h *accountService) CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error {
 	if err := h.confluent.CreateACLEntry(h.context, clusterId, serviceAccountId, entry.AclDefinition); err != nil {
 		return err
 	}
@@ -86,7 +94,7 @@ func (h *AccountService) CreateAclEntry(clusterId models.ClusterId, serviceAccou
 	return h.repository.UpdateAclEntry(entry)
 }
 
-func (h *AccountService) CreateApiKey(clusterAccess *models.ClusterAccess) error {
+func (h *accountService) CreateApiKey(clusterAccess *models.ClusterAccess) error {
 	key, err := h.confluent.CreateApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err

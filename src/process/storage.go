@@ -6,14 +6,13 @@ import (
 )
 
 type Database interface {
-	NewSession(context.Context) DataSession
+	WithContext(context.Context) Database
+	Transaction(func(Transaction) error) error
+	stateRepository
 }
 
-type DataSession interface {
-	Transaction(func(DataSession) error) error
-
+type Transaction interface {
 	serviceAccountRepository
-	stateRepository
 	UpdateProcessState(state *models.ProcessState) error
 }
 
