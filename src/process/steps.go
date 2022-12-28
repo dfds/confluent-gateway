@@ -1,29 +1,29 @@
 package process
 
-type steps struct {
-	steps []stepWrapper
-}
-
 type stepWrapper func(*Process) (bool, error)
 type Step func(*Process) error
 type Predicate func(*Process) bool
 type PerformStep func(Step) error
 
+type StepBuilder interface {
+	Step(Step) NextStepBuilder
+}
+
 type NextStepBuilder interface {
-	Step(Step) StepBuilder
+	StepBuilder
+	Until(Predicate) StepBuilder
 	Run(PerformStep) error
 }
 
-type StepBuilder interface {
-	NextStepBuilder
-	Until(Predicate) NextStepBuilder
+type steps struct {
+	steps []stepWrapper
 }
 
-func PrepareSteps() NextStepBuilder {
+func PrepareSteps() StepBuilder {
 	return &steps{steps: []stepWrapper{}}
 }
 
-func (s *steps) Step(step Step) StepBuilder {
+func (s *steps) Step(step Step) NextStepBuilder {
 	s.steps = append(s.steps, func(p *Process) (bool, error) {
 		err := step(p)
 		return true, err
@@ -31,7 +31,7 @@ func (s *steps) Step(step Step) StepBuilder {
 	return s
 }
 
-func (s *steps) Until(isDone Predicate) NextStepBuilder {
+func (s *steps) Until(isDone Predicate) StepBuilder {
 	lastStep := s.steps[len(s.steps)-1]
 
 	s.steps[len(s.steps)-1] = func(p *Process) (bool, error) {
