@@ -109,6 +109,7 @@ type Process struct {
 	Account AccountService
 	Vault   VaultService
 	Topic   TopicService
+	Outbox  *messaging.Outbox
 }
 
 func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, state *models.ProcessState) *Process {
@@ -117,6 +118,7 @@ func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, s
 		Account: NewAccountService(ctx, ctp.confluent, tx),
 		Vault:   NewVaultService(ctx, ctp.vault),
 		Topic:   NewTopicService(ctx, ctp.confluent),
+		Outbox:  messaging.NewOutbox(ctp.logger, ctp.registry, tx),
 	}
 }
 
@@ -236,7 +238,14 @@ func ensureTopicIsCreated(process *Process) error {
 
 	process.State.MarkAsCompleted()
 
-	return nil
+	event := TopicProvisioned{
+		CapabilityRootId: string(process.State.CapabilityRootId),
+		ClusterId:        string(process.State.ClusterId),
+		TopicName:        process.State.TopicName,
+	}
+
+	return process.Outbox.Produce(event)
+
 }
 
 // endregion

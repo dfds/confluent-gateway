@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 )
 
@@ -14,6 +15,7 @@ type Database interface {
 type Transaction interface {
 	serviceAccountRepository
 	UpdateProcessState(state *models.ProcessState) error
+	AddToOutbox(entry *messaging.OutboxEntry) error
 }
 
 type serviceAccountRepository interface {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/dfds/confluent-gateway/logging"
+	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/dfds/confluent-gateway/process"
 	"gorm.io/driver/postgres"
@@ -108,4 +109,8 @@ func (d *Database) CreateClusterAccess(clusterAccess *models.ClusterAccess) erro
 
 func (d *Database) UpdateClusterAccess(clusterAccess *models.ClusterAccess) error {
 	return d.db.Save(clusterAccess).Error
+}
+
+func (d *Database) AddToOutbox(entry *messaging.OutboxEntry) error {
+	return d.db.Save(entry).Error
 }
