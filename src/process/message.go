@@ -7,3 +7,9 @@ type TopicRequested struct {
 	Partitions       int    `json:"partitions"`
 	Retention        string `json:"retention"`
 }
+
+type TopicProvisioned struct {
+	CapabilityRootId string `json:"capabilityRootId"`
+	ClusterId        string `json:"clusterId"`
+	TopicName        string `json:"topicName"`
+}
