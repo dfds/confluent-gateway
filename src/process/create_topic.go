@@ -3,17 +3,27 @@ package process
 import (
 	"context"
 	"fmt"
+	"github.com/dfds/confluent-gateway/logging"
+	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 )
 
 type createTopicProcess struct {
+	logger    logging.Logger
 	database  Database
 	confluent Confluent
 	vault     Vault
+	registry  messaging.OutgoingMessageRegistry
 }
 
-func NewCreateTopicProcess(database Database, confluent Confluent, vault Vault) CreateTopicProcess {
-	return &createTopicProcess{database, confluent, vault}
+func NewCreateTopicProcess(logger logging.Logger, database Database, confluent Confluent, vault Vault, registry messaging.OutgoingMessageRegistry) CreateTopicProcess {
+	return &createTopicProcess{
+		logger:    logger,
+		database:  database,
+		confluent: confluent,
+		vault:     vault,
+		registry:  registry,
+	}
 }
 
 type CreateTopicProcessInput struct {

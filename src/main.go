@@ -96,7 +96,12 @@ func main() {
 		panic(err)
 	}
 
-	newTopic := process.NewCreateTopicProcess(db, confluentClient, awsClient)
+	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
+	if err := outgoingRegistry.RegisterMessage("cloudenginerring.confluentgateway.provisioning", "topic_provisioned", &process.TopicProvisioned{}).Error; err != nil {
+		panic(err)
+	}
+
+	newTopic := process.NewCreateTopicProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
