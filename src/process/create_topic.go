@@ -104,12 +104,16 @@ func getOrCreateProcessState(repository stateRepository, input CreateTopicProces
 	return state, nil
 }
 
+type Outbox interface {
+	Produce(msg interface{}) error
+}
+
 type Process struct {
 	State   *models.ProcessState
 	Account AccountService
 	Vault   VaultService
 	Topic   TopicService
-	Outbox  *messaging.Outbox
+	Outbox  Outbox
 }
 
 func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, state *models.ProcessState) *Process {
@@ -129,35 +133,61 @@ func (p *Process) HasClusterAccess() bool {
 // region Steps
 
 func ensureServiceAccount(process *Process) error {
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
 	fmt.Println("### EnsureServiceAccount")
+	return ensureServiceAccountStep(process)
+}
 
-	if process.State.HasServiceAccount {
+type EnsureServiceAccountStep interface {
+	hasServiceAccount() bool
+	createServiceAccount() error
+	markServiceAccountReady()
+}
+
+func ensureServiceAccountStep(process EnsureServiceAccountStep) error {
+	if process.hasServiceAccount() {
 		return nil
 	}
 
-	err := process.Account.CreateServiceAccount(capabilityRootId, clusterId)
+	err := process.createServiceAccount()
 	if err != nil {
 		return err
 	}
 
-	process.State.HasServiceAccount = true
+	process.markServiceAccountReady()
 
-	return err
+	return nil
+}
+
+func (p *Process) markServiceAccountReady() {
+	p.State.HasServiceAccount = true
+}
+
+func (p *Process) createServiceAccount() error {
+	return p.Account.CreateServiceAccount(p.State.CapabilityRootId, p.State.ClusterId)
+}
+
+func (p *Process) hasServiceAccount() bool {
+	return p.State.HasServiceAccount
 }
 
 func ensureServiceAccountAcl(process *Process) error {
-	service := process.Account
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
-
 	fmt.Println("### EnsureServiceAccountAcl")
-	if process.State.HasClusterAccess {
+	return ensureServiceAccountAclStep(process)
+}
+
+type EnsureServiceAccountAclStep interface {
+	hasClusterAccess() bool
+	getOrCreateClusterAccess() (*models.ClusterAccess, error)
+	createAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error
+	markClusterAccessReady()
+}
+
+func ensureServiceAccountAclStep(process EnsureServiceAccountAclStep) error {
+	if process.hasClusterAccess() {
 		return nil
 	}
 
-	clusterAccess, err := service.GetOrCreateClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := process.getOrCreateClusterAccess()
 	if err != nil {
 		return err
 	}
@@ -165,87 +195,169 @@ func ensureServiceAccountAcl(process *Process) error {
 	entries := clusterAccess.GetAclPendingCreation()
 	if len(entries) == 0 {
 		// no acl entries left => mark as done
-		process.State.HasClusterAccess = true
+		process.markClusterAccessReady()
 		return nil
 
 	} else {
 		nextEntry := entries[0]
 
-		return service.CreateAclEntry(clusterId, clusterAccess.ServiceAccountId, &nextEntry)
+		return process.createAclEntry(clusterAccess, nextEntry)
 	}
+}
+
+func (p *Process) hasClusterAccess() bool {
+	return p.State.HasClusterAccess
+}
+
+func (p *Process) getOrCreateClusterAccess() (*models.ClusterAccess, error) {
+	return p.Account.GetOrCreateClusterAccess(p.State.CapabilityRootId, p.State.ClusterId)
+}
+
+func (p *Process) createAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
+	return p.Account.CreateAclEntry(p.State.ClusterId, clusterAccess.ServiceAccountId, &nextEntry)
+}
+
+func (p *Process) markClusterAccessReady() {
+	p.State.HasClusterAccess = true
 }
 
 func ensureServiceAccountApiKey(process *Process) error {
-	service := process.Account
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
-
 	fmt.Println("### EnsureServiceAccountApiKey")
-	if process.State.HasApiKey {
+	return ensureServiceAccountApiKeyStep(process)
+}
+
+type EnsureServiceAccountApiKeyStep interface {
+	hasApiKey() bool
+	getClusterAccess() (*models.ClusterAccess, error)
+	createApiKey(clusterAccess *models.ClusterAccess) error
+	markApiKeyReady()
+}
+
+func ensureServiceAccountApiKeyStep(process EnsureServiceAccountApiKeyStep) error {
+	if process.hasApiKey() {
 		return nil
 	}
 
-	clusterAccess, err := service.GetClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := process.getClusterAccess()
 	if err != nil {
 		return err
 	}
 
-	err2 := service.CreateApiKey(clusterAccess)
-	if err2 != nil {
-		return err2
+	err = process.createApiKey(clusterAccess)
+	if err != nil {
+		return err
 	}
 
-	process.State.HasApiKey = true
+	process.markApiKeyReady()
 	return nil
+}
+
+func (p *Process) hasApiKey() bool {
+	return p.State.HasApiKey
+}
+
+func (p *Process) getClusterAccess() (*models.ClusterAccess, error) {
+	return p.Account.GetClusterAccess(p.State.CapabilityRootId, p.State.ClusterId)
+}
+
+func (p *Process) createApiKey(clusterAccess *models.ClusterAccess) error {
+	return p.Account.CreateApiKey(clusterAccess)
+}
+
+func (p *Process) markApiKeyReady() {
+	p.State.HasApiKey = true
 }
 
 func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
-	capabilityRootId := process.State.CapabilityRootId
-	clusterId := process.State.ClusterId
-
 	fmt.Println("### EnsureServiceAccountApiKeyAreStoredInVault")
-	if process.State.HasApiKeyInVault {
+	return ensureServiceAccountApiKeyAreStoredInVaultStep(process)
+}
+
+type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
+	hasApiKeyInVault() bool
+	getClusterAccess() (*models.ClusterAccess, error)
+	storeApiKey(clusterAccess *models.ClusterAccess) error
+	markApiKeyInVaultReady()
+}
+
+func ensureServiceAccountApiKeyAreStoredInVaultStep(process EnsureServiceAccountApiKeyAreStoredInVaultStep) error {
+	if process.hasApiKeyInVault() {
 		return nil
 	}
 
-	clusterAccess, err := process.Account.GetClusterAccess(capabilityRootId, clusterId)
+	clusterAccess, err := process.getClusterAccess()
 	if err != nil {
 		return err
 	}
 
-	if err := process.Vault.StoreApiKey(capabilityRootId, clusterAccess); err != nil {
+	if err = process.storeApiKey(clusterAccess); err != nil {
 		return err
 	}
 
-	process.State.HasApiKeyInVault = true
+	process.markApiKeyInVaultReady()
 
 	return nil
 }
 
-func ensureTopicIsCreated(process *Process) error {
-	clusterId := process.State.ClusterId
-	topic := process.State.Topic()
+func (p *Process) hasApiKeyInVault() bool {
+	return p.State.HasApiKeyInVault
+}
 
+func (p *Process) storeApiKey(clusterAccess *models.ClusterAccess) error {
+	return p.Vault.StoreApiKey(p.State.CapabilityRootId, clusterAccess)
+}
+
+func (p *Process) markApiKeyInVaultReady() {
+	p.State.HasApiKeyInVault = true
+}
+
+func ensureTopicIsCreated(process *Process) error {
 	fmt.Println("### EnsureTopicIsCreated")
-	if process.State.IsCompleted() {
+	return ensureTopicIsCreatedStep(process)
+
+}
+
+type EnsureTopicIsCreatedStep interface {
+	isCompleted() bool
+	createTopic() error
+	markAsCompleted()
+	topicProvisioned() error
+}
+
+func ensureTopicIsCreatedStep(process EnsureTopicIsCreatedStep) error {
+	if process.isCompleted() {
 		return nil
 	}
 
-	err := process.Topic.CreateTopic(clusterId, topic)
+	err := process.createTopic()
 	if err != nil {
 		return err
 	}
 
-	process.State.MarkAsCompleted()
+	process.markAsCompleted()
 
+	return process.topicProvisioned()
+}
+
+func (p *Process) isCompleted() bool {
+	return p.State.IsCompleted()
+}
+
+func (p *Process) createTopic() error {
+	return p.Topic.CreateTopic(p.State.ClusterId, p.State.Topic())
+}
+
+func (p *Process) markAsCompleted() {
+	p.State.MarkAsCompleted()
+}
+
+func (p *Process) topicProvisioned() error {
 	event := TopicProvisioned{
-		CapabilityRootId: string(process.State.CapabilityRootId),
-		ClusterId:        string(process.State.ClusterId),
-		TopicName:        process.State.TopicName,
+		CapabilityRootId: string(p.State.CapabilityRootId),
+		ClusterId:        string(p.State.ClusterId),
+		TopicName:        p.State.TopicName,
 	}
-
-	return process.Outbox.Produce(event)
-
+	return p.Outbox.Produce(event)
 }
 
 // endregion
