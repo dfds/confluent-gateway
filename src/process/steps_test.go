@@ -38,18 +38,18 @@ func TestSteps_Until(t *testing.T) {
 type Collector struct {
 	steps   []int
 	cnt     int
-	process *Process
+	process *StepContext
 }
 
 func NewCollector() *Collector {
-	return &Collector{steps: []int{}, process: &Process{}}
+	return &Collector{steps: []int{}, process: &StepContext{}}
 }
 
 func (c *Collector) DummyStep() Step {
 	c.cnt++
 	cnt := c.cnt
 
-	return func(p *Process) error {
+	return func(p *StepContext) error {
 		c.steps = append(c.steps, cnt)
 
 		return nil
@@ -58,7 +58,7 @@ func (c *Collector) DummyStep() Step {
 
 func (c *Collector) Count(maxCnt int) Predicate {
 	cnt := 0
-	return func(*Process) bool {
+	return func(*StepContext) bool {
 		if cnt <= maxCnt {
 			cnt++
 			return false

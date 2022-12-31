@@ -4,7 +4,7 @@ import (
 	"github.com/dfds/confluent-gateway/models"
 )
 
-type Process struct {
+type StepContext struct {
 	State   *models.ProcessState
 	Account AccountService
 	Vault   VaultService
@@ -12,83 +12,83 @@ type Process struct {
 	Outbox  Outbox
 }
 
-func NewProcess(state *models.ProcessState, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *Process {
-	return &Process{State: state, Account: account, Vault: vault, Topic: topic, Outbox: outbox}
+func NewStepContext(state *models.ProcessState, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *StepContext {
+	return &StepContext{State: state, Account: account, Vault: vault, Topic: topic, Outbox: outbox}
 }
 
 type Outbox interface {
 	Produce(msg interface{}) error
 }
 
-func (p *Process) markServiceAccountReady() {
+func (p *StepContext) MarkServiceAccountAsReady() {
 	p.State.HasServiceAccount = true
 }
 
-func (p *Process) createServiceAccount() error {
+func (p *StepContext) CreateServiceAccount() error {
 	return p.Account.CreateServiceAccount(p.State.CapabilityRootId, p.State.ClusterId)
 }
 
-func (p *Process) hasServiceAccount() bool {
+func (p *StepContext) HasServiceAccount() bool {
 	return p.State.HasServiceAccount
 }
 
-func (p *Process) hasClusterAccess() bool {
+func (p *StepContext) HasClusterAccess() bool {
 	return p.State.HasClusterAccess
 }
 
-func (p *Process) getOrCreateClusterAccess() (*models.ClusterAccess, error) {
+func (p *StepContext) GetOrCreateClusterAccess() (*models.ClusterAccess, error) {
 	return p.Account.GetOrCreateClusterAccess(p.State.CapabilityRootId, p.State.ClusterId)
 }
 
-func (p *Process) createAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
+func (p *StepContext) CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
 	return p.Account.CreateAclEntry(p.State.ClusterId, clusterAccess.ServiceAccountId, &nextEntry)
 }
 
-func (p *Process) markClusterAccessReady() {
+func (p *StepContext) MarkClusterAccessAsReady() {
 	p.State.HasClusterAccess = true
 }
 
-func (p *Process) hasApiKey() bool {
+func (p *StepContext) HasApiKey() bool {
 	return p.State.HasApiKey
 }
 
-func (p *Process) getClusterAccess() (*models.ClusterAccess, error) {
+func (p *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
 	return p.Account.GetClusterAccess(p.State.CapabilityRootId, p.State.ClusterId)
 }
 
-func (p *Process) createApiKey(clusterAccess *models.ClusterAccess) error {
+func (p *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
 	return p.Account.CreateApiKey(clusterAccess)
 }
 
-func (p *Process) markApiKeyReady() {
+func (p *StepContext) MarkApiKeyAsReady() {
 	p.State.HasApiKey = true
 }
 
-func (p *Process) hasApiKeyInVault() bool {
+func (p *StepContext) HasApiKeyInVault() bool {
 	return p.State.HasApiKeyInVault
 }
 
-func (p *Process) storeApiKey(clusterAccess *models.ClusterAccess) error {
+func (p *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
 	return p.Vault.StoreApiKey(p.State.CapabilityRootId, clusterAccess)
 }
 
-func (p *Process) markApiKeyInVaultReady() {
+func (p *StepContext) MarkApiKeyInVaultAsReady() {
 	p.State.HasApiKeyInVault = true
 }
 
-func (p *Process) isCompleted() bool {
+func (p *StepContext) IsCompleted() bool {
 	return p.State.IsCompleted()
 }
 
-func (p *Process) createTopic() error {
+func (p *StepContext) CreateTopic() error {
 	return p.Topic.CreateTopic(p.State.ClusterId, p.State.Topic())
 }
 
-func (p *Process) markAsCompleted() {
+func (p *StepContext) MarkAsCompleted() {
 	p.State.MarkAsCompleted()
 }
 
-func (p *Process) topicProvisioned() error {
+func (p *StepContext) RaiseTopicProvisionedEvent() error {
 	event := TopicProvisioned{
 		CapabilityRootId: string(p.State.CapabilityRootId),
 		ClusterId:        string(p.State.ClusterId),

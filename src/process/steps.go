@@ -1,8 +1,8 @@
 package process
 
-type stepWrapper func(*Process) (bool, error)
-type Step func(*Process) error
-type Predicate func(*Process) bool
+type stepWrapper func(*StepContext) (bool, error)
+type Step func(*StepContext) error
+type Predicate func(*StepContext) bool
 type PerformStep func(Step) error
 
 type StepBuilder interface {
@@ -24,7 +24,7 @@ func PrepareSteps() StepBuilder {
 }
 
 func (s *steps) Step(step Step) NextStepBuilder {
-	s.steps = append(s.steps, func(p *Process) (bool, error) {
+	s.steps = append(s.steps, func(p *StepContext) (bool, error) {
 		err := step(p)
 		return true, err
 	})
@@ -34,7 +34,7 @@ func (s *steps) Step(step Step) NextStepBuilder {
 func (s *steps) Until(isDone Predicate) StepBuilder {
 	lastStep := s.steps[len(s.steps)-1]
 
-	s.steps[len(s.steps)-1] = func(p *Process) (bool, error) {
+	s.steps[len(s.steps)-1] = func(p *StepContext) (bool, error) {
 		if isDone(p) {
 			return true, nil
 		}
@@ -51,7 +51,7 @@ func (s *steps) Run(perform PerformStep) error {
 		for {
 			done := true
 
-			err := perform(func(p *Process) error {
+			err := perform(func(p *StepContext) error {
 				var err error
 				done, err = step(p)
 				return err

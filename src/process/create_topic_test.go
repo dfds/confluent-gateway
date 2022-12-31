@@ -2,6 +2,7 @@ package process
 
 import (
 	"errors"
+	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,29 +13,28 @@ var serviceError = errors.New("service error")
 func Test_ensureServiceAccount(t *testing.T) {
 	tests := []struct {
 		name    string
-		mock    *ProcessMock
+		context *mocks.StepContextMock
 		wantErr assert.ErrorAssertionFunc
-		wantOk  bool
+		marked  bool
 	}{
 		{
 			name:    "ok",
-			mock:    &ProcessMock{},
+			context: &mocks.StepContextMock{},
 			wantErr: assert.NoError,
-			wantOk:  true,
+			marked:  true,
 		},
 		{
-			name: "error",
-
-			mock:    &ProcessMock{OnCreateServiceAccountError: serviceError},
+			name:    "error",
+			context: &mocks.StepContextMock{OnCreateServiceAccountError: serviceError},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wantErr(t, ensureServiceAccountStep(tt.mock))
+			tt.wantErr(t, ensureServiceAccountStep(tt.context))
 
-			assert.Equal(t, tt.wantOk, tt.mock.HasServiceAccount)
+			assert.Equal(t, tt.marked, tt.context.MarkServiceAccountAsReadyWasCalled)
 		})
 	}
 }
@@ -42,43 +42,43 @@ func Test_ensureServiceAccount(t *testing.T) {
 func Test_ensureServiceAccountAcl(t *testing.T) {
 	tests := []struct {
 		name    string
-		mock    *ProcessMock
+		context *mocks.StepContextMock
 		wantErr assert.ErrorAssertionFunc
-		wantOk  bool
+		marked  bool
 	}{
 		{
 			name:    "ok",
-			mock:    &ProcessMock{ReturnClusterAccess: &models.ClusterAccess{}},
+			context: &mocks.StepContextMock{ReturnClusterAccess: &models.ClusterAccess{}},
 			wantErr: assert.NoError,
-			wantOk:  true,
+			marked:  true,
 		},
 		{
 			name:    "create entry",
-			mock:    &ProcessMock{ReturnClusterAccess: &models.ClusterAccess{Acl: []models.AclEntry{{}}}},
+			context: &mocks.StepContextMock{ReturnClusterAccess: &models.ClusterAccess{Acl: []models.AclEntry{{}}}},
 			wantErr: assert.NoError,
-			wantOk:  false,
+			marked:  false,
 		},
 		{
 			name: "create entry error",
-			mock: &ProcessMock{
+			context: &mocks.StepContextMock{
 				ReturnClusterAccess:   &models.ClusterAccess{Acl: []models.AclEntry{{}}},
 				OnCreateAclEntryError: serviceError,
 			},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 		{
 			name:    "get or create error",
-			mock:    &ProcessMock{OnGetOrCreateClusterAccessError: serviceError},
+			context: &mocks.StepContextMock{OnGetOrCreateClusterAccessError: serviceError},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wantErr(t, ensureServiceAccountAclStep(tt.mock))
+			tt.wantErr(t, ensureServiceAccountAclStep(tt.context))
 
-			assert.Equal(t, tt.wantOk, tt.mock.HasClusterAccess)
+			assert.Equal(t, tt.marked, tt.context.MarkClusterAccessAsReadyWasCalled)
 		})
 	}
 }
@@ -86,34 +86,34 @@ func Test_ensureServiceAccountAcl(t *testing.T) {
 func Test_ensureServiceAccountApiKey(t *testing.T) {
 	tests := []struct {
 		name    string
-		mock    *ProcessMock
+		context *mocks.StepContextMock
 		wantErr assert.ErrorAssertionFunc
-		wantOk  bool
+		marked  bool
 	}{
 		{
 			name:    "ok",
-			mock:    &ProcessMock{ReturnClusterAccess: &models.ClusterAccess{}},
+			context: &mocks.StepContextMock{ReturnClusterAccess: &models.ClusterAccess{}},
 			wantErr: assert.NoError,
-			wantOk:  true,
+			marked:  true,
 		},
 		{
 			name:    "get cluster access error",
-			mock:    &ProcessMock{OnGetClusterAccessError: serviceError},
+			context: &mocks.StepContextMock{OnGetClusterAccessError: serviceError},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 		{
 			name:    "create api key error",
-			mock:    &ProcessMock{OnCreateApiKeyError: serviceError},
+			context: &mocks.StepContextMock{OnCreateApiKeyError: serviceError},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wantErr(t, ensureServiceAccountApiKeyStep(tt.mock))
+			tt.wantErr(t, ensureServiceAccountApiKeyStep(tt.context))
 
-			assert.Equal(t, tt.wantOk, tt.mock.HasApiKey)
+			assert.Equal(t, tt.marked, tt.context.MarkApiKeyAsReadyWasCalled)
 		})
 	}
 }
@@ -121,167 +121,70 @@ func Test_ensureServiceAccountApiKey(t *testing.T) {
 func Test_ensureServiceAccountApiKeyAreStoredInVault(t *testing.T) {
 	tests := []struct {
 		name    string
-		mock    *ProcessMock
+		context *mocks.StepContextMock
 		wantErr assert.ErrorAssertionFunc
-		wantOk  bool
+		marked  bool
 	}{
 		{
 			name:    "ok",
-			mock:    &ProcessMock{ReturnClusterAccess: &models.ClusterAccess{}},
+			context: &mocks.StepContextMock{ReturnClusterAccess: &models.ClusterAccess{}},
 			wantErr: assert.NoError,
-			wantOk:  true,
+			marked:  true,
 		},
 		{
 			name:    "get cluster access error",
-			mock:    &ProcessMock{OnGetClusterAccessError: serviceError},
+			context: &mocks.StepContextMock{OnGetClusterAccessError: serviceError},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 		{
 			name: "store api key error",
-			mock: &ProcessMock{
+			context: &mocks.StepContextMock{
 				ReturnClusterAccess: &models.ClusterAccess{},
 				OnStoreApiKeyError:  serviceError,
 			},
 			wantErr: assert.Error,
-			wantOk:  false,
+			marked:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wantErr(t, ensureServiceAccountApiKeyAreStoredInVaultStep(tt.mock))
+			tt.wantErr(t, ensureServiceAccountApiKeyAreStoredInVaultStep(tt.context))
 
-			assert.Equal(t, tt.wantOk, tt.mock.HasApiKeyInVault)
+			assert.Equal(t, tt.marked, tt.context.MarkApiKeyInVaultAsReadyWasCalled)
 		})
 	}
 }
 
 func Test_ensureTopicIsCreated(t *testing.T) {
 	tests := []struct {
-		name         string
-		process      *Process
-		mock         *ProcessMock
-		wantErr      assert.ErrorAssertionFunc
-		wantOk       bool
-		wantProduced bool
+		name        string
+		context     *mocks.StepContextMock
+		wantErr     assert.ErrorAssertionFunc
+		marked      bool
+		eventRaised bool
 	}{
 		{
-			name:         "ok",
-			mock:         &ProcessMock{},
-			wantErr:      assert.NoError,
-			wantOk:       true,
-			wantProduced: true,
+			name:        "ok",
+			context:     &mocks.StepContextMock{},
+			wantErr:     assert.NoError,
+			marked:      true,
+			eventRaised: true,
 		},
 		{
-			name:         "create topic error",
-			mock:         &ProcessMock{OnCreateTopicError: serviceError},
-			wantErr:      assert.Error,
-			wantOk:       false,
-			wantProduced: false,
+			name:        "create topic error",
+			context:     &mocks.StepContextMock{OnCreateTopicError: serviceError},
+			wantErr:     assert.Error,
+			marked:      false,
+			eventRaised: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wantErr(t, ensureTopicIsCreatedStep(tt.mock))
+			tt.wantErr(t, ensureTopicIsCreatedStep(tt.context))
 
-			assert.Equal(t, tt.wantOk, tt.mock.IsCompleted)
-			assert.Equal(t, tt.wantProduced, tt.mock.TopicProvisioned)
+			assert.Equal(t, tt.marked, tt.context.MarkAsCompletedWasCalled)
+			assert.Equal(t, tt.eventRaised, tt.context.TopicProvisionedEventWasRaised)
 		})
 	}
 }
-
-// region Test Doubles
-
-type ProcessMock struct {
-	ReturnClusterAccess *models.ClusterAccess
-
-	HasServiceAccount bool
-	HasClusterAccess  bool
-	HasApiKey         bool
-	HasApiKeyInVault  bool
-	IsCompleted       bool
-	TopicProvisioned  bool
-
-	OnCreateServiceAccountError     error
-	OnGetOrCreateClusterAccessError error
-	OnCreateAclEntryError           error
-	OnGetClusterAccessError         error
-	OnCreateApiKeyError             error
-	OnStoreApiKeyError              error
-	OnCreateTopicError              error
-}
-
-func (p *ProcessMock) hasServiceAccount() bool {
-	return false
-}
-
-func (p *ProcessMock) createServiceAccount() error {
-	return p.OnCreateServiceAccountError
-}
-
-func (p *ProcessMock) markServiceAccountReady() {
-	p.HasServiceAccount = true
-}
-
-func (p *ProcessMock) hasClusterAccess() bool {
-	return false
-}
-
-func (p *ProcessMock) getOrCreateClusterAccess() (*models.ClusterAccess, error) {
-	return p.ReturnClusterAccess, p.OnGetOrCreateClusterAccessError
-}
-
-func (p *ProcessMock) createAclEntry(*models.ClusterAccess, models.AclEntry) error {
-	return p.OnCreateAclEntryError
-}
-
-func (p *ProcessMock) markClusterAccessReady() {
-	p.HasClusterAccess = true
-}
-
-func (p *ProcessMock) hasApiKey() bool {
-	return false
-}
-
-func (p *ProcessMock) getClusterAccess() (*models.ClusterAccess, error) {
-	return p.ReturnClusterAccess, p.OnGetClusterAccessError
-}
-
-func (p *ProcessMock) createApiKey(*models.ClusterAccess) error {
-	return p.OnCreateApiKeyError
-}
-
-func (p *ProcessMock) markApiKeyReady() {
-	p.HasApiKey = true
-}
-
-func (p *ProcessMock) hasApiKeyInVault() bool {
-	return false
-}
-
-func (p *ProcessMock) storeApiKey(*models.ClusterAccess) error {
-	return p.OnStoreApiKeyError
-}
-
-func (p *ProcessMock) markApiKeyInVaultReady() {
-	p.HasApiKeyInVault = true
-}
-
-func (p *ProcessMock) isCompleted() bool {
-	return false
-}
-
-func (p *ProcessMock) createTopic() error {
-	return p.OnCreateTopicError
-}
-
-func (p *ProcessMock) markAsCompleted() {
-	p.IsCompleted = true
-}
-
-func (p *ProcessMock) topicProvisioned() error {
-	p.TopicProvisioned = true
-	return nil
-}
-
-// endregion

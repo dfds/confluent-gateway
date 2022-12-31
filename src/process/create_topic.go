@@ -47,16 +47,15 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 
 	return PrepareSteps().
 		Step(ensureServiceAccount).
-		Step(ensureServiceAccountAcl).Until(func(p *Process) bool { return p.hasClusterAccess() }).
+		Step(ensureServiceAccountAcl).Until(func(p *StepContext) bool { return p.HasClusterAccess() }).
 		Step(ensureServiceAccountApiKey).
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
 		Run(func(step Step) error {
 			return database.Transaction(func(tx Transaction) error {
+				stepContext := ctp.getStepContext(ctx, tx, state)
 
-				process := ctp.NewProcess(ctx, tx, state)
-
-				err := step(process)
+				err := step(stepContext)
 				if err != nil {
 					return err
 				}
@@ -80,15 +79,15 @@ func getOrCreateProcessState(repository stateRepository, input CreateTopicProces
 		//	return nil, err
 		//}
 		//
-		//hasServiceAccount := false
-		//hasClusterAccess := false
+		//HasServiceAccount := false
+		//HasClusterAccess := false
 		//
 		//if serviceAccount != nil {
-		//	hasServiceAccount = true
-		//	_, hasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
+		//	HasServiceAccount = true
+		//	_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 		//}
 		//
-		//state = models.NewProcessState(capabilityRootId, clusterId, topic, hasServiceAccount, hasClusterAccess)
+		//state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
 
 		// TODO -- stop faking
 
@@ -104,61 +103,61 @@ func getOrCreateProcessState(repository stateRepository, input CreateTopicProces
 	return state, nil
 }
 
-func (ctp *createTopicProcess) NewProcess(ctx context.Context, tx Transaction, state *models.ProcessState) *Process {
+func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx Transaction, state *models.ProcessState) *StepContext {
 	newAccountService := NewAccountService(ctx, ctp.confluent, tx)
 	vault := NewVaultService(ctx, ctp.vault)
 	topic := NewTopicService(ctx, ctp.confluent)
 	outbox := messaging.NewOutbox(ctp.logger, ctp.registry, tx)
 
-	return NewProcess(state, newAccountService, vault, topic, outbox)
+	return NewStepContext(state, newAccountService, vault, topic, outbox)
 }
 
 // region Steps
 
-func ensureServiceAccount(process *Process) error {
+func ensureServiceAccount(stepContext *StepContext) error {
 	fmt.Println("### EnsureServiceAccount")
-	return ensureServiceAccountStep(process)
+	return ensureServiceAccountStep(stepContext)
 }
 
 type EnsureServiceAccountStep interface {
-	hasServiceAccount() bool
-	createServiceAccount() error
-	markServiceAccountReady()
+	HasServiceAccount() bool
+	CreateServiceAccount() error
+	MarkServiceAccountAsReady()
 }
 
-func ensureServiceAccountStep(process EnsureServiceAccountStep) error {
-	if process.hasServiceAccount() {
+func ensureServiceAccountStep(step EnsureServiceAccountStep) error {
+	if step.HasServiceAccount() {
 		return nil
 	}
 
-	err := process.createServiceAccount()
+	err := step.CreateServiceAccount()
 	if err != nil {
 		return err
 	}
 
-	process.markServiceAccountReady()
+	step.MarkServiceAccountAsReady()
 
 	return nil
 }
 
-func ensureServiceAccountAcl(process *Process) error {
+func ensureServiceAccountAcl(stepContext *StepContext) error {
 	fmt.Println("### EnsureServiceAccountAcl")
-	return ensureServiceAccountAclStep(process)
+	return ensureServiceAccountAclStep(stepContext)
 }
 
 type EnsureServiceAccountAclStep interface {
-	hasClusterAccess() bool
-	getOrCreateClusterAccess() (*models.ClusterAccess, error)
-	createAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error
-	markClusterAccessReady()
+	HasClusterAccess() bool
+	GetOrCreateClusterAccess() (*models.ClusterAccess, error)
+	CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error
+	MarkClusterAccessAsReady()
 }
 
-func ensureServiceAccountAclStep(process EnsureServiceAccountAclStep) error {
-	if process.hasClusterAccess() {
+func ensureServiceAccountAclStep(step EnsureServiceAccountAclStep) error {
+	if step.HasClusterAccess() {
 		return nil
 	}
 
-	clusterAccess, err := process.getOrCreateClusterAccess()
+	clusterAccess, err := step.GetOrCreateClusterAccess()
 	if err != nil {
 		return err
 	}
@@ -166,104 +165,104 @@ func ensureServiceAccountAclStep(process EnsureServiceAccountAclStep) error {
 	entries := clusterAccess.GetAclPendingCreation()
 	if len(entries) == 0 {
 		// no acl entries left => mark as done
-		process.markClusterAccessReady()
+		step.MarkClusterAccessAsReady()
 		return nil
 
 	} else {
 		nextEntry := entries[0]
 
-		return process.createAclEntry(clusterAccess, nextEntry)
+		return step.CreateAclEntry(clusterAccess, nextEntry)
 	}
 }
 
-func ensureServiceAccountApiKey(process *Process) error {
+func ensureServiceAccountApiKey(stepContext *StepContext) error {
 	fmt.Println("### EnsureServiceAccountApiKey")
-	return ensureServiceAccountApiKeyStep(process)
+	return ensureServiceAccountApiKeyStep(stepContext)
 }
 
 type EnsureServiceAccountApiKeyStep interface {
-	hasApiKey() bool
-	getClusterAccess() (*models.ClusterAccess, error)
-	createApiKey(clusterAccess *models.ClusterAccess) error
-	markApiKeyReady()
+	HasApiKey() bool
+	GetClusterAccess() (*models.ClusterAccess, error)
+	CreateApiKey(clusterAccess *models.ClusterAccess) error
+	MarkApiKeyAsReady()
 }
 
-func ensureServiceAccountApiKeyStep(process EnsureServiceAccountApiKeyStep) error {
-	if process.hasApiKey() {
+func ensureServiceAccountApiKeyStep(step EnsureServiceAccountApiKeyStep) error {
+	if step.HasApiKey() {
 		return nil
 	}
 
-	clusterAccess, err := process.getClusterAccess()
+	clusterAccess, err := step.GetClusterAccess()
 	if err != nil {
 		return err
 	}
 
-	err = process.createApiKey(clusterAccess)
+	err = step.CreateApiKey(clusterAccess)
 	if err != nil {
 		return err
 	}
 
-	process.markApiKeyReady()
+	step.MarkApiKeyAsReady()
 	return nil
 }
 
-func ensureServiceAccountApiKeyAreStoredInVault(process *Process) error {
+func ensureServiceAccountApiKeyAreStoredInVault(stepContext *StepContext) error {
 	fmt.Println("### EnsureServiceAccountApiKeyAreStoredInVault")
-	return ensureServiceAccountApiKeyAreStoredInVaultStep(process)
+	return ensureServiceAccountApiKeyAreStoredInVaultStep(stepContext)
 }
 
 type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
-	hasApiKeyInVault() bool
-	getClusterAccess() (*models.ClusterAccess, error)
-	storeApiKey(clusterAccess *models.ClusterAccess) error
-	markApiKeyInVaultReady()
+	HasApiKeyInVault() bool
+	GetClusterAccess() (*models.ClusterAccess, error)
+	StoreApiKey(clusterAccess *models.ClusterAccess) error
+	MarkApiKeyInVaultAsReady()
 }
 
-func ensureServiceAccountApiKeyAreStoredInVaultStep(process EnsureServiceAccountApiKeyAreStoredInVaultStep) error {
-	if process.hasApiKeyInVault() {
+func ensureServiceAccountApiKeyAreStoredInVaultStep(step EnsureServiceAccountApiKeyAreStoredInVaultStep) error {
+	if step.HasApiKeyInVault() {
 		return nil
 	}
 
-	clusterAccess, err := process.getClusterAccess()
+	clusterAccess, err := step.GetClusterAccess()
 	if err != nil {
 		return err
 	}
 
-	if err = process.storeApiKey(clusterAccess); err != nil {
+	if err = step.StoreApiKey(clusterAccess); err != nil {
 		return err
 	}
 
-	process.markApiKeyInVaultReady()
+	step.MarkApiKeyInVaultAsReady()
 
 	return nil
 }
 
-func ensureTopicIsCreated(process *Process) error {
+func ensureTopicIsCreated(stepContext *StepContext) error {
 	fmt.Println("### EnsureTopicIsCreated")
-	return ensureTopicIsCreatedStep(process)
+	return ensureTopicIsCreatedStep(stepContext)
 
 }
 
 type EnsureTopicIsCreatedStep interface {
-	isCompleted() bool
-	createTopic() error
-	markAsCompleted()
-	topicProvisioned() error
+	IsCompleted() bool
+	CreateTopic() error
+	MarkAsCompleted()
+	RaiseTopicProvisionedEvent() error
 }
 
-func ensureTopicIsCreatedStep(process EnsureTopicIsCreatedStep) error {
-	if process.isCompleted() {
+func ensureTopicIsCreatedStep(step EnsureTopicIsCreatedStep) error {
+	if step.IsCompleted() {
 		return nil
 	}
 
-	err := process.createTopic()
+	err := step.CreateTopic()
 	if err != nil {
 		return err
 	}
 
-	process.markAsCompleted()
+	step.MarkAsCompleted()
 
-	return process.topicProvisioned()
+	return step.RaiseTopicProvisionedEvent()
 }
 
 // endregion
