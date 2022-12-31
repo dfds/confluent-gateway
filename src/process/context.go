@@ -16,6 +16,22 @@ func NewStepContext(state *models.ProcessState, account AccountService, vault Va
 	return &StepContext{State: state, Account: account, Vault: vault, Topic: topic, Outbox: outbox}
 }
 
+type AccountService interface {
+	CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error
+	GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
+	GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
+	CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error
+	CreateApiKey(clusterAccess *models.ClusterAccess) error
+}
+
+type VaultService interface {
+	StoreApiKey(capabilityRootId models.CapabilityRootId, clusterAccess *models.ClusterAccess) error
+}
+
+type TopicService interface {
+	CreateTopic(clusterId models.ClusterId, topic models.Topic) error
+}
+
 type Outbox interface {
 	Produce(msg interface{}) error
 }

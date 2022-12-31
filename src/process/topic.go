@@ -5,10 +5,6 @@ import (
 	"github.com/dfds/confluent-gateway/models"
 )
 
-type TopicService interface {
-	CreateTopic(clusterId models.ClusterId, topic models.Topic) error
-}
-
 type topicService struct {
 	context   context.Context
 	confluent Confluent

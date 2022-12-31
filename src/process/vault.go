@@ -9,10 +9,6 @@ type Vault interface {
 	StoreApiKey(ctx context.Context, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, apiKey models.ApiKey) error
 }
 
-type VaultService interface {
-	StoreApiKey(capabilityRootId models.CapabilityRootId, clusterAccess *models.ClusterAccess) error
-}
-
 type vaultService struct {
 	context context.Context
 	vault   Vault

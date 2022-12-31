@@ -7,14 +7,6 @@ import (
 	"time"
 )
 
-type AccountService interface {
-	CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error
-	GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
-	GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
-	CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error
-	CreateApiKey(clusterAccess *models.ClusterAccess) error
-}
-
 type accountService struct {
 	context    context.Context
 	confluent  Confluent
