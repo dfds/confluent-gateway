@@ -65,41 +65,61 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		})
 }
 
-func getOrCreateProcessState(repository stateRepository, input CreateTopicProcessInput) (*models.ProcessState, error) {
+func getOrCreateProcessState(database Database, input CreateTopicProcessInput) (*models.ProcessState, error) {
 	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
 
-	state, err := repository.GetProcessState(capabilityRootId, clusterId, topic.Name)
+	state, err := database.GetProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	if state == nil {
-		//serviceAccount, err := repository.GetServiceAccount(capabilityRootId)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//HasServiceAccount := false
-		//HasClusterAccess := false
-		//
-		//if serviceAccount != nil {
-		//	HasServiceAccount = true
-		//	_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
-		//}
-		//
-		//state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
-
-		// TODO -- stop faking
-
-		state = models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
-		state.HasApiKey = true
-		state.HasApiKeyInVault = true
-		state.MarkAsCompleted()
-
-		if err := repository.CreateProcessState(state); err != nil {
-			return nil, err
-		}
+	if state != nil {
+		return state, nil
 	}
+
+	err = database.Transaction(func(tx Transaction) error {
+		newState, err := createProcessState(database, input)
+
+		state = newState
+
+		return err
+
+	})
+
+	return state, err
+}
+
+func createProcessState(repository stateRepository, input CreateTopicProcessInput) (*models.ProcessState, error) {
+	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
+
+	//serviceAccount, err := repository.GetServiceAccount(capabilityRootId)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//HasServiceAccount := false
+	//HasClusterAccess := false
+	//
+	//if serviceAccount != nil {
+	//	HasServiceAccount = true
+	//	_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
+	//}
+	//
+	//state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+
+	// TODO -- stop faking
+
+	state := models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
+	state.HasApiKey = true
+	state.HasApiKeyInVault = true
+	state.MarkAsCompleted()
+
+	if err := repository.CreateProcessState(state); err != nil {
+		return nil, err
+	}
+
+	// TODO -- RaiseTopicProvisioningStarted
+
 	return state, nil
 }
 
