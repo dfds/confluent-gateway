@@ -8,7 +8,101 @@ import (
 	"testing"
 )
 
+const someTopicName = "some-topic-name"
+
 var serviceError = errors.New("service error")
+
+func Test_createProcessState(t *testing.T) {
+	tests := []struct {
+		name                  string
+		repository            *mock
+		input                 CreateTopicProcessInput
+		wantHasServiceAccount bool
+		wantHasClusterAccess  bool
+		wantHasApiKey         bool
+		wantHasApiKeyInVault  bool
+		wantIsCompleted       bool
+		wantErr               assert.ErrorAssertionFunc
+	}{
+		{
+			name:       "ok",
+			repository: &mock{},
+			input: CreateTopicProcessInput{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				Topic:            models.Topic{Name: someTopicName},
+			},
+			wantHasServiceAccount: false,
+			wantHasClusterAccess:  false,
+			wantHasApiKey:         false,
+			wantHasApiKeyInVault:  false,
+			wantIsCompleted:       false,
+
+			wantErr: assert.NoError,
+		},
+		{
+			name:       "ok got service account",
+			repository: &mock{ReturnServiceAccount: &models.ServiceAccount{}},
+			input: CreateTopicProcessInput{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				Topic:            models.Topic{Name: someTopicName},
+			},
+			wantHasServiceAccount: true,
+			wantHasClusterAccess:  false,
+			wantHasApiKey:         false,
+			wantHasApiKeyInVault:  false,
+			wantIsCompleted:       false,
+
+			wantErr: assert.NoError,
+		},
+		{
+			name:       "ok got cluster access",
+			repository: &mock{ReturnServiceAccount: &models.ServiceAccount{ClusterAccesses: []models.ClusterAccess{{ClusterId: someClusterId}}}},
+			input: CreateTopicProcessInput{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				Topic:            models.Topic{Name: someTopicName},
+			},
+			wantHasServiceAccount: true,
+			wantHasClusterAccess:  true,
+			wantHasApiKey:         true,
+			wantHasApiKeyInVault:  true,
+			wantIsCompleted:       false,
+
+			wantErr: assert.NoError,
+		}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := createProcessState(tt.repository, tt.input)
+			if !tt.wantErr(t, err) {
+				return
+			}
+			assert.Equal(t, someCapabilityRootId, got.CapabilityRootId)
+			assert.Equal(t, someClusterId, got.ClusterId)
+			assert.Equal(t, someTopicName, got.TopicName)
+			assert.Equal(t, int(0), got.TopicPartitions)
+			assert.Equal(t, int64(0), got.TopicRetention)
+			assert.Equal(t, tt.wantHasServiceAccount, got.HasServiceAccount)
+			assert.Equal(t, tt.wantHasClusterAccess, got.HasClusterAccess)
+			assert.Equal(t, tt.wantHasApiKey, got.HasApiKey)
+			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasApiKeyInVault)
+			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
+		})
+	}
+}
+
+type mock struct {
+	ReturnServiceAccount *models.ServiceAccount
+}
+
+func (m *mock) GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
+	return m.ReturnServiceAccount, nil
+}
+
+func (m *mock) CreateProcessState(state *models.ProcessState) error {
+	return nil
+}
 
 func Test_ensureServiceAccount(t *testing.T) {
 	tests := []struct {
