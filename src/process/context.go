@@ -105,7 +105,7 @@ func (p *StepContext) MarkAsCompleted() {
 }
 
 func (p *StepContext) RaiseTopicProvisionedEvent() error {
-	event := TopicProvisioned{
+	event := &TopicProvisioned{
 		CapabilityRootId: string(p.state.CapabilityRootId),
 		ClusterId:        string(p.state.ClusterId),
 		TopicName:        p.state.TopicName,

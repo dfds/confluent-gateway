@@ -13,3 +13,9 @@ type TopicProvisioned struct {
 	ClusterId        string `json:"clusterId"`
 	TopicName        string `json:"topicName"`
 }
+
+type TopicProvisioningBegun struct {
+	CapabilityRootId string `json:"capabilityRootId"`
+	ClusterId        string `json:"clusterId"`
+	TopicName        string `json:"topicName"`
+}
