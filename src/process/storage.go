@@ -9,12 +9,11 @@ import (
 type Database interface {
 	WithContext(context.Context) Database
 	Transaction(func(Transaction) error) error
-	GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error)
-	stateRepository
 }
 
 type Transaction interface {
 	serviceAccountRepository
+	stateRepository
 	UpdateProcessState(state *models.ProcessState) error
 	AddToOutbox(entry *messaging.OutboxEntry) error
 }
@@ -28,6 +27,7 @@ type serviceAccountRepository interface {
 }
 
 type stateRepository interface {
+	GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error)
 	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
 	CreateProcessState(state *models.ProcessState) error
 }

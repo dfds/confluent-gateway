@@ -66,9 +66,28 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 }
 
 func (ctp *createTopicProcess) getOrCreateProcessState(database Database, input CreateTopicProcessInput) (*models.ProcessState, error) {
+	var s *models.ProcessState
+
+	err := database.Transaction(func(tx Transaction) error {
+		outbox := ctp.getOutbox(tx)
+
+		state, err := getOrCreateProcessState(tx, outbox, input)
+		if err != nil {
+			return err
+		}
+
+		s = state
+
+		return nil
+	})
+
+	return s, err
+}
+
+func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTopicProcessInput) (*models.ProcessState, error) {
 	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
 
-	state, err := database.GetProcessState(capabilityRootId, clusterId, topic.Name)
+	state, err := repo.GetProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -77,29 +96,7 @@ func (ctp *createTopicProcess) getOrCreateProcessState(database Database, input 
 		return state, nil
 	}
 
-	err = database.Transaction(func(tx Transaction) error {
-		newState, err := createProcessState(database, input)
-		if err != nil {
-			return err
-		}
-
-		state = newState
-
-		return ctp.getOutbox(tx).
-			Produce(&TopicProvisioningBegun{
-				CapabilityRootId: string(capabilityRootId),
-				ClusterId:        string(clusterId),
-				TopicName:        topic.Name,
-			})
-	})
-
-	return state, err
-}
-
-func createProcessState(repository stateRepository, input CreateTopicProcessInput) (*models.ProcessState, error) {
-	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
-
-	serviceAccount, err := repository.GetServiceAccount(capabilityRootId)
+	serviceAccount, err := repo.GetServiceAccount(capabilityRootId)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +109,7 @@ func createProcessState(repository stateRepository, input CreateTopicProcessInpu
 		_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 	}
 
-	state := models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+	state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
 
 	//// TODO -- stop faking
 	//
@@ -121,11 +118,21 @@ func createProcessState(repository stateRepository, input CreateTopicProcessInpu
 	//state.HasApiKeyInVault = true
 	//state.MarkAsCompleted()
 
-	if err := repository.CreateProcessState(state); err != nil {
+	if err := repo.CreateProcessState(state); err != nil {
 		return nil, err
 	}
 
 	// TODO -- RaiseTopicProvisioningStarted
+
+	err = outbox.Produce(&TopicProvisioningBegun{
+		CapabilityRootId: string(capabilityRootId),
+		ClusterId:        string(clusterId),
+		TopicName:        topic.Name,
+	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	return state, nil
 }

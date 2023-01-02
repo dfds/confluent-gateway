@@ -6,6 +6,7 @@ import (
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 const someTopicName = "some-topic-name"
@@ -23,6 +24,7 @@ func Test_createProcessState(t *testing.T) {
 		wantHasApiKeyInVault  bool
 		wantIsCompleted       bool
 		wantErr               assert.ErrorAssertionFunc
+		wantEvent             *TopicProvisioningBegun
 	}{
 		{
 			name:       "ok",
@@ -37,8 +39,12 @@ func Test_createProcessState(t *testing.T) {
 			wantHasApiKey:         false,
 			wantHasApiKeyInVault:  false,
 			wantIsCompleted:       false,
-
-			wantErr: assert.NoError,
+			wantErr:               assert.NoError,
+			wantEvent: &TopicProvisioningBegun{
+				CapabilityRootId: string(someCapabilityRootId),
+				ClusterId:        string(someClusterId),
+				TopicName:        someTopicName,
+			},
 		},
 		{
 			name:       "ok got service account",
@@ -53,8 +59,12 @@ func Test_createProcessState(t *testing.T) {
 			wantHasApiKey:         false,
 			wantHasApiKeyInVault:  false,
 			wantIsCompleted:       false,
-
-			wantErr: assert.NoError,
+			wantErr:               assert.NoError,
+			wantEvent: &TopicProvisioningBegun{
+				CapabilityRootId: string(someCapabilityRootId),
+				ClusterId:        string(someClusterId),
+				TopicName:        someTopicName,
+			},
 		},
 		{
 			name:       "ok got cluster access",
@@ -69,12 +79,42 @@ func Test_createProcessState(t *testing.T) {
 			wantHasApiKey:         true,
 			wantHasApiKeyInVault:  true,
 			wantIsCompleted:       false,
-
-			wantErr: assert.NoError,
-		}}
+			wantErr:               assert.NoError,
+			wantEvent: &TopicProvisioningBegun{
+				CapabilityRootId: string(someCapabilityRootId),
+				ClusterId:        string(someClusterId),
+				TopicName:        someTopicName,
+			},
+		},
+		{
+			name: "process already exists",
+			repository: &mock{ReturnProcessState: &models.ProcessState{
+				CapabilityRootId:  someCapabilityRootId,
+				ClusterId:         someClusterId,
+				TopicName:         someTopicName,
+				HasServiceAccount: true,
+				HasClusterAccess:  true,
+				HasApiKey:         true,
+				HasApiKeyInVault:  true,
+				CompletedAt:       &time.Time{},
+			}},
+			input: CreateTopicProcessInput{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				Topic:            models.Topic{Name: someTopicName},
+			},
+			wantHasServiceAccount: true,
+			wantHasClusterAccess:  true,
+			wantHasApiKey:         true,
+			wantHasApiKeyInVault:  true,
+			wantIsCompleted:       true,
+			wantErr:               assert.NoError,
+			wantEvent:             nil,
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := createProcessState(tt.repository, tt.input)
+			got, err := getOrCreateProcessState(tt.repository, tt.repository, tt.input)
 			if !tt.wantErr(t, err) {
 				return
 			}
@@ -88,12 +128,25 @@ func Test_createProcessState(t *testing.T) {
 			assert.Equal(t, tt.wantHasApiKey, got.HasApiKey)
 			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasApiKeyInVault)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
+			assert.Equal(t, tt.wantEvent, tt.repository.EventProduced)
 		})
 	}
 }
 
 type mock struct {
+	ReturnProcessState   *models.ProcessState
 	ReturnServiceAccount *models.ServiceAccount
+	EventProduced        *TopicProvisioningBegun
+}
+
+func (m *mock) GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error) {
+	return m.ReturnProcessState, nil
+}
+
+func (m *mock) Produce(msg interface{}) error {
+	m.EventProduced, _ = msg.(*TopicProvisioningBegun)
+
+	return nil
 }
 
 func (m *mock) GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
