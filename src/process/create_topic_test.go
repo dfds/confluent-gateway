@@ -17,7 +17,7 @@ var serviceError = errors.New("service error")
 func Test_createProcessState(t *testing.T) {
 	tests := []struct {
 		name                  string
-		repository            *mock
+		mock                  *mock
 		input                 CreateTopicProcessInput
 		wantHasServiceAccount bool
 		wantHasClusterAccess  bool
@@ -28,8 +28,8 @@ func Test_createProcessState(t *testing.T) {
 		wantEvent             *TopicProvisioningBegun
 	}{
 		{
-			name:       "ok",
-			repository: &mock{},
+			name: "ok",
+			mock: &mock{},
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
@@ -48,8 +48,8 @@ func Test_createProcessState(t *testing.T) {
 			},
 		},
 		{
-			name:       "ok got service account",
-			repository: &mock{ReturnServiceAccount: &models.ServiceAccount{}},
+			name: "ok got service account",
+			mock: &mock{ReturnServiceAccount: &models.ServiceAccount{}},
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
@@ -68,8 +68,8 @@ func Test_createProcessState(t *testing.T) {
 			},
 		},
 		{
-			name:       "ok got cluster access",
-			repository: &mock{ReturnServiceAccount: &models.ServiceAccount{ClusterAccesses: []models.ClusterAccess{{ClusterId: someClusterId}}}},
+			name: "ok got cluster access",
+			mock: &mock{ReturnServiceAccount: &models.ServiceAccount{ClusterAccesses: []models.ClusterAccess{{ClusterId: someClusterId}}}},
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
@@ -89,7 +89,7 @@ func Test_createProcessState(t *testing.T) {
 		},
 		{
 			name: "process already exists",
-			repository: &mock{ReturnProcessState: &models.ProcessState{
+			mock: &mock{ReturnProcessState: &models.ProcessState{
 				CapabilityRootId:  someCapabilityRootId,
 				ClusterId:         someClusterId,
 				TopicName:         someTopicName,
@@ -122,18 +122,18 @@ func Test_createProcessState(t *testing.T) {
 			assert.Equal(t, someCapabilityRootId, got.CapabilityRootId)
 			assert.Equal(t, someClusterId, got.ClusterId)
 			assert.Equal(t, someTopicName, got.TopicName)
-			assert.Equal(t, int(0), got.TopicPartitions)
+			assert.Equal(t, 0, got.TopicPartitions)
 			assert.Equal(t, int64(0), got.TopicRetention)
 			assert.Equal(t, tt.wantHasServiceAccount, got.HasServiceAccount)
 			assert.Equal(t, tt.wantHasClusterAccess, got.HasClusterAccess)
 			assert.Equal(t, tt.wantHasApiKey, got.HasApiKey)
 			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasApiKeyInVault)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
-			if tt.repository.EventProduced != nil {
+			if tt.mock.EventProduced != nil {
 				// ignore partitionKey
-				tt.repository.EventProduced.partitionKey = ""
+				tt.mock.EventProduced.partitionKey = ""
 			}
-			assert.Equal(t, tt.wantEvent, tt.repository.EventProduced)
+			assert.Equal(t, tt.wantEvent, tt.mock.EventProduced)
 		})
 	}
 }
@@ -144,7 +144,7 @@ type mock struct {
 	EventProduced        *TopicProvisioningBegun
 }
 
-func (m *mock) GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error) {
+func (m *mock) GetProcessState(models.CapabilityRootId, models.ClusterId, string) (*models.ProcessState, error) {
 	return m.ReturnProcessState, nil
 }
 
@@ -154,11 +154,11 @@ func (m *mock) Produce(msg messaging.OutgoingMessage) error {
 	return nil
 }
 
-func (m *mock) GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
+func (m *mock) GetServiceAccount(models.CapabilityRootId) (*models.ServiceAccount, error) {
 	return m.ReturnServiceAccount, nil
 }
 
-func (m *mock) CreateProcessState(state *models.ProcessState) error {
+func (m *mock) CreateProcessState(*models.ProcessState) error {
 	return nil
 }
 
