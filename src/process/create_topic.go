@@ -97,7 +97,7 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTo
 		return state, nil
 	}
 
-	if strings.HasSuffix(topic.Name, "-cg") {
+	if !strings.HasSuffix(topic.Name, "-cg") {
 		// TODO -- stop faking
 		state = models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
 		state.HasApiKey = true
