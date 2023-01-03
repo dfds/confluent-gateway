@@ -99,8 +99,8 @@ func main() {
 	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
 
 	registration := outgoingRegistry.
-		RegisterMessage("cloudenginerring.confluentgateway.provisioning", "topic_provisioned", &process.TopicProvisioned{}).
-		RegisterMessage("cloudenginerring.confluentgateway.provisioning", "topic_provisioning_begun", &process.TopicProvisioningBegun{})
+		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioned", &process.TopicProvisioned{}).
+		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioning_begun", &process.TopicProvisioningBegun{})
 
 	if err := registration.Error; err != nil {
 		panic(err)
