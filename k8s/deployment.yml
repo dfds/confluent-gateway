@@ -94,8 +94,8 @@ spec:
             - name: DB_CONNECTION_STRING
               valueFrom:
                 secretKeyRef:
-                  name: capability-service-db
-                  key: connection-string
+                  name: confluent-gateway-postgres
+                  key: GENDIS_CONNECTION_STRING
           envFrom:
             - secretRef:
                 name: kafka-credentials
