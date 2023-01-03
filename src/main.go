@@ -27,8 +27,8 @@ type Configuration struct {
 	ConfluentCloudApiPassword string `env:"CG_CONFLUENT_CLOUD_API_PASSWORD"`
 	VaultApiUrl               string `env:"CG_VAULT_API_URL"`
 	KafkaBroker               string `env:"DEFAULT_KAFKA_BOOTSTRAP_SERVERS"`
-	KafkaUserName             string `env:"DEFAULT_KAFKA_USERNAME"`
-	KafkaPassword             string `env:"DEFAULT_KAFKA_PASSWORD"`
+	KafkaUserName             string `env:"DEFAULT_KAFKA_SASL_USERNAME"`
+	KafkaPassword             string `env:"DEFAULT_KAFKA_SASL_PASSWORD"`
 	KafkaGroupId              string `env:"CG_KAFKA_GROUP_ID"`
 	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
 	TopicNameSelfService      string `env:"CG_TOPIC_NAME_SELF_SERVICE"`
