@@ -7,28 +7,28 @@ import (
 )
 
 func TestConvertToTransportMessageAssignsExpectedTopic(t *testing.T) {
-	result := convertToTransportMessage(OutgoingMessage{Topic: "foo"})
+	result := convertToTransportMessage(RawOutgoingMessage{Topic: "foo"})
 	assert.Equal(t, "foo", result.Topic)
 }
 
 func TestConvertToTransportMessageAssignsExpectedPartitionKey(t *testing.T) {
-	result := convertToTransportMessage(OutgoingMessage{PartitionKey: "foo"})
+	result := convertToTransportMessage(RawOutgoingMessage{PartitionKey: "foo"})
 	assert.Equal(t, []byte("foo"), result.Key)
 }
 
 func TestConvertToTransportMessageAssignsExpectedHeadersWhenEmpty(t *testing.T) {
-	result := convertToTransportMessage(OutgoingMessage{})
+	result := convertToTransportMessage(RawOutgoingMessage{})
 	assert.Empty(t, result.Headers)
 }
 
 func TestConvertToTransportMessageAssignsExpectedHeadersWhenContainingSingle(t *testing.T) {
-	result := convertToTransportMessage(OutgoingMessage{Headers: map[string]string{"foo": "bar"}})
+	result := convertToTransportMessage(RawOutgoingMessage{Headers: map[string]string{"foo": "bar"}})
 	expected := []kafka.Header{{Key: "foo", Value: []byte("bar")}}
 	assert.Equal(t, expected, result.Headers)
 }
 
 func TestConvertToTransportMessageAssignsExpectedHeadersWhenContainingMultiple(t *testing.T) {
-	result := convertToTransportMessage(OutgoingMessage{Headers: map[string]string{"foo": "bar", "baz": "qux"}})
+	result := convertToTransportMessage(RawOutgoingMessage{Headers: map[string]string{"foo": "bar", "baz": "qux"}})
 	expected := []kafka.Header{
 		{Key: "foo", Value: []byte("bar")},
 		{Key: "baz", Value: []byte("qux")},
@@ -37,6 +37,6 @@ func TestConvertToTransportMessageAssignsExpectedHeadersWhenContainingMultiple(t
 }
 
 func TestConvertToTransportMessageAssignsExpectedValue(t *testing.T) {
-	result := convertToTransportMessage(OutgoingMessage{Payload: "foo"})
+	result := convertToTransportMessage(RawOutgoingMessage{Payload: "foo"})
 	assert.Equal(t, []byte("foo"), result.Value)
 }

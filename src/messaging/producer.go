@@ -8,17 +8,17 @@ import (
 )
 
 type Producer interface {
-	Produce(context context.Context, msg OutgoingMessage) error
+	Produce(context context.Context, msg RawOutgoingMessage) error
 }
 
-type OutgoingMessage struct {
+type RawOutgoingMessage struct {
 	Topic        string
 	PartitionKey string
 	Headers      map[string]string
 	Payload      string
 }
 
-func convertToTransportMessage(msg OutgoingMessage) kafka.Message {
+func convertToTransportMessage(msg RawOutgoingMessage) kafka.Message {
 	var headers []kafka.Header
 	for key, value := range msg.Headers {
 		headers = append(
@@ -38,7 +38,7 @@ func convertToTransportMessage(msg OutgoingMessage) kafka.Message {
 	}
 }
 
-func (p *realProducer) Produce(ctx context.Context, msg OutgoingMessage) error {
+func (p *realProducer) Produce(ctx context.Context, msg RawOutgoingMessage) error {
 	p.logger.Trace("Producing outgoing message {OutgoingMessage}", fmt.Sprintf("%v", msg))
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(p.broker),
