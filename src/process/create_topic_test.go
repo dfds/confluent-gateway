@@ -2,6 +2,7 @@ package process
 
 import (
 	"errors"
+	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
@@ -128,6 +129,10 @@ func Test_createProcessState(t *testing.T) {
 			assert.Equal(t, tt.wantHasApiKey, got.HasApiKey)
 			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasApiKeyInVault)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
+			if tt.repository.EventProduced != nil {
+				// ignore partitionKey
+				tt.repository.EventProduced.partitionKey = ""
+			}
 			assert.Equal(t, tt.wantEvent, tt.repository.EventProduced)
 		})
 	}
@@ -143,7 +148,7 @@ func (m *mock) GetProcessState(capabilityRootId models.CapabilityRootId, cluster
 	return m.ReturnProcessState, nil
 }
 
-func (m *mock) Produce(msg interface{}) error {
+func (m *mock) Produce(msg messaging.OutgoingMessage) error {
 	m.EventProduced, _ = msg.(*TopicProvisioningBegun)
 
 	return nil

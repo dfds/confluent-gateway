@@ -118,6 +118,7 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTo
 		}
 
 		err = outbox.Produce(&TopicProvisioningBegun{
+			partitionKey:     state.Id.String(),
 			CapabilityRootId: string(capabilityRootId),
 			ClusterId:        string(clusterId),
 			TopicName:        topic.Name,

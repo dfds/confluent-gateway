@@ -6,14 +6,18 @@ import (
 )
 
 type OutgoingMessageRegistry interface {
-	RegisterMessage(topicName string, eventType string, message interface{}) *OutgoingRegistration
-	GetRegistration(message interface{}) (*OutgoingMessageRegistration, error)
+	RegisterMessage(topicName string, eventType string, message OutgoingMessage) *OutgoingRegistration
+	GetRegistration(message OutgoingMessage) (*OutgoingMessageRegistration, error)
 }
 
 func NewOutgoingMessageRegistry() OutgoingMessageRegistry {
 	return &outgoingMessageRegistry{
 		registrations: make(map[string]OutgoingMessageRegistration),
 	}
+}
+
+type OutgoingMessage interface {
+	PartitionKey() string
 }
 
 type OutgoingMessageRegistration struct {
@@ -30,7 +34,7 @@ type OutgoingRegistration struct {
 	Error    error
 }
 
-func (r *OutgoingRegistration) RegisterMessage(topicName string, eventType string, message interface{}) *OutgoingRegistration {
+func (r *OutgoingRegistration) RegisterMessage(topicName string, eventType string, message OutgoingMessage) *OutgoingRegistration {
 	if r.Error != nil {
 		return r
 	}
@@ -38,7 +42,7 @@ func (r *OutgoingRegistration) RegisterMessage(topicName string, eventType strin
 	return r.registry.RegisterMessage(topicName, eventType, message)
 }
 
-func (r *outgoingMessageRegistry) RegisterMessage(topicName string, eventType string, message interface{}) *OutgoingRegistration {
+func (r *outgoingMessageRegistry) RegisterMessage(topicName string, eventType string, message OutgoingMessage) *OutgoingRegistration {
 	if len(topicName) == 0 {
 		return r.error(errors.New("topic name must be specified"))
 	}
@@ -76,7 +80,7 @@ func (r *outgoingMessageRegistry) error(err error) *OutgoingRegistration {
 	}
 }
 
-func (r *outgoingMessageRegistry) GetRegistration(message interface{}) (*OutgoingMessageRegistration, error) {
+func (r *outgoingMessageRegistry) GetRegistration(message OutgoingMessage) (*OutgoingMessageRegistration, error) {
 	messageType, err := getMessageType(message)
 	if err != nil {
 		return nil, err

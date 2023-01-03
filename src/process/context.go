@@ -1,6 +1,7 @@
 package process
 
 import (
+	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 )
 
@@ -33,7 +34,7 @@ type TopicService interface {
 }
 
 type Outbox interface {
-	Produce(msg interface{}) error
+	Produce(msg messaging.OutgoingMessage) error
 }
 
 func (p *StepContext) MarkServiceAccountAsReady() {
@@ -106,6 +107,7 @@ func (p *StepContext) MarkAsCompleted() {
 
 func (p *StepContext) RaiseTopicProvisionedEvent() error {
 	event := &TopicProvisioned{
+		partitionKey:     p.state.Id.String(),
 		CapabilityRootId: string(p.state.CapabilityRootId),
 		ClusterId:        string(p.state.ClusterId),
 		TopicName:        p.state.TopicName,

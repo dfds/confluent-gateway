@@ -26,7 +26,7 @@ func NewOutbox(logger logging.Logger, registry OutgoingMessageRegistry, repo Out
 	}
 }
 
-func (p *Outbox) Produce(msg interface{}) error {
+func (p *Outbox) Produce(msg OutgoingMessage) error {
 	registration, err := p.registry.GetRegistration(msg)
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (p *Outbox) Produce(msg interface{}) error {
 	entry := &OutboxEntry{
 		Id:          uuid.NewV4(),
 		Topic:       registration.topic,
-		Key:         registration.eventType,
+		Key:         msg.PartitionKey(),
 		Payload:     string(payload),
 		OccurredUtc: time.Now(),
 	}

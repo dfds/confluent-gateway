@@ -16,31 +16,25 @@ func TestRegisterOutgoingMessageHandler(t *testing.T) {
 	tests := []struct {
 		name    string
 		topic   string
-		message interface{}
+		message OutgoingMessage
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "pointer to struct",
 			topic:   "some_topic",
-			message: &dummyMessage{},
+			message: &dummyOutgoingMessage{},
 			wantErr: assert.NoError,
 		},
 		{
 			name:    "struct",
 			topic:   "some_topic",
-			message: dummyMessage{},
+			message: &dummyOutgoingMessage{},
 			wantErr: assert.NoError,
-		},
-		{
-			name:    "illegal type",
-			topic:   "some_topic",
-			message: make(map[string]string),
-			wantErr: assert.Error,
 		},
 		{
 			name:    "no topic",
 			topic:   "",
-			message: &dummyMessage{},
+			message: &dummyOutgoingMessage{},
 			wantErr: assert.Error,
 		},
 		{
@@ -64,8 +58,8 @@ func TestRegisterOutgoingMessageHandler(t *testing.T) {
 func TestRegisterOutgoingMessageHandlerWithDuplicateRegistrations(t *testing.T) {
 	sut := NewOutgoingMessageRegistry()
 	err := sut.
-		RegisterMessage("some_topic", "some_event", &dummyMessage{}).
-		RegisterMessage("some_topic", "some_event", &dummyMessage{}).
+		RegisterMessage("some_topic", "some_event", &dummyOutgoingMessage{}).
+		RegisterMessage("some_topic", "some_event", &dummyOutgoingMessage{}).
 		Error
 
 	assert.Error(t, err)
@@ -73,9 +67,9 @@ func TestRegisterOutgoingMessageHandlerWithDuplicateRegistrations(t *testing.T) 
 
 func TestOutgoingMessageRegistry_GetRegistration(t *testing.T) {
 	sut := NewOutgoingMessageRegistry()
-	_ = sut.RegisterMessage("some_topic", "some_event", &dummyMessage{})
+	_ = sut.RegisterMessage("some_topic", "some_event", &dummyOutgoingMessage{})
 
-	registration, err := sut.GetRegistration(&dummyMessage{})
+	registration, err := sut.GetRegistration(&dummyOutgoingMessage{})
 
 	assert.NoError(t, err)
 	assert.Equal(t, "some_event", registration.eventType)
@@ -84,7 +78,7 @@ func TestOutgoingMessageRegistry_GetRegistration(t *testing.T) {
 
 func TestOutgoingMessageRegistry_GetRegistrationWithUnregisteredMessageType(t *testing.T) {
 	sut := NewOutgoingMessageRegistry()
-	_ = sut.RegisterMessage("some_topic", "some_event", &dummyMessage{})
+	_ = sut.RegisterMessage("some_topic", "some_event", &dummyOutgoingMessage{})
 
 	registration, err := sut.GetRegistration(&unregisteredDummyMessage{})
 
@@ -92,5 +86,18 @@ func TestOutgoingMessageRegistry_GetRegistrationWithUnregisteredMessageType(t *t
 	assert.Nil(t, registration)
 }
 
+type dummyOutgoingMessage struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func (d *dummyOutgoingMessage) PartitionKey() string {
+	return "some-partition-key"
+}
+
 type unregisteredDummyMessage struct {
+}
+
+func (u *unregisteredDummyMessage) PartitionKey() string {
+	return ""
 }
