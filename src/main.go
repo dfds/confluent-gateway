@@ -26,13 +26,13 @@ type Configuration struct {
 	ConfluentCloudApiUserName string `env:"CG_CONFLUENT_CLOUD_API_USERNAME"`
 	ConfluentCloudApiPassword string `env:"CG_CONFLUENT_CLOUD_API_PASSWORD"`
 	VaultApiUrl               string `env:"CG_VAULT_API_URL"`
-	KafkaBroker               string `env:"CG_KAFKA_BROKER"`
+	KafkaBroker               string `env:"DEFAULT_KAFKA_BOOTSTRAP_SERVERS"`
+	KafkaUserName             string `env:"DEFAULT_KAFKA_USERNAME"`
+	KafkaPassword             string `env:"DEFAULT_KAFKA_PASSWORD"`
 	KafkaGroupId              string `env:"CG_KAFKA_GROUP_ID"`
-	KafkaUserName             string `env:"SELFSERVICE_KAFKA_USERNAME"`
-	KafkaPassword             string `env:"SELFSERVICE_KAFKA_PASSWORD"`
 	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
-	TopicNameSelfService      string `env:"CB_TOPIC_NAME_SELF_SERVICE"`
-	TopicNameProvisioning     string `env:"CB_TOPIC_NAME_PROVISIONING"`
+	TopicNameSelfService      string `env:"CG_TOPIC_NAME_SELF_SERVICE"`
+	TopicNameProvisioning     string `env:"CG_TOPIC_NAME_PROVISIONING"`
 }
 
 // region configuration helper functions

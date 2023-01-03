@@ -47,16 +47,62 @@ spec:
               value: Production
             - name: CG_CONFLUENT_CLOUD_API_URL
               value: https://api.confluent.cloud
-            - name: CG_KAFKA_BROKER
-              value: pkc-e8wrm.eu-central-1.aws.confluent.cloud:9092
             - name: CG_KAFKA_GROUP_ID
               value: build.selfservice.confluentgateway
-            - name: CB_TOPIC_NAME_SELF_SERVICE
+            - name: CG_TOPIC_NAME_SELF_SERVICE
               value: cloudengineering.selfservice.kafkatopic
-            - name: CB_TOPIC_NAME_PROVISIONING
+            - name: CG_TOPIC_NAME_PROVISIONING
               value: cloudengineering.confluentgateway.provisioning
           envFrom:
             - secretRef:
                 name: kafka-credentials
             - secretRef:
                 name: confluent-gateway-cloud-credentials
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confluent-gateway-gendis
+  namespace: selfservice
+  labels:
+    project: selfservice
+    department: devex
+    app: confluent-gateway-gendis
+    component: capability-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: confluent-gateway-gendis
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5225"
+      labels:
+        app: confluent-gateway-gendis
+        project: selfservice
+        department: devex
+    spec:
+      containers:
+        - name: app
+          image: public.ecr.aws/d8r0z9h2/dafda-gendis:0.9.1
+          ports:
+            - name: metrics
+              containerPort: 5225
+          env:
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: capability-service-db
+                  key: connection-string
+          envFrom:
+            - secretRef:
+                name: kafka-credentials
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "50m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
