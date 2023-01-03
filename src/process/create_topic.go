@@ -6,6 +6,7 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
+	"github.com/satori/go.uuid"
 	"strings"
 )
 
@@ -152,7 +153,7 @@ func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx Transactio
 }
 
 func (ctp *createTopicProcess) getOutbox(tx Transaction) *messaging.Outbox {
-	return messaging.NewOutbox(ctp.logger, ctp.registry, tx)
+	return messaging.NewOutbox(ctp.logger, ctp.registry, tx, func() string { return uuid.NewV4().String() })
 }
 
 // region Steps

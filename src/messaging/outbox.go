@@ -9,20 +9,24 @@ import (
 )
 
 type Outbox struct {
-	logger   logging.Logger
-	registry OutgoingMessageRegistry
-	repo     OutboxRepository
+	logger    logging.Logger
+	registry  OutgoingMessageRegistry
+	repo      OutboxRepository
+	generator MessageIdGenerator
 }
+
+type MessageIdGenerator func() string
 
 type OutboxRepository interface {
 	AddToOutbox(*OutboxEntry) error
 }
 
-func NewOutbox(logger logging.Logger, registry OutgoingMessageRegistry, repo OutboxRepository) *Outbox {
+func NewOutbox(logger logging.Logger, registry OutgoingMessageRegistry, repo OutboxRepository, generator MessageIdGenerator) *Outbox {
 	return &Outbox{
-		logger:   logger,
-		registry: registry,
-		repo:     repo,
+		logger:    logger,
+		registry:  registry,
+		repo:      repo,
+		generator: generator,
 	}
 }
 
@@ -34,10 +38,16 @@ func (p *Outbox) Produce(msg OutgoingMessage) error {
 
 	p.logger.Trace("Producing outgoing message {OutgoingMessage} ({EventType}) to {Topic}", fmt.Sprintf("%v", msg), registration.eventType, registration.topic)
 
-	payload, err := json.Marshal(msg)
+	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
+
+	payload, err := json.Marshal(envelope{
+		MessageId: p.generator(),
+		Type:      registration.eventType,
+		Data:      data,
+	})
 
 	entry := &OutboxEntry{
 		Id:          uuid.NewV4(),
