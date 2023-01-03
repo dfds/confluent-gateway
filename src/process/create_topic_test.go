@@ -115,7 +115,7 @@ func Test_createProcessState(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getOrCreateProcessState(tt.repository, tt.repository, tt.input)
+			got, err := getOrCreateProcessState(tt.mock, tt.mock, tt.input)
 			if !tt.wantErr(t, err) {
 				return
 			}

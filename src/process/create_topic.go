@@ -37,7 +37,7 @@ type CreateTopicProcessInput struct {
 func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
 	database := ctp.database.WithContext(ctx)
 
-	state, err := ctp.getOrCreateProcessState(database, input)
+	state, err := ctp.prepareProcessState(database, input)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		})
 }
 
-func (ctp *createTopicProcess) getOrCreateProcessState(database Database, input CreateTopicProcessInput) (*models.ProcessState, error) {
+func (ctp *createTopicProcess) prepareProcessState(database Database, input CreateTopicProcessInput) (*models.ProcessState, error) {
 	var s *models.ProcessState
 
 	err := database.Transaction(func(tx Transaction) error {
