@@ -6,6 +6,7 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
+	"strings"
 )
 
 type createTopicProcess struct {
@@ -96,42 +97,45 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTo
 		return state, nil
 	}
 
-	serviceAccount, err := repo.GetServiceAccount(capabilityRootId)
-	if err != nil {
-		return nil, err
-	}
+	if strings.HasSuffix(topic.Name, "-cg") {
+		// TODO -- stop faking
+		state = models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
+		state.HasApiKey = true
+		state.HasApiKeyInVault = true
+		state.MarkAsCompleted()
 
-	HasServiceAccount := false
-	HasClusterAccess := false
+		if err := repo.CreateProcessState(state); err != nil {
+			return nil, err
+		}
+	} else {
+		serviceAccount, err := repo.GetServiceAccount(capabilityRootId)
+		if err != nil {
+			return nil, err
+		}
 
-	if serviceAccount != nil {
-		HasServiceAccount = true
-		_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
-	}
+		HasServiceAccount := false
+		HasClusterAccess := false
 
-	state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+		if serviceAccount != nil {
+			HasServiceAccount = true
+			_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
+		}
 
-	//// TODO -- stop faking
-	//
-	//state := models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
-	//state.HasApiKey = true
-	//state.HasApiKeyInVault = true
-	//state.MarkAsCompleted()
+		state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
 
-	if err := repo.CreateProcessState(state); err != nil {
-		return nil, err
-	}
+		if err := repo.CreateProcessState(state); err != nil {
+			return nil, err
+		}
 
-	// TODO -- RaiseTopicProvisioningStarted
+		err = outbox.Produce(&TopicProvisioningBegun{
+			CapabilityRootId: string(capabilityRootId),
+			ClusterId:        string(clusterId),
+			TopicName:        topic.Name,
+		})
 
-	err = outbox.Produce(&TopicProvisioningBegun{
-		CapabilityRootId: string(capabilityRootId),
-		ClusterId:        string(clusterId),
-		TopicName:        topic.Name,
-	})
-
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return state, nil
