@@ -82,9 +82,13 @@ func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.R
 
 	elapsed := time.Since(start)
 
-	c.logger.Trace("POST {Url}, StatusCode: {StatusCode}, Took: {Elapsed}", url, response.Status, elapsed.String())
+	c.logger.Trace("POST {Url}, Body: {Body}, StatusCode: {StatusCode}, Took: {Elapsed}", url, payload, response.Status, elapsed.String())
 
-	return response, err
+	if response.StatusCode >= 200 && response.StatusCode <= 299 {
+		return response, nil
+	}
+
+	return nil, fmt.Errorf("confluent client (%s) failed with status code %d", url, response.StatusCode)
 }
 
 func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
