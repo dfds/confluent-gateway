@@ -88,7 +88,7 @@ func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.R
 		return response, nil
 	}
 
-	return nil, fmt.Errorf("confluent client (%s) failed with status code %d", url, response.StatusCode)
+	return response, fmt.Errorf("confluent client (%s) failed with status code %d", url, response.StatusCode)
 }
 
 func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
