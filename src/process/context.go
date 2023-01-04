@@ -1,11 +1,13 @@
 package process
 
 import (
+	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 )
 
 type StepContext struct {
+	logger  logging.Logger
 	state   *models.ProcessState
 	account AccountService
 	vault   VaultService
@@ -13,8 +15,8 @@ type StepContext struct {
 	outbox  Outbox
 }
 
-func NewStepContext(state *models.ProcessState, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *StepContext {
-	return &StepContext{state: state, account: account, vault: vault, topic: topic, outbox: outbox}
+func NewStepContext(logger logging.Logger, state *models.ProcessState, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *StepContext {
+	return &StepContext{logger: logger, state: state, account: account, vault: vault, topic: topic, outbox: outbox}
 }
 
 type AccountService interface {

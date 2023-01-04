@@ -80,7 +80,7 @@ func main() {
 		panic(err)
 	}
 
-	confluentClient := confluent.NewConfluentClient(confluent.CloudApiAccess{
+	confluentClient := confluent.NewConfluentClient(logger, confluent.CloudApiAccess{
 		ApiEndpoint: config.ConfluentCloudApiUrl,
 		Username:    config.ConfluentCloudApiUserName,
 		Password:    config.ConfluentCloudApiPassword,

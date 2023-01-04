@@ -2,7 +2,6 @@ package process
 
 import (
 	"context"
-	"fmt"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
@@ -144,12 +143,13 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTo
 }
 
 func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx Transaction, state *models.ProcessState) *StepContext {
+	logger := ctp.logger
 	newAccountService := NewAccountService(ctx, ctp.confluent, tx)
 	vault := NewVaultService(ctx, ctp.vault)
 	topic := NewTopicService(ctx, ctp.confluent)
 	outbox := ctp.getOutbox(tx)
 
-	return NewStepContext(state, newAccountService, vault, topic, outbox)
+	return NewStepContext(logger, state, newAccountService, vault, topic, outbox)
 }
 
 func (ctp *createTopicProcess) getOutbox(tx Transaction) *messaging.Outbox {
@@ -159,7 +159,7 @@ func (ctp *createTopicProcess) getOutbox(tx Transaction) *messaging.Outbox {
 // region Steps
 
 func ensureServiceAccount(stepContext *StepContext) error {
-	fmt.Println("### EnsureServiceAccount")
+	stepContext.logger.Trace("Running {Step}", "EnsureServiceAccount")
 	return ensureServiceAccountStep(stepContext)
 }
 
@@ -185,7 +185,7 @@ func ensureServiceAccountStep(step EnsureServiceAccountStep) error {
 }
 
 func ensureServiceAccountAcl(stepContext *StepContext) error {
-	fmt.Println("### EnsureServiceAccountAcl")
+	stepContext.logger.Trace("Running {Step}", "EnsureServiceAccountAcl")
 	return ensureServiceAccountAclStep(stepContext)
 }
 
@@ -220,7 +220,7 @@ func ensureServiceAccountAclStep(step EnsureServiceAccountAclStep) error {
 }
 
 func ensureServiceAccountApiKey(stepContext *StepContext) error {
-	fmt.Println("### EnsureServiceAccountApiKey")
+	stepContext.logger.Trace("Running {Step}", "EnsureServiceAccountApiKey")
 	return ensureServiceAccountApiKeyStep(stepContext)
 }
 
@@ -251,7 +251,7 @@ func ensureServiceAccountApiKeyStep(step EnsureServiceAccountApiKeyStep) error {
 }
 
 func ensureServiceAccountApiKeyAreStoredInVault(stepContext *StepContext) error {
-	fmt.Println("### EnsureServiceAccountApiKeyAreStoredInVault")
+	stepContext.logger.Trace("Running {Step}", "EnsureServiceAccountApiKeyAreStoredInVault")
 	return ensureServiceAccountApiKeyAreStoredInVaultStep(stepContext)
 }
 
@@ -282,9 +282,8 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step EnsureServiceAccountApi
 }
 
 func ensureTopicIsCreated(stepContext *StepContext) error {
-	fmt.Println("### EnsureTopicIsCreated")
+	stepContext.logger.Trace("Running {Step}", "EnsureTopicIsCreated")
 	return ensureTopicIsCreatedStep(stepContext)
-
 }
 
 type EnsureTopicIsCreatedStep interface {

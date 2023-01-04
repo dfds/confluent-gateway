@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
+	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -36,6 +37,7 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			}
 
 			stubClient := Client{
+				logger:         logging.NilLogger(),
 				cloudApiAccess: CloudApiAccess{},
 				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 			}
@@ -73,6 +75,7 @@ func TestCreateTopicSendsExpectedPayload(t *testing.T) {
 	}
 
 	stubClient := Client{
+		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
@@ -119,6 +122,7 @@ func TestCreateTopicUsesExpectedApiKey(t *testing.T) {
 	}
 
 	stubClient := Client{
+		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
@@ -144,6 +148,7 @@ func TestCreateServiceAccountCallsExpectedEndpoint(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
@@ -170,6 +175,7 @@ func TestCreateServiceAccountSendsExpectedPayload(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
@@ -204,6 +210,7 @@ func TestCreateServiceAccountUsesExpectedApiKey(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "foo",
@@ -229,6 +236,7 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
@@ -257,6 +265,7 @@ func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
@@ -283,6 +292,7 @@ func TestCreateApiKeySendsExpectedPayload(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
@@ -325,6 +335,7 @@ func TestCreateApiKeyUsesExpectedApiKey(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "foo",
@@ -359,6 +370,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 	defer server.Close()
 
 	stubClient := Client{
+		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
 			ApiEndpoint: server.URL,
 			Username:    "dummy",
@@ -400,6 +412,7 @@ func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			}
 
 			stubClient := Client{
+				logger:         logging.NilLogger(),
 				cloudApiAccess: CloudApiAccess{},
 				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 			}
@@ -438,6 +451,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 	}
 
 	stubClient := Client{
+		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}
@@ -492,6 +506,7 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 	}
 
 	stubClient := Client{
+		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
 		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
 	}

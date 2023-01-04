@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type CloudApiAccess struct {
@@ -16,11 +18,16 @@ type CloudApiAccess struct {
 	Password    string
 }
 
+func (a *CloudApiAccess) ApiKey() models.ApiKey {
+	return models.ApiKey{Username: a.Username, Password: a.Password}
+}
+
 type ClusterRepository interface {
 	GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error)
 }
 
 type Client struct {
+	logger         logging.Logger
 	cloudApiAccess CloudApiAccess
 	repo           ClusterRepository
 }
@@ -43,15 +50,10 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 		"description": "` + description + `"
 	}`
 
-	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(c.cloudApiAccess.Username, c.cloudApiAccess.Password)
-
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.post(url, payload, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()
 
 	if err != nil {
-		//log -> response.Status
 		return nil, err
 	}
 
@@ -63,6 +65,26 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 
 	serviceAccountId := models.ServiceAccountId(serviceAccountResponse.Id)
 	return &serviceAccountId, nil
+}
+
+func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.Response, error) {
+	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(apiKey.Username, apiKey.Password)
+
+	start := time.Now()
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		c.logger.Error(&err, "POST {Url} failed", url)
+		return nil, err
+	}
+
+	elapsed := time.Since(start)
+
+	c.logger.Trace("POST {Url}, StatusCode: {StatusCode}, Took: {Elapsed}", url, response.Status, elapsed.String())
+
+	return response, err
 }
 
 func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {
@@ -82,11 +104,7 @@ func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 		"permission": "` + string(entry.PermissionType) + `"
 	}`
 
-	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(cluster.AdminApiKey.Username, cluster.AdminApiKey.Password)
-
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.post(url, payload, cluster.AdminApiKey)
 	defer response.Body.Close()
 
 	if err != nil {
@@ -115,7 +133,7 @@ func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(c.cloudApiAccess.Username, c.cloudApiAccess.Password)
 
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.post(url, payload, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()
 
 	if err != nil {
@@ -149,11 +167,7 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 		}]
 	}`
 
-	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(cluster.AdminApiKey.Username, cluster.AdminApiKey.Password)
-
-	response, err := http.DefaultClient.Do(request)
+	response, err := c.post(url, payload, cluster.AdminApiKey)
 	defer response.Body.Close()
 
 	if err != nil {
@@ -163,6 +177,6 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	return err
 }
 
-func NewConfluentClient(cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
-	return &Client{cloudApiAccess: cloudApiAccess, repo: repo}
+func NewConfluentClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
+	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, repo: repo}
 }
