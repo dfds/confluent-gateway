@@ -88,7 +88,7 @@ func TestCreateTopicSendsExpectedPayload(t *testing.T) {
 		t,
 		`{
 			"topic_name": "foo-topic-name",
-			"partition_count": 1,
+			"partitions_count": 1,
 			"replication_factor": 3,
 			"configs": [{
 				"name": "retention.ms",

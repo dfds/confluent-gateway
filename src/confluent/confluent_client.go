@@ -163,7 +163,7 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 
 	payload := `{
 		"topic_name": "` + name + `",
-		"partition_count": ` + strconv.Itoa(partitions) + `,
+		"partitions_count": ` + strconv.Itoa(partitions) + `,
 		"replication_factor": 3,
 		"configs": [{
 			"name": "retention.ms",
