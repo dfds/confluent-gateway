@@ -22,7 +22,7 @@ func NewAccountService(ctx context.Context, confluent Confluent, repository serv
 }
 
 func (h *accountService) CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error {
-	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, "sa-some-name", "sa description")
+	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, string(capabilityRootId), "Created by Confluent Gateway")
 	if err != nil {
 		return err
 	}
