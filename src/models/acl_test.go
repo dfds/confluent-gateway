@@ -8,7 +8,7 @@ import (
 func TestAclDefinition_String(t *testing.T) {
 	acl := defineAcl(PatternTypePrefix, "pub.", PatternTypePrefix, OperationTypeRead, PermissionTypeAllow)
 
-	assert.Equal(t, "PREFIX | pub. | PREFIX | READ | ALLOW", acl.String())
+	assert.Equal(t, "PREFIXED | pub. | PREFIXED | READ | ALLOW", acl.String())
 }
 
 func TestCreateAclDefinitions(t *testing.T) {
@@ -17,26 +17,26 @@ func TestCreateAclDefinitions(t *testing.T) {
 	result := mapToString(all)
 
 	assert.Equal(t, []string{
-		"TOPIC | '*' | PREFIX | CREATE | DENY",
+		"TOPIC | '*' | PREFIXED | CREATE | DENY",
 
-		"TOPIC | some-capability | PREFIX | READ | ALLOW",
-		"TOPIC | some-capability | PREFIX | WRITE | ALLOW",
-		"TOPIC | some-capability | PREFIX | CREATE | ALLOW",
-		"TOPIC | some-capability | PREFIX | DESCRIBE | ALLOW",
-		"TOPIC | some-capability | PREFIX | DESCRIBECONFIGS | ALLOW",
+		"TOPIC | some-capability | PREFIXED | READ | ALLOW",
+		"TOPIC | some-capability | PREFIXED | WRITE | ALLOW",
+		"TOPIC | some-capability | PREFIXED | CREATE | ALLOW",
+		"TOPIC | some-capability | PREFIXED | DESCRIBE | ALLOW",
+		"TOPIC | some-capability | PREFIXED | DESCRIBECONFIGS | ALLOW",
 
-		"TOPIC | pub. | PREFIX | READ | ALLOW",
+		"TOPIC | pub. | PREFIXED | READ | ALLOW",
 
-		"TOPIC | pub.some-capability | PREFIX | WRITE | ALLOW",
-		"TOPIC | pub.some-capability | PREFIX | CREATE | ALLOW",
+		"TOPIC | pub.some-capability | PREFIXED | WRITE | ALLOW",
+		"TOPIC | pub.some-capability | PREFIXED | CREATE | ALLOW",
 
-		"GROUP | connect-some-capability | PREFIX | READ | ALLOW",
-		"GROUP | connect-some-capability | PREFIX | WRITE | ALLOW",
-		"GROUP | connect-some-capability | PREFIX | CREATE | ALLOW",
+		"GROUP | connect-some-capability | PREFIXED | READ | ALLOW",
+		"GROUP | connect-some-capability | PREFIXED | WRITE | ALLOW",
+		"GROUP | connect-some-capability | PREFIXED | CREATE | ALLOW",
 
-		"GROUP | some-capability | PREFIX | READ | ALLOW",
-		"GROUP | some-capability | PREFIX | WRITE | ALLOW",
-		"GROUP | some-capability | PREFIX | CREATE | ALLOW",
+		"GROUP | some-capability | PREFIXED | READ | ALLOW",
+		"GROUP | some-capability | PREFIXED | WRITE | ALLOW",
+		"GROUP | some-capability | PREFIXED | CREATE | ALLOW",
 
 		"CLUSTER | kafka-cluster | LITERAL | ALTER | DENY",
 		"CLUSTER | kafka-cluster | LITERAL | ALTERCONFIGS | DENY",

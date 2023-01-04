@@ -40,7 +40,7 @@ type PatternType string
 
 const (
 	PatternTypeLiteral PatternType = "LITERAL"
-	PatternTypePrefix              = "PREFIX"
+	PatternTypePrefix              = "PREFIXED"
 )
 
 type ResourceType string
