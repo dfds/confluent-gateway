@@ -76,7 +76,7 @@ func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.R
 
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
-		c.logger.Error(&err, "POST {Url} failed", url)
+		c.logger.Error(err, "POST {Url} failed", url)
 		return nil, err
 	}
 

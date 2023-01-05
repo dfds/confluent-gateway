@@ -52,11 +52,11 @@ func (l *databaseLogger) Trace(_ context.Context, begin time.Time, fc func() (sq
 
 		if rows == -1 {
 			s := fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, "-", sql)
-			l.logger.Error(&err, s)
+			l.logger.Error(err, s)
 
 		} else {
 			s := fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
-			l.logger.Error(&err, s)
+			l.logger.Error(err, s)
 		}
 	case l.level == logger.Info:
 		sql, rows := fc()

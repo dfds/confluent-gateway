@@ -50,7 +50,7 @@ type nilLogger struct {
 
 // region nilLogger
 
-func (n *nilLogger) Error(error *error, message string, args ...string) {
+func (n *nilLogger) Error(error error, message string, args ...string) {
 }
 
 func (n *nilLogger) Warning(message string, args ...string) {
@@ -67,11 +67,11 @@ func (n *nilLogger) Trace(message string, args ...string) {
 
 // endregion
 
-func (l *logger) Error(error *error, message string, args ...string) {
+func (l *logger) Error(error error, message string, args ...string) {
 	logger := l.innerLog.Error().CallerSkipFrame(1)
 
 	if error != nil {
-		logger = logger.Err(*error)
+		logger = logger.Err(error)
 	}
 
 	msg := convertToMessage(message, args...)
@@ -127,7 +127,7 @@ func (l *logger) Trace(message string, args ...string) {
 }
 
 type Logger interface {
-	Error(error *error, message string, args ...string)
+	Error(error error, message string, args ...string)
 	Warning(message string, args ...string)
 	Information(message string, args ...string)
 	Debug(message string, args ...string)

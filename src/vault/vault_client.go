@@ -44,7 +44,7 @@ func (v *Vault) StoreApiKey(ctx context.Context, capabilityRootId models.Capabil
 	})
 
 	if err != nil {
-		v.logger.Error(&err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityRootId} i cluster {ClusterId}", apiKey.Username, string(capabilityRootId), string(clusterId))
+		v.logger.Error(err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityRootId} i cluster {ClusterId}", apiKey.Username, string(capabilityRootId), string(clusterId))
 		return err
 	}
 

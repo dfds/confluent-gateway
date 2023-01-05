@@ -132,7 +132,7 @@ func main() {
 	logger.Information("Running")
 
 	if err := m.Run(ctx); err != nil {
-		logger.Error(&err, "Exit reason {Reason}", err.Error())
+		logger.Error(err, "Exit reason {Reason}", err.Error())
 		os.Exit(1)
 	}
 
@@ -209,13 +209,13 @@ func (m *Main) Close() {
 	if m.Consumer != nil {
 		err := m.Consumer.Stop()
 		if err != nil {
-			m.Logger.Error(&err, err.Error())
+			m.Logger.Error(err, err.Error())
 		}
 	}
 	if m.MetricsServer != nil {
 		err := m.MetricsServer.Close()
 		if err != nil {
-			m.Logger.Error(&err, err.Error())
+			m.Logger.Error(err, err.Error())
 		}
 	}
 }

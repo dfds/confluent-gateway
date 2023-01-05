@@ -36,7 +36,7 @@ func (c *consumer) Start(ctx context.Context) error {
 				return nil
 			}
 
-			c.logger.Error(&err, "[START] Fatal error when consumer {GroupId} is fetching next message", c.groupId)
+			c.logger.Error(err, "[START] Fatal error when consumer {GroupId} is fetching next message", c.groupId)
 			return err
 		}
 
@@ -46,13 +46,13 @@ func (c *consumer) Start(ctx context.Context) error {
 		c.logger.Information("[START] Message received: {Message}", json)
 
 		if err := c.dispatcher.Dispatch(ctx, RawMessage{Data: m.Value}); err != nil {
-			c.logger.Error(&err, "[START] Consumer {GroupId} could not dispatch {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
+			c.logger.Error(err, "[START] Consumer {GroupId} could not dispatch {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
 			return err
 		}
 		// *************************************************************************
 
 		if err := c.kafkaReader.CommitMessages(ctx, m); err != nil {
-			c.logger.Error(&err, "[START] Consumer {GroupId} could not commit offset {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
+			c.logger.Error(err, "[START] Consumer {GroupId} could not commit offset {Offset} on topic {Topic}", c.groupId, fmt.Sprint(m.Offset), m.Topic)
 			return err
 		}
 
@@ -73,7 +73,7 @@ func (c *consumer) Stop() error {
 	c.logger.Trace("[STOP] Closing internal kafka reader for consumer {GroupId}", c.groupId)
 
 	if err := c.kafkaReader.Close(); err != nil {
-		c.logger.Error(&err, "[STOP] Error while closing kafka reader for consumer {GroupId}", c.groupId)
+		c.logger.Error(err, "[STOP] Error while closing kafka reader for consumer {GroupId}", c.groupId)
 		return err
 	}
 
