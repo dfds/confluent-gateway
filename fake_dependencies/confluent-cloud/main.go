@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const serviceAccountId = "sa-150405"
+
 func main() {
 	r := gin.Default()
 
@@ -15,7 +17,8 @@ func main() {
 
 	r.POST("/iam/v2/service-accounts", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"id": fmt.Sprintf("sa-%s", time.Now().Format("150405")),
+			//"id": fmt.Sprintf("sa-%s", time.Now().Format("150405")),
+			"id": serviceAccountId,
 		})
 	})
 
@@ -43,6 +46,31 @@ func main() {
 			   "Version": 1
 			}
 		`))
+	})
+
+	r.GET("/api/service_accounts", func(c *gin.Context) {
+		c.Data(200, "application/json", []byte(`{
+"users": [
+	{
+	  "id": 7482,
+	  "email": "0-devex-deploy@serviceaccounts.confluent.cloud",
+	  "first_name": "",
+	  "last_name": "",
+	  "deactivated": false,
+	  "verified": "1970-01-01T00:00:00Z",
+	  "created": "2019-06-27T08:47:35.460259Z",
+	  "modified": "2019-06-27T08:47:35.460259Z",
+	  "service_name": "devex-deploy",
+	  "service_description": "Development excellence deploy account for management",
+	  "service_account": true,
+	  "preferences": {},
+	  "internal": false,
+	  "resource_id": "`+serviceAccountId+`",
+	  "deactivated_at": null,
+	  "social_connection": "",
+	  "auth_type": "AUTH_TYPE_UNKNOWN"
+	}]
+}`))
 	})
 
 	// [THFIS] trailing slash (!!) because of AWS SDK
