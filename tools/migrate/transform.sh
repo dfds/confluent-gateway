@@ -26,11 +26,13 @@ function get_process_sql() {
 function get_service_account_sql() {
 
     xsv join --no-case 'name' service_accounts.csv 'capability_name' topics.csv | \
-        xsv select 'serviceaccount_id,capability_root_id,created' | \
+        xsv join --no-case 'serviceaccount_id' /dev/stdin 'serviceaccount_id' users.csv | \
+        xsv select 'serviceaccount_id,user_id,capability_root_id,created' | \
         xsv sort --select 'serviceaccount_id,created' | \
         awk -F',' '!seen[$1]++' | \
-        awk -F',' '{ printf "('\''%s'\'', '\''%s'\'', '\''%s'\'');\n", $1, $2, $3 }' | \
-        sed 's/^/insert into service_account (id, capability_root_id, created_at) values /'
+        awk -F',' '{ printf "('\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'');\n", $1, $2, $3, $4 }' | \
+        sed 's/^/insert into service_account (id, user_account_id, capability_root_id, created_at) values /' | \
+        tail -n +2
 
 }
 
@@ -39,22 +41,22 @@ function get_service_account_sql() {
 function get_cluster_access_csv() {
 
     xsv join --no-case 'name' service_accounts.csv 'capability_name' topics.csv | \
-        xsv select 'serviceaccount_id,cluster_id,created' | \
+        xsv join --no-case 'serviceaccount_id' /dev/stdin 'serviceaccount_id' users.csv | \
+        xsv select 'serviceaccount_id,user_id,cluster_id,created' | \
         xsv join --no-case 'serviceaccount_id,cluster_id' /dev/stdin 'owner_id,resource_id' api_keys.csv | \
         xsv join --no-case 'key' /dev/stdin 'key' ssm.csv | \
-        xsv select 'serviceaccount_id,cluster_id,key[0],secret,created' | \
+        xsv select 'serviceaccount_id,user_id,cluster_id,key[0],secret,created' | \
         xsv sort --select 'serviceaccount_id,cluster_id' | \
         awk -F',' '!seen[$1$2$3]++' | \
-        awk -v OFS=, '("uuidgen" | getline uuid) > 0 { if (NR!=1) { print uuid,$0 } else { print "cluster_access_id",$0 } } {close("uuidgen")}' \
-        > cluster_access.csv
-
+        awk -v OFS=, '("uuidgen" | getline uuid) > 0 { if (NR!=1) { print uuid,$0 } else { print "cluster_access_id",$0 } } {close("uuidgen")}'
+        
 }
 
 function get_cluster_access_sql() {
 
     cat cluster_access.csv | \
-        awk -F',' '{ printf "('\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'');\n", $1, $2, $3, $4, $5, $6 }' | \
-        sed 's/^/insert into cluster_access (id, service_account_id, cluster_id, api_key_username, api_key_password, created_at) values /' | \
+        awk -F',' '{ printf "('\''%s'\'','\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'');\n", $1, $2, $3, $4, $5, $6, $7 }' | \
+        sed 's/^/insert into cluster_access (id, service_account_id, user_account_id, cluster_id, api_key_username, api_key_password, created_at) values /' | \
         tail -n +2
 
 }
@@ -76,7 +78,7 @@ function get_acl_sql() {
 
 get_process_sql > process.sql
 get_service_account_sql > service_account.sql
-get_cluster_access_csv
+get_cluster_access_csv > cluster_access.csv
 get_cluster_access_sql > cluster_access.sql
 get_acl_sql > acl.sql
 
