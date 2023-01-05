@@ -33,6 +33,10 @@ type Client struct {
 	repo           ClusterRepository
 }
 
+func NewConfluentClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
+	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, repo: repo}
+}
+
 type createServiceAccountResponse struct {
 	Id string `json:"id"`
 }
@@ -192,8 +196,4 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	}
 
 	return err
-}
-
-func NewConfluentClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
-	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, repo: repo}
 }
