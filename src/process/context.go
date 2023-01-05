@@ -23,7 +23,7 @@ type AccountService interface {
 	CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error
 	GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
-	CreateAclEntry(clusterId models.ClusterId, userAccountId int, entry *models.AclEntry) error
+	CreateAclEntry(clusterId models.ClusterId, userAccountId models.UserAccountId, entry *models.AclEntry) error
 	CreateApiKey(clusterAccess *models.ClusterAccess) error
 }
 

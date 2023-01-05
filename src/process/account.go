@@ -43,7 +43,7 @@ func (h *accountService) CreateServiceAccount(capabilityRootId models.Capability
 		return fmt.Errorf("unable to find matching user account for %q", serviceAccountId)
 	}
 
-	userAccountId := user.Id
+	userAccountId := models.UserAccountId(fmt.Sprintf("User:%d", user.Id))
 
 	newServiceAccount := &models.ServiceAccount{
 		Id:               serviceAccountId,
@@ -95,7 +95,7 @@ func (h *accountService) GetClusterAccess(capabilityRootId models.CapabilityRoot
 	return clusterAccess, nil
 }
 
-func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountId int, entry *models.AclEntry) error {
+func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountId models.UserAccountId, entry *models.AclEntry) error {
 	if err := h.confluent.CreateACLEntry(h.context, clusterId, userAccountId, entry.AclDefinition); err != nil {
 		return err
 	}

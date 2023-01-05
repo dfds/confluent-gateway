@@ -26,8 +26,8 @@ func (m *MockClient) CreateServiceAccount(_ context.Context, name string, descri
 	return m.ReturnServiceAccountId, m.OnCreateServiceAccountError
 }
 
-func (m *MockClient) CreateACLEntry(_ context.Context, clusterId models.ClusterId, userAccountId int, entry models.AclDefinition) error {
-	fmt.Printf("Creating ACL entry for %s on %d [%s]\n", clusterId, userAccountId, entry)
+func (m *MockClient) CreateACLEntry(_ context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error {
+	fmt.Printf("Creating ACL entry for %s on %s [%s]\n", clusterId, userAccountId, entry)
 	return m.OnCreateAclEntryError
 }
 

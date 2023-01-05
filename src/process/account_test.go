@@ -24,7 +24,7 @@ func TestAccountHelper_CreateServiceAccount_Ok(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, someServiceAccountId, spy.GotServiceAccount.Id)
-	assert.Equal(t, someUserAccountId, spy.GotServiceAccount.UserAccountId)
+	assert.Equal(t, models.MakeUserAccountId(someUserAccountId), spy.GotServiceAccount.UserAccountId)
 	assert.Equal(t, someCapabilityRootId, spy.GotServiceAccount.CapabilityRootId)
 	assert.Equal(t, someServiceAccountId, spy.GotServiceAccount.ClusterAccesses[0].ServiceAccountId)
 	assert.Equal(t, someClusterId, spy.GotServiceAccount.ClusterAccesses[0].ClusterId)
@@ -103,7 +103,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_GetExistingClusterAccessError(t 
 
 func TestAccountHelper_GetOrCreateClusterAccess_CreateNewClusterAccess(t *testing.T) {
 	spy := &mocks.AccountRepository{
-		ReturnServiceAccount: &models.ServiceAccount{Id: someServiceAccountId, UserAccountId: someUserAccountId},
+		ReturnServiceAccount: &models.ServiceAccount{Id: someServiceAccountId, UserAccountId: models.MakeUserAccountId(someUserAccountId)},
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, spy)
 
@@ -112,7 +112,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_CreateNewClusterAccess(t *testin
 	assert.NoError(t, err)
 	assert.Equal(t, spy.GotClusterAccess.ClusterId, someClusterId)
 	assert.Equal(t, spy.GotClusterAccess.ServiceAccountId, someServiceAccountId)
-	assert.Equal(t, spy.GotClusterAccess.UserAccountId, someUserAccountId)
+	assert.Equal(t, spy.GotClusterAccess.UserAccountId, models.MakeUserAccountId(someUserAccountId))
 	assert.Equal(t, spy.GotClusterAccess.ApiKey, models.ApiKey{})
 }
 
@@ -189,7 +189,7 @@ func TestAccountHelper_CreateAclEntry_Ok(t *testing.T) {
 	entry := &models.AclEntry{}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, &mocks.AccountRepository{})
 
-	err := sut.CreateAclEntry(someClusterId, someUserAccountId, entry)
+	err := sut.CreateAclEntry(someClusterId, models.MakeUserAccountId(someUserAccountId), entry)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, entry.CreatedAt)
@@ -200,7 +200,7 @@ func TestAccountHelper_CreateAclEntry_ConfluentError(t *testing.T) {
 	stub := &mocks.MockClient{OnCreateAclEntryError: errors.New(errorText)}
 	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
 
-	err := sut.CreateAclEntry(someClusterId, someUserAccountId, &models.AclEntry{})
+	err := sut.CreateAclEntry(someClusterId, models.MakeUserAccountId(someUserAccountId), &models.AclEntry{})
 
 	assert.EqualError(t, err, errorText)
 }
@@ -210,7 +210,7 @@ func TestAccountHelper_CreateAclEntry_DatabaseError(t *testing.T) {
 	stub := &mocks.AccountRepository{OnUpdateAclEntryError: errors.New(errorText)}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	err := sut.CreateAclEntry(someClusterId, someUserAccountId, &models.AclEntry{})
+	err := sut.CreateAclEntry(someClusterId, models.MakeUserAccountId(someUserAccountId), &models.AclEntry{})
 
 	assert.EqualError(t, err, errorText)
 }

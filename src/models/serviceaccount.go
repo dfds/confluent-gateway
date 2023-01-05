@@ -1,17 +1,24 @@
 package models
 
 import (
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"time"
 )
 
 type ServiceAccountId string
 
+type UserAccountId string
+
+func MakeUserAccountId(id int) UserAccountId {
+	return UserAccountId(fmt.Sprintf("User:%d", id))
+}
+
 type CapabilityRootId string
 
 type ServiceAccount struct {
 	Id               ServiceAccountId `gorm:"primarykey"`
-	UserAccountId    int
+	UserAccountId    UserAccountId
 	CapabilityRootId CapabilityRootId
 	ClusterAccesses  []ClusterAccess
 	CreatedAt        time.Time
@@ -34,7 +41,7 @@ type ClusterAccess struct {
 	Id               uuid.UUID `gorm:"primarykey"`
 	ClusterId        ClusterId
 	ServiceAccountId ServiceAccountId
-	UserAccountId    int
+	UserAccountId    UserAccountId
 	ApiKey           ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
 	Acl              []AclEntry
 	CreatedAt        time.Time
@@ -56,7 +63,7 @@ func (ca *ClusterAccess) GetAclPendingCreation() []AclEntry {
 	return pending
 }
 
-func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId int, clusterId ClusterId, capabilityRootId CapabilityRootId) *ClusterAccess {
+func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId UserAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) *ClusterAccess {
 	clusterAccessId := uuid.NewV4()
 
 	return &ClusterAccess{

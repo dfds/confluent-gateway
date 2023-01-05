@@ -120,7 +120,7 @@ func (c *Client) getResponseReader(request *http.Request, payload string) (*http
 	return response, fmt.Errorf("confluent client (%s) failed with status code %d: %s", url, response.StatusCode, content)
 }
 
-func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId int, entry models.AclDefinition) error {
+func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error {
 	cluster, err := c.repo.GetClusterById(ctx, clusterId)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 		"resource_type": "` + string(entry.ResourceType) + `",
 		"resource_name": "` + string(entry.ResourceName) + `",
 		"pattern_type": "` + string(entry.PatternType) + `",
-		"principal": "User:` + strconv.Itoa(userAccountId) + `",
+		"principal": "` + string(userAccountId) + `",
 		"host": "*",
 		"operation": "` + string(entry.OperationType) + `",
 		"permission": "` + string(entry.PermissionType) + `"

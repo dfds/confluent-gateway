@@ -417,7 +417,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 
 // ---------------------------------------------------------------------------------------------------------
 
-const someUserAccountId = 1234
+const someUserAccountId = models.UserAccountId("User:1234")
 
 func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 	tests := []string{"foo", "bar", "baz", "qux"}
@@ -505,7 +505,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 			"resource_type": "foo",
 			"resource_name": "bar",
 			"pattern_type": "baz",
-			"principal": "User:`+strconv.Itoa(someUserAccountId)+`",
+			"principal": "`+string(someUserAccountId)+`",
 			"host": "*",
 			"operation": "qux",
 			"permission": "quux"
