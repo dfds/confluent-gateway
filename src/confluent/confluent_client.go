@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -75,6 +76,13 @@ func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.R
 	start := time.Now()
 
 	response, err := http.DefaultClient.Do(request)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			c.logger.Error(err, "Closing response body failed")
+		}
+	}(response.Body)
+
 	if err != nil {
 		c.logger.Error(err, "POST {Url} failed", url)
 		return nil, err
@@ -84,11 +92,16 @@ func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.R
 
 	c.logger.Trace("POST {Url}, Body: {Body}, StatusCode: {StatusCode}, Took: {Elapsed}", url, payload, response.Status, elapsed.String())
 
+	var buf bytes.Buffer
+	tee := io.TeeReader(response.Body, &buf)
+	content, _ := io.ReadAll(tee)
+	response.Body = io.NopCloser(&buf)
+
 	if response.StatusCode >= 200 && response.StatusCode <= 299 {
 		return response, nil
 	}
 
-	return response, fmt.Errorf("confluent client (%s) failed with status code %d", url, response.StatusCode)
+	return response, fmt.Errorf("confluent client (%s) failed with status code %d: %s", url, response.StatusCode, content)
 }
 
 func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {

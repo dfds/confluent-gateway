@@ -252,6 +252,34 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 	assert.Equal(t, expected, *serviceAccountId)
 }
 
+func TestCreateServiceAccountResponseError(t *testing.T) {
+	expectedStatusCode := http.StatusBadRequest
+	responseContent := "bad request"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(expectedStatusCode)
+		w.Write([]byte(responseContent))
+	}))
+
+	defer server.Close()
+
+	stubClient := Client{
+		logger: logging.NilLogger(),
+		cloudApiAccess: CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "foo",
+			Password:    "bar",
+		},
+		repo: &ClusterRepositoryStub{},
+	}
+
+	// act
+	_, err := stubClient.CreateServiceAccount(context.TODO(), "dummy", "dummy")
+
+	assert.Error(t, err)
+	assert.Equal(t, fmt.Sprintf("confluent client (%s/iam/v2/service-accounts) failed with status code %d: %s", server.URL, expectedStatusCode, responseContent), err.Error())
+}
+
 // ---------------------------------------------------------------------------------------------------------
 
 func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
