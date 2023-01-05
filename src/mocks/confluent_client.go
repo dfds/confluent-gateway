@@ -17,11 +17,12 @@ type MockClient struct {
 	OnCreateAclEntryError       error
 	OnCreateApiKeyError         error
 	OnCreateTopicError          error
+	OnGetUsersError             error
 }
 
-func (m *MockClient) CreateServiceAccount(_ context.Context, name string, description string) (*models.ServiceAccountId, error) {
+func (m *MockClient) CreateServiceAccount(_ context.Context, name string, description string) (models.ServiceAccountId, error) {
 	fmt.Printf("Creating Service Account %s (%s)\n", name, description)
-	return &m.ReturnServiceAccountId, m.OnCreateServiceAccountError
+	return m.ReturnServiceAccountId, m.OnCreateServiceAccountError
 }
 
 func (m *MockClient) CreateACLEntry(_ context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry models.AclDefinition) error {

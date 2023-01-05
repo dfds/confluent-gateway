@@ -28,9 +28,9 @@ func (h *accountService) CreateServiceAccount(capabilityRootId models.Capability
 	}
 
 	newServiceAccount := &models.ServiceAccount{
-		Id:               *serviceAccountId,
+		Id:               serviceAccountId,
 		CapabilityRootId: capabilityRootId,
-		ClusterAccesses:  []models.ClusterAccess{*models.NewClusterAccess(*serviceAccountId, clusterId, capabilityRootId)},
+		ClusterAccesses:  []models.ClusterAccess{*models.NewClusterAccess(serviceAccountId, clusterId, capabilityRootId)},
 		CreatedAt:        time.Now(),
 	}
 

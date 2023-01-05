@@ -56,7 +56,7 @@ type usersResponse struct {
 	} `json:"page_info"`
 }
 
-func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (*models.ServiceAccountId, error) {
+func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
 	payload := `{
 		"display_name": "` + name + `",
@@ -67,17 +67,16 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	defer response.Body.Close()
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	serviceAccountResponse := &createServiceAccountResponse{}
 	derr := json.NewDecoder(response.Body).Decode(serviceAccountResponse)
 	if derr != nil {
-		return nil, derr
+		return "", derr
 	}
 
-	serviceAccountId := models.ServiceAccountId(serviceAccountResponse.Id)
-	return &serviceAccountId, nil
+	return models.ServiceAccountId(serviceAccountResponse.Id), nil
 }
 
 func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.Response, error) {
