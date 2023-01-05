@@ -23,7 +23,7 @@ type AccountService interface {
 	CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error
 	GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
-	CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error
+	CreateAclEntry(clusterId models.ClusterId, userAccountId int, entry *models.AclEntry) error
 	CreateApiKey(clusterAccess *models.ClusterAccess) error
 }
 
@@ -60,7 +60,7 @@ func (p *StepContext) GetOrCreateClusterAccess() (*models.ClusterAccess, error) 
 }
 
 func (p *StepContext) CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
-	return p.account.CreateAclEntry(p.state.ClusterId, clusterAccess.ServiceAccountId, &nextEntry)
+	return p.account.CreateAclEntry(p.state.ClusterId, clusterAccess.UserAccountId, &nextEntry)
 }
 
 func (p *StepContext) MarkClusterAccessAsReady() {

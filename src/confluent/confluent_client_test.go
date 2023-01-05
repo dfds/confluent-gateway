@@ -417,6 +417,8 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 
 // ---------------------------------------------------------------------------------------------------------
 
+const someUserAccountId = 1234
+
 func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 	tests := []string{"foo", "bar", "baz", "qux"}
 
@@ -449,7 +451,7 @@ func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			stubAclDefinition := models.AclDefinition{}
 
 			// act
-			stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, "dummy", stubAclDefinition)
+			stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, someUserAccountId, stubAclDefinition)
 
 			// assert
 			expectedRelativeUrl := fmt.Sprintf("/kafka/v3/clusters/%s/acls", stubClusterId)
@@ -494,7 +496,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 	}
 
 	// act
-	stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, "sa-1234", stubAclDefinition)
+	stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, someUserAccountId, stubAclDefinition)
 
 	// assert
 	assert.JSONEq(
@@ -503,7 +505,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 			"resource_type": "foo",
 			"resource_name": "bar",
 			"pattern_type": "baz",
-			"principal": "User:sa-1234",
+			"principal": "User:`+strconv.Itoa(someUserAccountId)+`",
 			"host": "*",
 			"operation": "qux",
 			"permission": "quux"
@@ -541,7 +543,7 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 	}
 
 	// act
-	stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, "dummy", models.AclDefinition{})
+	stubClient.CreateACLEntry(context.TODO(), stubCluster.ClusterId, someUserAccountId, models.AclDefinition{})
 
 	// assert
 	assert.Equal(t, expected, usedApiKey)

@@ -95,8 +95,8 @@ func (h *accountService) GetClusterAccess(capabilityRootId models.CapabilityRoot
 	return clusterAccess, nil
 }
 
-func (h *accountService) CreateAclEntry(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId, entry *models.AclEntry) error {
-	if err := h.confluent.CreateACLEntry(h.context, clusterId, serviceAccountId, entry.AclDefinition); err != nil {
+func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountId int, entry *models.AclEntry) error {
+	if err := h.confluent.CreateACLEntry(h.context, clusterId, userAccountId, entry.AclDefinition); err != nil {
 		return err
 	}
 
