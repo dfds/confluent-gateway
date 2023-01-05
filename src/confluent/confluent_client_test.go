@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
@@ -545,6 +546,63 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 	// assert
 	assert.Equal(t, expected, usedApiKey)
 }
+
+// ---------------------------------------------------------------------------------------------------------
+
+func TestGetUsers(t *testing.T) {
+	expectedId := 7482
+	expectedServiceName := "devex-deploy"
+	expectedServiceDescription := "Development excellence deploy account for management"
+	expectedServiceAccountId := "sa-l5w5qg"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+  "users": [
+    {
+      "id": ` + strconv.Itoa(expectedId) + `,
+      "deactivated": false,
+      "service_name": "` + expectedServiceName + `",
+      "service_description": "` + expectedServiceDescription + `",
+      "service_account": true,
+      "internal": false,
+      "resource_id": "` + expectedServiceAccountId + `"
+    }
+  ]
+}`))
+	}))
+
+	defer server.Close()
+
+	stubClient := Client{
+		logger: logging.NilLogger(),
+		cloudApiAccess: CloudApiAccess{
+			ApiEndpoint: server.URL,
+			Username:    "dummy",
+			Password:    "dummy",
+		},
+		repo: &ClusterRepositoryStub{},
+	}
+
+	// act
+	users, err := stubClient.GetUsers(context.TODO())
+
+	// assert
+	assert.NoError(t, err)
+	assert.Equal(t, []models.User{
+		{
+			Id:                 expectedId,
+			Deactivated:        false,
+			ServiceName:        expectedServiceName,
+			ServiceDescription: expectedServiceDescription,
+			ServiceAccount:     true,
+			Internal:           false,
+			ResourceID:         expectedServiceAccountId,
+		},
+	}, users)
+}
+
+// ---------------------------------------------------------------------------------------------------------
 
 type ClusterRepositoryStub struct {
 	Cluster models.Cluster

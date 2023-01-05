@@ -48,6 +48,14 @@ type createApiKeyResponse struct {
 	} `json:"spec"`
 }
 
+type usersResponse struct {
+	Users    []models.User `json:"users"`
+	PageInfo struct {
+		PageSize  int    `json:"page_size"`
+		PageToken string `json:"page_token"`
+	} `json:"page_info"`
+}
+
 func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (*models.ServiceAccountId, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
 	payload := `{
@@ -73,12 +81,16 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 }
 
 func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.Response, error) {
-	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
+	request, _ := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(payload)))
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(apiKey.Username, apiKey.Password)
 
-	start := time.Now()
+	return c.getResponseReader(request, payload)
+}
 
+func (c *Client) getResponseReader(request *http.Request, payload string) (*http.Response, error) {
+	url := request.URL.String()
+	start := time.Now()
 	response, err := http.DefaultClient.Do(request)
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -88,13 +100,14 @@ func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.R
 	}(response.Body)
 
 	if err != nil {
-		c.logger.Error(err, "POST {Url} failed", url)
+		c.logger.Error(err, "{Method} {Url} failed", request.Method, url)
 		return nil, err
 	}
 
 	elapsed := time.Since(start)
 
-	c.logger.Trace("POST {Url}, Body: {Body}, StatusCode: {StatusCode}, Took: {Elapsed}", url, payload, response.Status, elapsed.String())
+	c.logger.Trace("{Method} {Url}, Body: {Body}, StatusCode: {StatusCode}, Took: {Elapsed}",
+		request.Method, url, payload, response.Status, elapsed.String())
 
 	var buf bytes.Buffer
 	tee := io.TeeReader(response.Body, &buf)
@@ -196,4 +209,30 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	}
 
 	return err
+}
+
+func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
+	url := c.cloudApiAccess.ApiEndpoint + "/api/service_accounts"
+
+	response, err := c.get(url, c.cloudApiAccess.ApiKey())
+	defer response.Body.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var users usersResponse
+	if err := json.NewDecoder(response.Body).Decode(&users); err != nil {
+		return nil, err
+	}
+
+	return users.Users, nil
+}
+
+func (c *Client) get(url string, apiKey models.ApiKey) (*http.Response, error) {
+	request, _ := http.NewRequest(http.MethodGet, url, nil)
+	request.Header.Set("Accept", "application/json")
+	request.SetBasicAuth(apiKey.Username, apiKey.Password)
+
+	return c.getResponseReader(request, "")
 }
