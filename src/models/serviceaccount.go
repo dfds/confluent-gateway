@@ -11,6 +11,7 @@ type CapabilityRootId string
 
 type ServiceAccount struct {
 	Id               ServiceAccountId `gorm:"primarykey"`
+	UserAccountId    int
 	CapabilityRootId CapabilityRootId
 	ClusterAccesses  []ClusterAccess
 	CreatedAt        time.Time
@@ -33,6 +34,7 @@ type ClusterAccess struct {
 	Id               uuid.UUID `gorm:"primarykey"`
 	ClusterId        ClusterId
 	ServiceAccountId ServiceAccountId
+	UserAccountId    int
 	ApiKey           ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
 	Acl              []AclEntry
 	CreatedAt        time.Time
@@ -54,12 +56,13 @@ func (ca *ClusterAccess) GetAclPendingCreation() []AclEntry {
 	return pending
 }
 
-func NewClusterAccess(serviceAccountId ServiceAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) *ClusterAccess {
+func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId int, clusterId ClusterId, capabilityRootId CapabilityRootId) *ClusterAccess {
 	clusterAccessId := uuid.NewV4()
 
 	return &ClusterAccess{
 		Id:               clusterAccessId,
 		ServiceAccountId: serviceAccountId,
+		UserAccountId:    userAccountId,
 		ClusterId:        clusterId,
 		ApiKey:           ApiKey{},
 		Acl:              createAclEntries(capabilityRootId, clusterAccessId),

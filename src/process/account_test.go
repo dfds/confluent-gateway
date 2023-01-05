@@ -13,9 +13,10 @@ import (
 const someServiceAccountId = models.ServiceAccountId("sa-1234")
 const someCapabilityRootId = models.CapabilityRootId("some-capability-root-id")
 const someClusterId = models.ClusterId("some-cluster-id")
+const someUserAccountId = 1234
 
 func TestAccountHelper_CreateServiceAccount_Ok(t *testing.T) {
-	stub := &mocks.MockClient{ReturnServiceAccountId: someServiceAccountId}
+	stub := &mocks.MockClient{ReturnServiceAccountId: someServiceAccountId, ReturnUsers: []models.User{{Id: someUserAccountId, ResourceID: string(someServiceAccountId)}}}
 	spy := &mocks.AccountRepository{}
 	sut := NewAccountService(context.TODO(), stub, spy)
 
@@ -23,6 +24,7 @@ func TestAccountHelper_CreateServiceAccount_Ok(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, someServiceAccountId, spy.GotServiceAccount.Id)
+	assert.Equal(t, someUserAccountId, spy.GotServiceAccount.UserAccountId)
 	assert.Equal(t, someCapabilityRootId, spy.GotServiceAccount.CapabilityRootId)
 	assert.Equal(t, someServiceAccountId, spy.GotServiceAccount.ClusterAccesses[0].ServiceAccountId)
 	assert.Equal(t, someClusterId, spy.GotServiceAccount.ClusterAccesses[0].ClusterId)
@@ -38,10 +40,31 @@ func TestAccountHelper_CreateServiceAccount_ErrorCreatingServiceAccount(t *testi
 	assert.EqualError(t, err, errorText)
 }
 
+func TestAccountHelper_CreateServiceAccount_ErrorGettingUsers(t *testing.T) {
+	const errorText = "confluent failed"
+	stub := &mocks.MockClient{OnGetUsersError: errors.New(errorText)}
+	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
+
+	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+
+	assert.EqualError(t, err, errorText)
+}
+
+func TestAccountHelper_CreateServiceAccount_MissingUserAccount(t *testing.T) {
+	const errorText = "confluent failed"
+	stub := &mocks.MockClient{ReturnServiceAccountId: someServiceAccountId}
+	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
+
+	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+
+	assert.EqualError(t, err, fmt.Sprintf("unable to find matching user account for %q", someServiceAccountId))
+}
+
 func TestAccountHelper_CreateServiceAccount_ErrorPersistingServiceAccount(t *testing.T) {
 	const errorText = "db failed"
-	stub := &mocks.AccountRepository{OnCreateServiceAccountError: errors.New(errorText)}
-	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
+	repoStub := &mocks.AccountRepository{OnCreateServiceAccountError: errors.New(errorText)}
+	clientStub := &mocks.MockClient{ReturnServiceAccountId: someServiceAccountId, ReturnUsers: []models.User{{Id: someUserAccountId, ResourceID: string(someServiceAccountId)}}}
+	sut := NewAccountService(context.TODO(), clientStub, repoStub)
 
 	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
 
@@ -80,7 +103,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_GetExistingClusterAccessError(t 
 
 func TestAccountHelper_GetOrCreateClusterAccess_CreateNewClusterAccess(t *testing.T) {
 	spy := &mocks.AccountRepository{
-		ReturnServiceAccount: &models.ServiceAccount{Id: someServiceAccountId},
+		ReturnServiceAccount: &models.ServiceAccount{Id: someServiceAccountId, UserAccountId: someUserAccountId},
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, spy)
 
@@ -89,6 +112,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_CreateNewClusterAccess(t *testin
 	assert.NoError(t, err)
 	assert.Equal(t, spy.GotClusterAccess.ClusterId, someClusterId)
 	assert.Equal(t, spy.GotClusterAccess.ServiceAccountId, someServiceAccountId)
+	assert.Equal(t, spy.GotClusterAccess.UserAccountId, someUserAccountId)
 	assert.Equal(t, spy.GotClusterAccess.ApiKey, models.ApiKey{})
 }
 

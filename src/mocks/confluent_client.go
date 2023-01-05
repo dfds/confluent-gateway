@@ -9,6 +9,7 @@ import (
 type MockClient struct {
 	ReturnServiceAccountId      models.ServiceAccountId
 	ReturnApiKey                models.ApiKey
+	ReturnUsers                 []models.User
 	GotClusterId                string
 	GotName                     string
 	GotPartitions               int
@@ -42,4 +43,8 @@ func (m *MockClient) CreateTopic(_ context.Context, clusterId models.ClusterId, 
 	m.GotPartitions = partitions
 	m.GotRetention = retention
 	return m.OnCreateTopicError
+}
+
+func (m *MockClient) GetUsers(ctx context.Context) ([]models.User, error) {
+	return m.ReturnUsers, m.OnGetUsersError
 }

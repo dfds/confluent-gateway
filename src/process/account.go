@@ -27,10 +27,29 @@ func (h *accountService) CreateServiceAccount(capabilityRootId models.Capability
 		return err
 	}
 
+	users, err := h.confluent.GetUsers(h.context)
+	if err != nil {
+		return err
+	}
+
+	userMap := make(map[string]models.User)
+
+	for _, user := range users {
+		userMap[user.ResourceID] = user
+	}
+
+	user, found := userMap[string(serviceAccountId)]
+	if !found || user.Deactivated {
+		return fmt.Errorf("unable to find matching user account for %q", serviceAccountId)
+	}
+
+	userAccountId := user.Id
+
 	newServiceAccount := &models.ServiceAccount{
 		Id:               serviceAccountId,
+		UserAccountId:    userAccountId,
 		CapabilityRootId: capabilityRootId,
-		ClusterAccesses:  []models.ClusterAccess{*models.NewClusterAccess(serviceAccountId, clusterId, capabilityRootId)},
+		ClusterAccesses:  []models.ClusterAccess{*models.NewClusterAccess(serviceAccountId, userAccountId, clusterId, capabilityRootId)},
 		CreatedAt:        time.Now(),
 	}
 
@@ -49,7 +68,7 @@ func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.Capabi
 	clusterAccess, hasClusterAccess := serviceAccount.TryGetClusterAccess(clusterId)
 
 	if !hasClusterAccess {
-		clusterAccess = models.NewClusterAccess(serviceAccount.Id, clusterId, capabilityRootId)
+		clusterAccess = models.NewClusterAccess(serviceAccount.Id, serviceAccount.UserAccountId, clusterId, capabilityRootId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, *clusterAccess)
 
 		if err = h.repository.CreateClusterAccess(clusterAccess); err != nil {
