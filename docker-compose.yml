@@ -79,5 +79,3 @@ services:
     environment:
       - DEFAULT_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - DB_CONNECTION_STRING=User ID=postgres;Password=p;Host=database;Port=5432;Database=db
-    ports:
-      - 5051:5051
