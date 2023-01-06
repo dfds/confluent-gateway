@@ -23,7 +23,7 @@ func TestCreateAclDefinitions(t *testing.T) {
 		"TOPIC | some-capability | PREFIXED | WRITE | ALLOW",
 		"TOPIC | some-capability | PREFIXED | CREATE | ALLOW",
 		"TOPIC | some-capability | PREFIXED | DESCRIBE | ALLOW",
-		"TOPIC | some-capability | PREFIXED | DESCRIBECONFIGS | ALLOW",
+		"TOPIC | some-capability | PREFIXED | DESCRIBE_CONFIGS | ALLOW",
 
 		"TOPIC | pub. | PREFIXED | READ | ALLOW",
 
@@ -39,8 +39,8 @@ func TestCreateAclDefinitions(t *testing.T) {
 		"GROUP | some-capability | PREFIXED | CREATE | ALLOW",
 
 		"CLUSTER | kafka-cluster | LITERAL | ALTER | DENY",
-		"CLUSTER | kafka-cluster | LITERAL | ALTERCONFIGS | DENY",
-		"CLUSTER | kafka-cluster | LITERAL | CLUSTERACTION | DENY",
+		"CLUSTER | kafka-cluster | LITERAL | ALTER_CONFIGS | DENY",
+		"CLUSTER | kafka-cluster | LITERAL | CLUSTER_ACTION | DENY",
 	}, result)
 }
 

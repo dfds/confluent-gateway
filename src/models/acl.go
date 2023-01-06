@@ -30,10 +30,10 @@ const (
 	OperationTypeRead                          = "READ"
 	OperationTypeWrite                         = "WRITE"
 	OperationTypeDescribe                      = "DESCRIBE"
-	OperationTypeDescribeConfigs               = "DESCRIBECONFIGS"
+	OperationTypeDescribeConfigs               = "DESCRIBE_CONFIGS"
 	OperationTypeAlter                         = "ALTER"
-	OperationTypeAlterConfigs                  = "ALTERCONFIGS"
-	OperationTypeClusterAction                 = "CLUSTERACTION"
+	OperationTypeAlterConfigs                  = "ALTER_CONFIGS"
+	OperationTypeClusterAction                 = "CLUSTER_ACTION"
 )
 
 type PatternType string
