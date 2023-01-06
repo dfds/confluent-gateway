@@ -30,7 +30,7 @@ func NewCreateTopicProcess(logger logging.Logger, database Database, confluent C
 type CreateTopicProcessInput struct {
 	CapabilityRootId models.CapabilityRootId
 	ClusterId        models.ClusterId
-	Topic            models.Topic
+	Topic            models.TopicDescription
 }
 
 func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {

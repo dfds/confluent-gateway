@@ -20,14 +20,14 @@ type ProcessState struct {
 	CompletedAt       *time.Time
 }
 
-func NewProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topic Topic, hasServiceAccount bool, hasClusterAccess bool) *ProcessState {
+func NewProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topic TopicDescription, hasServiceAccount bool, hasClusterAccess bool) *ProcessState {
 	return &ProcessState{
 		Id:                uuid.NewV4(),
 		CapabilityRootId:  capabilityRootId,
 		ClusterId:         clusterId,
 		TopicName:         topic.Name,
 		TopicPartitions:   topic.Partitions,
-		TopicRetention:    int64(topic.Retention / time.Millisecond),
+		TopicRetention:    topic.RetentionInMs(),
 		HasServiceAccount: hasServiceAccount,
 		HasClusterAccess:  hasClusterAccess,
 		HasApiKey:         hasClusterAccess,
@@ -54,6 +54,7 @@ func (p *ProcessState) MarkAsCompleted() {
 	p.CompletedAt = &now
 }
 
-func (p *ProcessState) Topic() Topic {
-	return NewTopic(p.TopicName, p.TopicPartitions, time.Duration(p.TopicRetention)*time.Millisecond)
+func (p *ProcessState) TopicDescription() TopicDescription {
+	topic, _ := NewTopicDescription(p.TopicName, p.TopicPartitions, RetentionFromMs(p.TopicRetention))
+	return topic
 }

@@ -33,7 +33,7 @@ func Test_createProcessState(t *testing.T) {
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
-				Topic:            models.Topic{Name: someTopicName},
+				Topic:            models.TopicDescription{Name: someTopicName},
 			},
 			wantHasServiceAccount: false,
 			wantHasClusterAccess:  false,
@@ -53,7 +53,7 @@ func Test_createProcessState(t *testing.T) {
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
-				Topic:            models.Topic{Name: someTopicName},
+				Topic:            models.TopicDescription{Name: someTopicName},
 			},
 			wantHasServiceAccount: true,
 			wantHasClusterAccess:  false,
@@ -73,7 +73,7 @@ func Test_createProcessState(t *testing.T) {
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
-				Topic:            models.Topic{Name: someTopicName},
+				Topic:            models.TopicDescription{Name: someTopicName},
 			},
 			wantHasServiceAccount: true,
 			wantHasClusterAccess:  true,
@@ -102,7 +102,7 @@ func Test_createProcessState(t *testing.T) {
 			input: CreateTopicProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
-				Topic:            models.Topic{Name: someTopicName},
+				Topic:            models.TopicDescription{Name: someTopicName},
 			},
 			wantHasServiceAccount: true,
 			wantHasClusterAccess:  true,

@@ -48,14 +48,15 @@ func TestTopicService_CreateTopic(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			spy := &mocks.MockClient{}
 			sut := NewTopicService(context.TODO(), spy)
+			topic, err := models.NewTopicDescription(topicName, partitions, models.RetentionFromDuration(tt.retention))
 
-			tt.wantErr(t, sut.CreateTopic(clusterId, models.NewTopic(topicName, partitions, tt.retention)))
+			tt.wantErr(t, sut.CreateTopic(clusterId, topic))
 
+			assert.NoError(t, err)
 			assert.Equal(t, clusterId, spy.GotClusterId)
 			assert.Equal(t, topicName, spy.GotName)
 			assert.Equal(t, partitions, spy.GotPartitions)
 			assert.Equal(t, tt.wantRetention, spy.GotRetention)
-
 		})
 	}
 }

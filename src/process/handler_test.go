@@ -3,8 +3,8 @@ package process
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/dfds/confluent-gateway/messaging"
+	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -12,16 +12,38 @@ import (
 
 func TestTopicRequestedHandler_Handle(t *testing.T) {
 	tests := []struct {
-		name       string
-		process    CreateTopicProcess
-		msgContext messaging.MessageContext
-		wantErr    assert.ErrorAssertionFunc
+		name                 string
+		process              *processStub
+		msgContext           messaging.MessageContext
+		wantCapabilityRootId models.CapabilityRootId
+		wantClusterId        models.ClusterId
+		wantTopicName        string
+		wantPartition        int
+		wantRetention        time.Duration
+		wantErr              assert.ErrorAssertionFunc
 	}{
 		{
-			name:       "process ok",
+			name:    "process ok",
+			process: &processStub{},
+			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicRequested{
+				CapabilityRootId: string(someCapabilityRootId),
+				ClusterId:        string(someClusterId),
+				TopicName:        someTopicName,
+				Partitions:       1,
+				Retention:        "-1",
+			}),
+			wantCapabilityRootId: someCapabilityRootId,
+			wantClusterId:        someClusterId,
+			wantTopicName:        someTopicName,
+			wantPartition:        1,
+			wantRetention:        -1 * time.Millisecond,
+			wantErr:              assert.NoError,
+		},
+		{
+			name:       "bad retention",
 			process:    &processStub{},
-			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicRequested{Retention: "-1"}),
-			wantErr:    assert.NoError,
+			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicRequested{Retention: "1y"}),
+			wantErr:    assert.Error,
 		},
 		{
 			name:       "process fail",
@@ -39,69 +61,12 @@ func TestTopicRequestedHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewTopicRequestedHandler(tt.process)
-			tt.wantErr(t, h.Handle(context.TODO(), tt.msgContext), fmt.Sprintf("Handle(context.TODO(), %v)", tt.msgContext))
-		})
-	}
-}
-
-func TestTopicRequestedHandler_Handle_Retention(t *testing.T) {
-	tests := []struct {
-		name          string
-		retention     string
-		wantErr       assert.ErrorAssertionFunc
-		wantRetention time.Duration
-	}{
-		{
-			name:          "no retention",
-			retention:     "",
-			wantErr:       assert.Error,
-			wantRetention: 0,
-		},
-		{
-			name:          "1 year",
-			retention:     "1y",
-			wantErr:       assert.Error,
-			wantRetention: 0,
-		},
-		{
-			name:          "365 days",
-			retention:     "365d",
-			wantErr:       assert.Error,
-			wantRetention: 0,
-		},
-		{
-			name:          "forever",
-			retention:     "-1",
-			wantErr:       assert.NoError,
-			wantRetention: -1 * time.Millisecond,
-		},
-		{
-			name:          "7 days",
-			retention:     "604800000ms",
-			wantErr:       assert.NoError,
-			wantRetention: 1 * time.Hour * 24 * 7,
-		},
-		{
-			name:          "31 days",
-			retention:     "2678400000ms",
-			wantErr:       assert.NoError,
-			wantRetention: 1 * time.Hour * 24 * 31,
-		},
-		{
-			name:          "365 days",
-			retention:     "31536000000ms",
-			wantErr:       assert.NoError,
-			wantRetention: 1 * time.Hour * 24 * 365,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			stub := &processStub{}
-			h := NewTopicRequestedHandler(stub)
-			msgContext := messaging.NewMessageContext(map[string]string{}, &TopicRequested{Retention: tt.retention})
-			tt.wantErr(t, h.Handle(context.TODO(), msgContext))
-
-			assert.Equal(t, tt.wantRetention, stub.input.Topic.Retention)
+			tt.wantErr(t, h.Handle(context.TODO(), tt.msgContext))
+			assert.Equal(t, tt.wantCapabilityRootId, tt.process.input.CapabilityRootId)
+			assert.Equal(t, tt.wantClusterId, tt.process.input.ClusterId)
+			assert.Equal(t, tt.wantTopicName, tt.process.input.Topic.Name)
+			assert.Equal(t, tt.wantPartition, tt.process.input.Topic.Partitions)
+			assert.Equal(t, tt.wantRetention, tt.process.input.Topic.Retention)
 		})
 	}
 }
