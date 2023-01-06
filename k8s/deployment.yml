@@ -48,6 +48,8 @@ spec:
               value: Production
             - name: CG_CONFLUENT_CLOUD_API_URL
               value: https://api.confluent.cloud
+            - name: CG_CONFLUENT_USER_API_URL
+              value: https://confluent.cloud/api/service_accounts
             - name: CG_KAFKA_GROUP_ID
               value: build.selfservice.confluentgateway
             - name: CG_TOPIC_NAME_SELF_SERVICE

@@ -25,6 +25,7 @@ type Configuration struct {
 	ConfluentCloudApiUrl      string `env:"CG_CONFLUENT_CLOUD_API_URL"`
 	ConfluentCloudApiUserName string `env:"CG_CONFLUENT_CLOUD_API_USERNAME"`
 	ConfluentCloudApiPassword string `env:"CG_CONFLUENT_CLOUD_API_PASSWORD"`
+	ConfluentUserApiUrl       string `env:"CG_CONFLUENT_USER_API_URL"`
 	VaultApiUrl               string `env:"CG_VAULT_API_URL"`
 	KafkaBroker               string `env:"DEFAULT_KAFKA_BOOTSTRAP_SERVERS"`
 	KafkaUserName             string `env:"DEFAULT_KAFKA_SASL_USERNAME"`
@@ -81,9 +82,10 @@ func main() {
 	}
 
 	confluentClient := confluent.NewConfluentClient(logger, confluent.CloudApiAccess{
-		ApiEndpoint: config.ConfluentCloudApiUrl,
-		Username:    config.ConfluentCloudApiUserName,
-		Password:    config.ConfluentCloudApiPassword,
+		ApiEndpoint:     config.ConfluentCloudApiUrl,
+		Username:        config.ConfluentCloudApiUserName,
+		Password:        config.ConfluentCloudApiPassword,
+		UserApiEndpoint: config.ConfluentUserApiUrl,
 	}, db)
 
 	vaultCfg, err := config.CreateVaultConfig()

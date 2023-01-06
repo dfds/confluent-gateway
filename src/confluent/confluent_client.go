@@ -14,9 +14,10 @@ import (
 )
 
 type CloudApiAccess struct {
-	ApiEndpoint string
-	Username    string
-	Password    string
+	ApiEndpoint     string
+	Username        string
+	Password        string
+	UserApiEndpoint string
 }
 
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
@@ -211,7 +212,7 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 }
 
 func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
-	url := c.cloudApiAccess.ApiEndpoint + "/api/service_accounts"
+	url := c.cloudApiAccess.UserApiEndpoint
 
 	response, err := c.get(url, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()

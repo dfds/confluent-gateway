@@ -579,9 +579,9 @@ func TestGetUsers(t *testing.T) {
 	stubClient := Client{
 		logger: logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{
-			ApiEndpoint: server.URL,
-			Username:    "dummy",
-			Password:    "dummy",
+			UserApiEndpoint: server.URL,
+			Username:        "dummy",
+			Password:        "dummy",
 		},
 		repo: &ClusterRepositoryStub{},
 	}
