@@ -114,3 +114,7 @@ func (d *Database) UpdateClusterAccess(clusterAccess *models.ClusterAccess) erro
 func (d *Database) AddToOutbox(entry *messaging.OutboxEntry) error {
 	return d.db.Save(entry).Error
 }
+
+func (d *Database) CreateTopic(topic *models.Topic) error {
+	return d.db.Create(topic).Error
+}

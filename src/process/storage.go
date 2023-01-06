@@ -14,6 +14,7 @@ type Database interface {
 type Transaction interface {
 	serviceAccountRepository
 	stateRepository
+	topicRepository
 	UpdateProcessState(state *models.ProcessState) error
 	AddToOutbox(entry *messaging.OutboxEntry) error
 }
@@ -30,4 +31,8 @@ type stateRepository interface {
 	GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error)
 	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
 	CreateProcessState(state *models.ProcessState) error
+}
+
+type topicRepository interface {
+	CreateTopic(topic *models.Topic) error
 }

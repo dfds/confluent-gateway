@@ -146,7 +146,7 @@ func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx Transactio
 	logger := ctp.logger
 	newAccountService := NewAccountService(ctx, ctp.confluent, tx)
 	vault := NewVaultService(ctx, ctp.vault)
-	topic := NewTopicService(ctx, ctp.confluent)
+	topic := NewTopicService(ctx, ctp.confluent, tx)
 	outbox := ctp.getOutbox(tx)
 
 	return NewStepContext(logger, state, newAccountService, vault, topic, outbox)

@@ -32,7 +32,7 @@ type VaultService interface {
 }
 
 type TopicService interface {
-	CreateTopic(clusterId models.ClusterId, topic models.TopicDescription) error
+	CreateTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topic models.TopicDescription) error
 }
 
 type Outbox interface {
@@ -100,7 +100,7 @@ func (p *StepContext) IsCompleted() bool {
 }
 
 func (p *StepContext) CreateTopic() error {
-	return p.topic.CreateTopic(p.state.ClusterId, p.state.TopicDescription())
+	return p.topic.CreateTopic(p.state.CapabilityRootId, p.state.ClusterId, p.state.TopicDescription())
 }
 
 func (p *StepContext) MarkAsCompleted() {

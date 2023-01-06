@@ -2,7 +2,7 @@
 
 # Process
 
-function get_process_sql() {
+function get_topic_sql() {
 
     # Topic.csv
     # 1   capability_name
@@ -15,8 +15,8 @@ function get_process_sql() {
     # 8   retention
 
     cat topics.csv | \
-        awk -F',' '{ printf "(uuid_generate_v4(), '\''%s'\'', '\''%s'\'', '\''%s'\'', %d, %d, true, true, true, true, '\''%s'\'', '\''%s'\'');\n", $2, $4, $5, $6, $8, $7, $7 }' | \
-        sed 's/^/insert into process (id, capability_root_id, cluster_id, topic_name, topic_partitions, topic_retention, has_service_account, has_cluster_access, has_api_key, has_api_key_in_vault, created_at, completed_at) values /' | \
+        awk -F',' '{ printf "(uuid_generate_v4(), '\''%s'\'', '\''%s'\'', '\''%s'\'', %d, %d, '\''%s'\'');\n", $2, $4, $5, $6, $8, $7 }' | \
+        sed 's/^/insert into topic (id, capability_root_id, cluster_id, name, partitions, retention, created_at) values /' | \
         tail -n +2
 
 }
@@ -76,10 +76,9 @@ function get_acl_sql() {
 
 }
 
-get_process_sql > process.sql
+get_topic_sql > topic.sql
 get_service_account_sql > service_account.sql
 get_cluster_access_csv > cluster_access.csv
 get_cluster_access_sql > cluster_access.sql
 get_acl_sql > acl.sql
-
 
