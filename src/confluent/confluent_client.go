@@ -64,7 +64,7 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 		"description": "` + description + `"
 	}`
 
-	response, err := c.post(url, payload, c.cloudApiAccess.ApiKey())
+	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()
 
 	if err != nil {
@@ -80,8 +80,8 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	return models.ServiceAccountId(serviceAccountResponse.Id), nil
 }
 
-func (c *Client) post(url string, payload string, apiKey models.ApiKey) (*http.Response, error) {
-	request, _ := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(payload)))
+func (c *Client) post(ctx context.Context, url string, payload string, apiKey models.ApiKey) (*http.Response, error) {
+	request, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer([]byte(payload)))
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(apiKey.Username, apiKey.Password)
 
@@ -138,7 +138,7 @@ func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 		"permission": "` + string(entry.PermissionType) + `"
 	}`
 
-	response, err := c.post(url, payload, cluster.AdminApiKey)
+	response, err := c.post(ctx, url, payload, cluster.AdminApiKey)
 	defer response.Body.Close()
 
 	if err != nil {
@@ -163,11 +163,7 @@ func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 		}
 	}`
 
-	request, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(c.cloudApiAccess.Username, c.cloudApiAccess.Password)
-
-	response, err := c.post(url, payload, c.cloudApiAccess.ApiKey())
+	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()
 
 	if err != nil {
@@ -201,7 +197,7 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 		}]
 	}`
 
-	response, err := c.post(url, payload, cluster.AdminApiKey)
+	response, err := c.post(ctx, url, payload, cluster.AdminApiKey)
 	defer response.Body.Close()
 
 	if err != nil {
@@ -214,7 +210,7 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
 	url := c.cloudApiAccess.UserApiEndpoint
 
-	response, err := c.get(url, c.cloudApiAccess.ApiKey())
+	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()
 
 	if err != nil {
@@ -229,8 +225,8 @@ func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
 	return users.Users, nil
 }
 
-func (c *Client) get(url string, apiKey models.ApiKey) (*http.Response, error) {
-	request, _ := http.NewRequest(http.MethodGet, url, nil)
+func (c *Client) get(ctx context.Context, url string, apiKey models.ApiKey) (*http.Response, error) {
+	request, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	request.Header.Set("Accept", "application/json")
 	request.SetBasicAuth(apiKey.Username, apiKey.Password)
 
