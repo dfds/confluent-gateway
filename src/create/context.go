@@ -39,80 +39,80 @@ type Outbox interface {
 	Produce(msg messaging.OutgoingMessage) error
 }
 
-func (p *StepContext) MarkServiceAccountAsReady() {
-	p.state.HasServiceAccount = true
+func (c *StepContext) MarkServiceAccountAsReady() {
+	c.state.HasServiceAccount = true
 }
 
-func (p *StepContext) CreateServiceAccount() error {
-	return p.account.CreateServiceAccount(p.state.CapabilityRootId, p.state.ClusterId)
+func (c *StepContext) CreateServiceAccount() error {
+	return c.account.CreateServiceAccount(c.state.CapabilityRootId, c.state.ClusterId)
 }
 
-func (p *StepContext) HasServiceAccount() bool {
-	return p.state.HasServiceAccount
+func (c *StepContext) HasServiceAccount() bool {
+	return c.state.HasServiceAccount
 }
 
-func (p *StepContext) HasClusterAccess() bool {
-	return p.state.HasClusterAccess
+func (c *StepContext) HasClusterAccess() bool {
+	return c.state.HasClusterAccess
 }
 
-func (p *StepContext) GetOrCreateClusterAccess() (*models.ClusterAccess, error) {
-	return p.account.GetOrCreateClusterAccess(p.state.CapabilityRootId, p.state.ClusterId)
+func (c *StepContext) GetOrCreateClusterAccess() (*models.ClusterAccess, error) {
+	return c.account.GetOrCreateClusterAccess(c.state.CapabilityRootId, c.state.ClusterId)
 }
 
-func (p *StepContext) CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
-	return p.account.CreateAclEntry(p.state.ClusterId, clusterAccess.UserAccountId, &nextEntry)
+func (c *StepContext) CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
+	return c.account.CreateAclEntry(c.state.ClusterId, clusterAccess.UserAccountId, &nextEntry)
 }
 
-func (p *StepContext) MarkClusterAccessAsReady() {
-	p.state.HasClusterAccess = true
+func (c *StepContext) MarkClusterAccessAsReady() {
+	c.state.HasClusterAccess = true
 }
 
-func (p *StepContext) HasApiKey() bool {
-	return p.state.HasApiKey
+func (c *StepContext) HasApiKey() bool {
+	return c.state.HasApiKey
 }
 
-func (p *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
-	return p.account.GetClusterAccess(p.state.CapabilityRootId, p.state.ClusterId)
+func (c *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
+	return c.account.GetClusterAccess(c.state.CapabilityRootId, c.state.ClusterId)
 }
 
-func (p *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	return p.account.CreateApiKey(clusterAccess)
+func (c *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
+	return c.account.CreateApiKey(clusterAccess)
 }
 
-func (p *StepContext) MarkApiKeyAsReady() {
-	p.state.HasApiKey = true
+func (c *StepContext) MarkApiKeyAsReady() {
+	c.state.HasApiKey = true
 }
 
-func (p *StepContext) HasApiKeyInVault() bool {
-	return p.state.HasApiKeyInVault
+func (c *StepContext) HasApiKeyInVault() bool {
+	return c.state.HasApiKeyInVault
 }
 
-func (p *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
-	return p.vault.StoreApiKey(p.state.CapabilityRootId, clusterAccess)
+func (c *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
+	return c.vault.StoreApiKey(c.state.CapabilityRootId, clusterAccess)
 }
 
-func (p *StepContext) MarkApiKeyInVaultAsReady() {
-	p.state.HasApiKeyInVault = true
+func (c *StepContext) MarkApiKeyInVaultAsReady() {
+	c.state.HasApiKeyInVault = true
 }
 
-func (p *StepContext) IsCompleted() bool {
-	return p.state.IsCompleted()
+func (c *StepContext) IsCompleted() bool {
+	return c.state.IsCompleted()
 }
 
-func (p *StepContext) CreateTopic() error {
-	return p.topic.CreateTopic(p.state.CapabilityRootId, p.state.ClusterId, p.state.TopicDescription())
+func (c *StepContext) CreateTopic() error {
+	return c.topic.CreateTopic(c.state.CapabilityRootId, c.state.ClusterId, c.state.TopicDescription())
 }
 
-func (p *StepContext) MarkAsCompleted() {
-	p.state.MarkAsCompleted()
+func (c *StepContext) MarkAsCompleted() {
+	c.state.MarkAsCompleted()
 }
 
-func (p *StepContext) RaiseTopicProvisionedEvent() error {
+func (c *StepContext) RaiseTopicProvisionedEvent() error {
 	event := &TopicProvisioned{
-		partitionKey:     p.state.Id.String(),
-		CapabilityRootId: string(p.state.CapabilityRootId),
-		ClusterId:        string(p.state.ClusterId),
-		TopicName:        p.state.TopicName,
+		partitionKey:     c.state.Id.String(),
+		CapabilityRootId: string(c.state.CapabilityRootId),
+		ClusterId:        string(c.state.ClusterId),
+		TopicName:        c.state.TopicName,
 	}
-	return p.outbox.Produce(event)
+	return c.outbox.Produce(event)
 }
