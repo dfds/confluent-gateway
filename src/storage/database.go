@@ -73,6 +73,33 @@ func (d *Database) UpdateProcessState(state *models.ProcessState) error {
 	return d.db.Save(state).Error
 }
 
+func (d *Database) GetDeleteProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.DeleteProcess, error) {
+	var state = models.DeleteProcess{}
+
+	err := d.db.
+		Model(&state).
+		First(&state, "capability_root_id = ? and cluster_id = ? and topic_name = ?", capabilityRootId, clusterId, topicName).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &state, nil
+}
+
+func (d *Database) CreateDeleteProcessState(state *models.DeleteProcess) error {
+	return d.db.Create(state).Error
+}
+
+func (d *Database) UpdateDeleteProcessState(state *models.DeleteProcess) error {
+	return d.db.Save(state).Error
+}
+
 func (d *Database) GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
 	var serviceAccount models.ServiceAccount
 
@@ -116,4 +143,23 @@ func (d *Database) AddToOutbox(entry *messaging.OutboxEntry) error {
 
 func (d *Database) CreateTopic(topic *models.Topic) error {
 	return d.db.Create(topic).Error
+}
+
+func (d *Database) DeleteTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) error {
+	var topic = &models.Topic{}
+
+	err := d.db.
+		Model(topic).
+		First(topic, "capability_root_id = ? and cluster_id = ? and name = ?", capabilityRootId, clusterId, topicName).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+
+		return err
+	}
+
+	return d.db.Delete(topic).Error
 }

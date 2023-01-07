@@ -6,6 +6,7 @@ import (
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/confluent"
 	"github.com/dfds/confluent-gateway/create"
+	del "github.com/dfds/confluent-gateway/delete"
 	"github.com/dfds/confluent-gateway/http/metrics"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -101,18 +102,24 @@ func main() {
 	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
 
 	registration := outgoingRegistry.
-		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioned", &create.TopicProvisioned{}).
-		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioning_begun", &create.TopicProvisioningBegun{})
+		RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}).
+		RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}).
+		RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{})
 
 	if err := registration.Error; err != nil {
 		panic(err)
 	}
 
-	newTopic := create.NewProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
+	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
+	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, outgoingRegistry)
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(newTopic), &create.TopicRequested{}).Error; err != nil {
+	r := registry.
+		RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}).
+		RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{})
+
+	if err := r.Error; err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)

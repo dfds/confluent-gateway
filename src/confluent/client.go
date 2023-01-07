@@ -232,3 +232,21 @@ func (c *Client) get(ctx context.Context, url string, apiKey models.ApiKey) (*ht
 
 	return c.getResponseReader(request, "")
 }
+
+func (c *Client) DeleteTopic(ctx context.Context, clusterId models.ClusterId, topicName string) error {
+	cluster, _ := c.repo.GetClusterById(ctx, clusterId)
+	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics/%s", cluster.AdminApiEndpoint, clusterId, topicName)
+
+	response, err := c.delete(ctx, url, cluster.AdminApiKey)
+	defer response.Body.Close()
+
+	return err
+}
+
+func (c *Client) delete(ctx context.Context, url string, apiKey models.ApiKey) (*http.Response, error) {
+	request, _ := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	request.Header.Set("Accept", "application/json")
+	request.SetBasicAuth(apiKey.Username, apiKey.Password)
+
+	return c.getResponseReader(request, "")
+}

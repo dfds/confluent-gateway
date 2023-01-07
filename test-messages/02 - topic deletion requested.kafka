@@ -1,0 +1,12 @@
+PRODUCER json-output
+topic: cloudengineering.selfservice.kafkatopic
+{
+    "messageId": "1",
+    "type": "topic_deletion_requested",
+    "data": {
+        "capabilityRootId": "new-cap",
+        "clusterId": "abc-1234",
+        "topicName": "new-topic-cg"
+    }
+}
+

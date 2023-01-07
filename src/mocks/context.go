@@ -11,6 +11,7 @@ type StepContextMock struct {
 	MarkApiKeyInVaultAsReadyWasCalled  bool
 	MarkAsCompletedWasCalled           bool
 	TopicProvisionedEventWasRaised     bool
+	TopicDeletedEventWasRaised         bool
 
 	OnCreateServiceAccountError     error
 	OnGetOrCreateClusterAccessError error
@@ -19,6 +20,7 @@ type StepContextMock struct {
 	OnCreateApiKeyError             error
 	OnStoreApiKeyError              error
 	OnCreateTopicError              error
+	OnDeleteTopicError              error
 }
 
 func (m *StepContextMock) HasServiceAccount() bool {
@@ -91,5 +93,14 @@ func (m *StepContextMock) MarkAsCompleted() {
 
 func (m *StepContextMock) RaiseTopicProvisionedEvent() error {
 	m.TopicProvisionedEventWasRaised = true
+	return nil
+}
+
+func (m *StepContextMock) DeleteTopic() error {
+	return m.OnDeleteTopicError
+}
+
+func (m *StepContextMock) RaiseTopicDeletedEvent() error {
+	m.TopicDeletedEventWasRaised = true
 	return nil
 }

@@ -19,6 +19,7 @@ type MockClient struct {
 	OnCreateApiKeyError         error
 	OnCreateTopicError          error
 	OnGetUsersError             error
+	OnDeleteTopicError          error
 }
 
 func (m *MockClient) CreateServiceAccount(_ context.Context, name string, description string) (models.ServiceAccountId, error) {
@@ -47,4 +48,10 @@ func (m *MockClient) CreateTopic(_ context.Context, clusterId models.ClusterId, 
 
 func (m *MockClient) GetUsers(ctx context.Context) ([]models.User, error) {
 	return m.ReturnUsers, m.OnGetUsersError
+}
+
+func (m *MockClient) DeleteTopic(ctx context.Context, clusterId models.ClusterId, topicName string) error {
+	m.GotClusterId = string(clusterId)
+	m.GotName = topicName
+	return m.OnDeleteTopicError
 }

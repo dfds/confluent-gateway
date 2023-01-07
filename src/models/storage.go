@@ -24,7 +24,12 @@ type Transaction interface {
 	CreateProcessState(*ProcessState) error
 	UpdateProcessState(*ProcessState) error
 
+	GetDeleteProcessState(CapabilityRootId, ClusterId, string) (*DeleteProcess, error)
+	SaveDeleteProcessState(*DeleteProcess) error
+	UpdateDeleteProcessState(*DeleteProcess) error
+
 	CreateTopic(*Topic) error
+	DeleteTopic(CapabilityRootId, ClusterId, string) error
 
 	AddToOutbox(*messaging.OutboxEntry) error
 }
