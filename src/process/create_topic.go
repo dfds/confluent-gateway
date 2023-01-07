@@ -11,13 +11,13 @@ import (
 
 type createTopicProcess struct {
 	logger    logging.Logger
-	database  Database
+	database  models.Database
 	confluent Confluent
 	vault     Vault
 	registry  messaging.OutgoingMessageRegistry
 }
 
-func NewCreateTopicProcess(logger logging.Logger, database Database, confluent Confluent, vault Vault, registry messaging.OutgoingMessageRegistry) CreateTopicProcess {
+func NewCreateTopicProcess(logger logging.Logger, database models.Database, confluent Confluent, vault Vault, registry messaging.OutgoingMessageRegistry) CreateTopicProcess {
 	return &createTopicProcess{
 		logger:    logger,
 		database:  database,
@@ -53,7 +53,7 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
 		Run(func(step Step) error {
-			return session.Transaction(func(tx Transaction) error {
+			return session.Transaction(func(tx models.Transaction) error {
 				stepContext := ctp.getStepContext(ctx, tx, state)
 
 				err := step(stepContext)
@@ -66,10 +66,10 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		})
 }
 
-func (ctp *createTopicProcess) prepareProcessState(session Session, input CreateTopicProcessInput) (*models.ProcessState, error) {
+func (ctp *createTopicProcess) prepareProcessState(session models.Session, input CreateTopicProcessInput) (*models.ProcessState, error) {
 	var s *models.ProcessState
 
-	err := session.Transaction(func(tx Transaction) error {
+	err := session.Transaction(func(tx models.Transaction) error {
 		outbox := ctp.getOutbox(tx)
 
 		state, err := getOrCreateProcessState(tx, outbox, input)
@@ -83,6 +83,12 @@ func (ctp *createTopicProcess) prepareProcessState(session Session, input Create
 	})
 
 	return s, err
+}
+
+type stateRepository interface {
+	GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error)
+	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
+	CreateProcessState(state *models.ProcessState) error
 }
 
 func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTopicProcessInput) (*models.ProcessState, error) {
@@ -142,7 +148,7 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTo
 	return state, nil
 }
 
-func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx Transaction, state *models.ProcessState) *StepContext {
+func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx models.Transaction, state *models.ProcessState) *StepContext {
 	logger := ctp.logger
 	newAccountService := NewAccountService(ctx, ctp.confluent, tx)
 	vault := NewVaultService(ctx, ctp.vault)
@@ -152,7 +158,7 @@ func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx Transactio
 	return NewStepContext(logger, state, newAccountService, vault, topic, outbox)
 }
 
-func (ctp *createTopicProcess) getOutbox(tx Transaction) *messaging.Outbox {
+func (ctp *createTopicProcess) getOutbox(tx models.Transaction) *messaging.Outbox {
 	return messaging.NewOutbox(ctp.logger, ctp.registry, tx, func() string { return uuid.NewV4().String() })
 }
 

@@ -8,16 +8,24 @@ import (
 )
 
 type accountService struct {
-	context    context.Context
-	confluent  Confluent
-	repository serviceAccountRepository
+	context   context.Context
+	confluent Confluent
+	repo      serviceAccountRepository
 }
 
-func NewAccountService(ctx context.Context, confluent Confluent, repository serviceAccountRepository) *accountService {
+type serviceAccountRepository interface {
+	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
+	CreateServiceAccount(serviceAccount *models.ServiceAccount) error
+	UpdateAclEntry(aclEntry *models.AclEntry) error
+	CreateClusterAccess(clusterAccess *models.ClusterAccess) error
+	UpdateClusterAccess(clusterAccess *models.ClusterAccess) error
+}
+
+func NewAccountService(ctx context.Context, confluent Confluent, repo serviceAccountRepository) *accountService {
 	return &accountService{
-		context:    ctx,
-		confluent:  confluent,
-		repository: repository,
+		context:   ctx,
+		confluent: confluent,
+		repo:      repo,
 	}
 }
 
@@ -53,11 +61,11 @@ func (h *accountService) CreateServiceAccount(capabilityRootId models.Capability
 		CreatedAt:        time.Now(),
 	}
 
-	return h.repository.CreateServiceAccount(newServiceAccount)
+	return h.repo.CreateServiceAccount(newServiceAccount)
 }
 
 func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
-	serviceAccount, err := h.repository.GetServiceAccount(capabilityRootId)
+	serviceAccount, err := h.repo.GetServiceAccount(capabilityRootId)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +79,7 @@ func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.Capabi
 		clusterAccess = models.NewClusterAccess(serviceAccount.Id, serviceAccount.UserAccountId, clusterId, capabilityRootId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, *clusterAccess)
 
-		if err = h.repository.CreateClusterAccess(clusterAccess); err != nil {
+		if err = h.repo.CreateClusterAccess(clusterAccess); err != nil {
 			return nil, err
 		}
 	}
@@ -79,7 +87,7 @@ func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.Capabi
 }
 
 func (h *accountService) GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
-	serviceAccount, err := h.repository.GetServiceAccount(capabilityRootId)
+	serviceAccount, err := h.repo.GetServiceAccount(capabilityRootId)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +110,7 @@ func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountI
 
 	entry.Created()
 
-	return h.repository.UpdateAclEntry(entry)
+	return h.repo.UpdateAclEntry(entry)
 }
 
 func (h *accountService) CreateApiKey(clusterAccess *models.ClusterAccess) error {
@@ -113,5 +121,5 @@ func (h *accountService) CreateApiKey(clusterAccess *models.ClusterAccess) error
 
 	clusterAccess.ApiKey = *key
 
-	return h.repository.UpdateClusterAccess(clusterAccess)
+	return h.repo.UpdateClusterAccess(clusterAccess)
 }

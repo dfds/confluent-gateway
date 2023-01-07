@@ -11,6 +11,10 @@ type topicService struct {
 	repo      topicRepository
 }
 
+type topicRepository interface {
+	CreateTopic(topic *models.Topic) error
+}
+
 func NewTopicService(context context.Context, confluent Confluent, repo topicRepository) *topicService {
 	return &topicService{context: context, confluent: confluent, repo: repo}
 }
