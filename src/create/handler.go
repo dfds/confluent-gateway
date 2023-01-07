@@ -8,15 +8,15 @@ import (
 )
 
 type handler struct {
-	process CreateTopicProcess
+	process Process
 }
 
-func NewTopicRequestedHandler(process CreateTopicProcess) messaging.MessageHandler {
+func NewTopicRequestedHandler(process Process) messaging.MessageHandler {
 	return &handler{process: process}
 }
 
-type CreateTopicProcess interface {
-	Process(context.Context, CreateTopicProcessInput) error
+type Process interface {
+	Process(context.Context, ProcessInput) error
 }
 
 func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
@@ -29,11 +29,12 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 			return err
 		}
 
-		return h.process.Process(ctx, CreateTopicProcessInput{
+		input := ProcessInput{
 			CapabilityRootId: models.CapabilityRootId(message.CapabilityRootId),
 			ClusterId:        models.ClusterId(message.ClusterId),
 			Topic:            topic,
-		})
+		}
+		return h.process.Process(ctx, input)
 
 	default:
 		return fmt.Errorf("unknown message %#v", message)

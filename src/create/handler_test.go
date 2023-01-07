@@ -72,11 +72,11 @@ func TestTopicRequestedHandler_Handle(t *testing.T) {
 }
 
 type processStub struct {
-	input CreateTopicProcessInput
+	input ProcessInput
 	err   error
 }
 
-func (t *processStub) Process(_ context.Context, input CreateTopicProcessInput) error {
+func (t *processStub) Process(_ context.Context, input ProcessInput) error {
 	t.input = input
 	return t.err
 }

@@ -108,7 +108,7 @@ func main() {
 		panic(err)
 	}
 
-	newTopic := create.NewCreateTopicProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
+	newTopic := create.NewProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)

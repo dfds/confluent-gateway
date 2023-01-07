@@ -18,7 +18,7 @@ func Test_createProcessState(t *testing.T) {
 	tests := []struct {
 		name                  string
 		mock                  *mock
-		input                 CreateTopicProcessInput
+		input                 ProcessInput
 		wantHasServiceAccount bool
 		wantHasClusterAccess  bool
 		wantHasApiKey         bool
@@ -30,7 +30,7 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "ok",
 			mock: &mock{},
-			input: CreateTopicProcessInput{
+			input: ProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
 				Topic:            models.TopicDescription{Name: someTopicName},
@@ -50,7 +50,7 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "ok got service account",
 			mock: &mock{ReturnServiceAccount: &models.ServiceAccount{}},
-			input: CreateTopicProcessInput{
+			input: ProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
 				Topic:            models.TopicDescription{Name: someTopicName},
@@ -70,7 +70,7 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "ok got cluster access",
 			mock: &mock{ReturnServiceAccount: &models.ServiceAccount{ClusterAccesses: []models.ClusterAccess{{ClusterId: someClusterId}}}},
-			input: CreateTopicProcessInput{
+			input: ProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
 				Topic:            models.TopicDescription{Name: someTopicName},
@@ -99,7 +99,7 @@ func Test_createProcessState(t *testing.T) {
 				HasApiKeyInVault:  true,
 				CompletedAt:       &time.Time{},
 			}},
-			input: CreateTopicProcessInput{
+			input: ProcessInput{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
 				Topic:            models.TopicDescription{Name: someTopicName},

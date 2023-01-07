@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type createTopicProcess struct {
+type process struct {
 	logger    logging.Logger
 	database  models.Database
 	confluent Confluent
@@ -18,8 +18,8 @@ type createTopicProcess struct {
 	registry  messaging.OutgoingMessageRegistry
 }
 
-func NewCreateTopicProcess(logger logging.Logger, database models.Database, confluent Confluent, vault Vault, registry messaging.OutgoingMessageRegistry) CreateTopicProcess {
-	return &createTopicProcess{
+func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, vault Vault, registry messaging.OutgoingMessageRegistry) Process {
+	return &process{
 		logger:    logger,
 		database:  database,
 		confluent: confluent,
@@ -28,16 +28,16 @@ func NewCreateTopicProcess(logger logging.Logger, database models.Database, conf
 	}
 }
 
-type CreateTopicProcessInput struct {
+type ProcessInput struct {
 	CapabilityRootId models.CapabilityRootId
 	ClusterId        models.ClusterId
 	Topic            models.TopicDescription
 }
 
-func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
-	session := ctp.database.NewSession(ctx)
+func (p *process) Process(ctx context.Context, input ProcessInput) error {
+	session := p.database.NewSession(ctx)
 
-	state, err := ctp.prepareProcessState(session, input)
+	state, err := p.prepareProcessState(session, input)
 	if err != nil {
 		return err
 	}
@@ -49,13 +49,13 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 
 	return PrepareSteps[*StepContext]().
 		Step(ensureServiceAccount).
-		Step(ensureServiceAccountAcl).Until(func(p *StepContext) bool { return p.HasClusterAccess() }).
+		Step(ensureServiceAccountAcl).Until(func(c *StepContext) bool { return c.HasClusterAccess() }).
 		Step(ensureServiceAccountApiKey).
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
-				stepContext := ctp.getStepContext(ctx, tx, state)
+				stepContext := p.getStepContext(ctx, tx, state)
 
 				err := step(stepContext)
 				if err != nil {
@@ -67,11 +67,11 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		})
 }
 
-func (ctp *createTopicProcess) prepareProcessState(session models.Session, input CreateTopicProcessInput) (*models.ProcessState, error) {
+func (p *process) prepareProcessState(session models.Session, input ProcessInput) (*models.ProcessState, error) {
 	var s *models.ProcessState
 
 	err := session.Transaction(func(tx models.Transaction) error {
-		outbox := ctp.getOutbox(tx)
+		outbox := p.getOutbox(tx)
 
 		state, err := getOrCreateProcessState(tx, outbox, input)
 		if err != nil {
@@ -92,7 +92,7 @@ type stateRepository interface {
 	CreateProcessState(state *models.ProcessState) error
 }
 
-func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTopicProcessInput) (*models.ProcessState, error) {
+func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessInput) (*models.ProcessState, error) {
 	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
 
 	state, err := repo.GetProcessState(capabilityRootId, clusterId, topic.Name)
@@ -149,18 +149,18 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input CreateTo
 	return state, nil
 }
 
-func (ctp *createTopicProcess) getStepContext(ctx context.Context, tx models.Transaction, state *models.ProcessState) *StepContext {
-	logger := ctp.logger
-	newAccountService := NewAccountService(ctx, ctp.confluent, tx)
-	vault := NewVaultService(ctx, ctp.vault)
-	topic := NewTopicService(ctx, ctp.confluent, tx)
-	outbox := ctp.getOutbox(tx)
+func (p *process) getStepContext(ctx context.Context, tx models.Transaction, state *models.ProcessState) *StepContext {
+	logger := p.logger
+	newAccountService := NewAccountService(ctx, p.confluent, tx)
+	vault := NewVaultService(ctx, p.vault)
+	topic := NewTopicService(ctx, p.confluent, tx)
+	outbox := p.getOutbox(tx)
 
 	return NewStepContext(logger, state, newAccountService, vault, topic, outbox)
 }
 
-func (ctp *createTopicProcess) getOutbox(tx models.Transaction) *messaging.Outbox {
-	return messaging.NewOutbox(ctp.logger, ctp.registry, tx, func() string { return uuid.NewV4().String() })
+func (p *process) getOutbox(tx models.Transaction) *messaging.Outbox {
+	return messaging.NewOutbox(p.logger, p.registry, tx, func() string { return uuid.NewV4().String() })
 }
 
 // region Steps
