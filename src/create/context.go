@@ -20,19 +20,19 @@ func NewStepContext(logger logging.Logger, state *models.ProcessState, account A
 }
 
 type AccountService interface {
-	CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error
-	GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
-	GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error)
-	CreateAclEntry(clusterId models.ClusterId, userAccountId models.UserAccountId, entry *models.AclEntry) error
-	CreateApiKey(clusterAccess *models.ClusterAccess) error
+	CreateServiceAccount(models.CapabilityRootId, models.ClusterId) error
+	GetOrCreateClusterAccess(models.CapabilityRootId, models.ClusterId) (*models.ClusterAccess, error)
+	GetClusterAccess(models.CapabilityRootId, models.ClusterId) (*models.ClusterAccess, error)
+	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
+	CreateApiKey(*models.ClusterAccess) error
 }
 
 type VaultService interface {
-	StoreApiKey(capabilityRootId models.CapabilityRootId, clusterAccess *models.ClusterAccess) error
+	StoreApiKey(models.CapabilityRootId, *models.ClusterAccess) error
 }
 
 type TopicService interface {
-	CreateTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topic models.TopicDescription) error
+	CreateTopic(models.CapabilityRootId, models.ClusterId, models.TopicDescription) error
 }
 
 type Outbox interface {
