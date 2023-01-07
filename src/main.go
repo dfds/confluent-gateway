@@ -5,10 +5,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/confluent"
+	"github.com/dfds/confluent-gateway/create"
 	"github.com/dfds/confluent-gateway/http/metrics"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
-	"github.com/dfds/confluent-gateway/process"
 	"github.com/dfds/confluent-gateway/storage"
 	"github.com/dfds/confluent-gateway/vault"
 	"golang.org/x/sync/errgroup"
@@ -101,18 +101,18 @@ func main() {
 	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
 
 	registration := outgoingRegistry.
-		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioned", &process.TopicProvisioned{}).
-		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioning_begun", &process.TopicProvisioningBegun{})
+		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioned", &create.TopicProvisioned{}).
+		RegisterMessage("cloudengineering.confluentgateway.provisioning", "topic_provisioning_begun", &create.TopicProvisioningBegun{})
 
 	if err := registration.Error; err != nil {
 		panic(err)
 	}
 
-	newTopic := process.NewCreateTopicProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
+	newTopic := create.NewCreateTopicProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", process.NewTopicRequestedHandler(newTopic), &process.TopicRequested{}).Error; err != nil {
+	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(newTopic), &create.TopicRequested{}).Error; err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)

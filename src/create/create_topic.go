@@ -1,10 +1,11 @@
-package process
+package create
 
 import (
 	"context"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
+	. "github.com/dfds/confluent-gateway/process"
 	"github.com/satori/go.uuid"
 	"strings"
 )
@@ -46,13 +47,13 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		return nil
 	}
 
-	return PrepareSteps().
+	return PrepareSteps[*StepContext]().
 		Step(ensureServiceAccount).
 		Step(ensureServiceAccountAcl).Until(func(p *StepContext) bool { return p.HasClusterAccess() }).
 		Step(ensureServiceAccountApiKey).
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
-		Run(func(step Step) error {
+		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
 				stepContext := ctp.getStepContext(ctx, tx, state)
 

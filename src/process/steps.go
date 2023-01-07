@@ -1,59 +1,54 @@
 package process
 
-type stepWrapper func(*StepContext) (bool, error)
-type Step func(*StepContext) error
-type Predicate func(*StepContext) bool
-type PerformStep func(Step) error
-
-type StepBuilder interface {
-	Step(Step) NextStepBuilder
+type StepBuilder[Context any] interface {
+	Step(func(Context) error) NextStepBuilder[Context]
 }
 
-type NextStepBuilder interface {
-	StepBuilder
-	Until(Predicate) StepBuilder
-	Run(PerformStep) error
+type NextStepBuilder[Context any] interface {
+	StepBuilder[Context]
+	Until(func(Context) bool) StepBuilder[Context]
+	Run(func(func(Context) error) error) error
 }
 
-type steps struct {
-	steps []stepWrapper
+type Steps[Context any] struct {
+	steps []func(Context) (bool, error)
 }
 
-func PrepareSteps() StepBuilder {
-	return &steps{steps: []stepWrapper{}}
+func PrepareSteps[Context any]() StepBuilder[Context] {
+	return &Steps[Context]{steps: []func(Context) (bool, error){}}
 }
 
-func (s *steps) Step(step Step) NextStepBuilder {
-	s.steps = append(s.steps, func(p *StepContext) (bool, error) {
-		err := step(p)
+func (s *Steps[Context]) Step(step func(Context) error) NextStepBuilder[Context] {
+	s.steps = append(s.steps, func(context Context) (bool, error) {
+		err := step(context)
 		return true, err
 	})
 	return s
 }
 
-func (s *steps) Until(isDone Predicate) StepBuilder {
+func (s *Steps[Context]) Until(isDone func(Context) bool) StepBuilder[Context] {
 	lastStep := s.steps[len(s.steps)-1]
 
-	s.steps[len(s.steps)-1] = func(p *StepContext) (bool, error) {
-		if isDone(p) {
+	s.steps[len(s.steps)-1] = func(context Context) (bool, error) {
+		if isDone(context) {
 			return true, nil
 		}
 
-		_, err := lastStep(p)
+		_, err := lastStep(context)
 		return false, err
 	}
 
 	return s
 }
 
-func (s *steps) Run(perform PerformStep) error {
+func (s *Steps[Context]) Run(perform func(func(Context) error) error) error {
 	for _, step := range s.steps {
 		for {
 			done := true
 
-			err := perform(func(p *StepContext) error {
+			err := perform(func(context Context) error {
 				var err error
-				done, err = step(p)
+				done, err = step(context)
 				return err
 			})
 
