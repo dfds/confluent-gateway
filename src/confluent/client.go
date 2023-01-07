@@ -34,7 +34,7 @@ type Client struct {
 	repo           ClusterRepository
 }
 
-func NewConfluentClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
+func NewClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
 	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, repo: repo}
 }
 
