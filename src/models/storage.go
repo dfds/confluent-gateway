@@ -20,9 +20,9 @@ type Transaction interface {
 	CreateClusterAccess(*ClusterAccess) error
 	UpdateClusterAccess(*ClusterAccess) error
 
-	GetProcessState(CapabilityRootId, ClusterId, string) (*ProcessState, error)
-	CreateProcessState(*ProcessState) error
-	UpdateProcessState(*ProcessState) error
+	GetCreateProcessState(CapabilityRootId, ClusterId, string) (*CreateProcess, error)
+	SaveCreateProcessState(*CreateProcess) error
+	UpdateCreateProcessState(*CreateProcess) error
 
 	GetDeleteProcessState(CapabilityRootId, ClusterId, string) (*DeleteProcess, error)
 	SaveDeleteProcessState(*DeleteProcess) error

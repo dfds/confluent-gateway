@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type ProcessState struct {
+type CreateProcess struct {
 	Id                uuid.UUID `gorm:"type:uuid;primarykey"`
 	CapabilityRootId  CapabilityRootId
 	ClusterId         ClusterId
@@ -20,8 +20,8 @@ type ProcessState struct {
 	CompletedAt       *time.Time
 }
 
-func NewProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, topic TopicDescription, hasServiceAccount bool, hasClusterAccess bool) *ProcessState {
-	return &ProcessState{
+func NewCreateProcess(capabilityRootId CapabilityRootId, clusterId ClusterId, topic TopicDescription, hasServiceAccount bool, hasClusterAccess bool) *CreateProcess {
+	return &CreateProcess{
 		Id:                uuid.NewV4(),
 		CapabilityRootId:  capabilityRootId,
 		ClusterId:         clusterId,
@@ -37,15 +37,15 @@ func NewProcessState(capabilityRootId CapabilityRootId, clusterId ClusterId, top
 	}
 }
 
-func (*ProcessState) TableName() string {
-	return "process"
+func (*CreateProcess) TableName() string {
+	return "create_process"
 }
 
-func (p *ProcessState) IsCompleted() bool {
+func (p *CreateProcess) IsCompleted() bool {
 	return p.CompletedAt != nil
 }
 
-func (p *ProcessState) MarkAsCompleted() {
+func (p *CreateProcess) MarkAsCompleted() {
 	if p.IsCompleted() {
 		return
 	}
@@ -54,7 +54,7 @@ func (p *ProcessState) MarkAsCompleted() {
 	p.CompletedAt = &now
 }
 
-func (p *ProcessState) TopicDescription() TopicDescription {
+func (p *CreateProcess) TopicDescription() TopicDescription {
 	topic, _ := NewTopicDescription(p.TopicName, p.TopicPartitions, RetentionFromMs(p.TopicRetention))
 	return topic
 }

@@ -8,14 +8,14 @@ import (
 
 type StepContext struct {
 	logger  logging.Logger
-	state   *models.ProcessState
+	state   *models.CreateProcess
 	account AccountService
 	vault   VaultService
 	topic   TopicService
 	outbox  Outbox
 }
 
-func NewStepContext(logger logging.Logger, state *models.ProcessState, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *StepContext {
+func NewStepContext(logger logging.Logger, state *models.CreateProcess, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *StepContext {
 	return &StepContext{logger: logger, state: state, account: account, vault: vault, topic: topic, outbox: outbox}
 }
 

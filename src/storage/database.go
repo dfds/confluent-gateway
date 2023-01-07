@@ -46,8 +46,8 @@ func (d *Database) GetClusterById(ctx context.Context, id models.ClusterId) (*mo
 	return &cluster, nil
 }
 
-func (d *Database) GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error) {
-	var state = models.ProcessState{}
+func (d *Database) GetCreateProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error) {
+	var state = models.CreateProcess{}
 
 	err := d.db.
 		Model(&state).
@@ -65,11 +65,11 @@ func (d *Database) GetProcessState(capabilityRootId models.CapabilityRootId, clu
 	return &state, nil
 }
 
-func (d *Database) CreateProcessState(state *models.ProcessState) error {
+func (d *Database) SaveCreateProcessState(state *models.CreateProcess) error {
 	return d.db.Create(state).Error
 }
 
-func (d *Database) UpdateProcessState(state *models.ProcessState) error {
+func (d *Database) UpdateCreateProcessState(state *models.CreateProcess) error {
 	return d.db.Save(state).Error
 }
 
@@ -92,7 +92,7 @@ func (d *Database) GetDeleteProcessState(capabilityRootId models.CapabilityRootI
 	return &state, nil
 }
 
-func (d *Database) CreateDeleteProcessState(state *models.DeleteProcess) error {
+func (d *Database) SaveDeleteProcessState(state *models.DeleteProcess) error {
 	return d.db.Create(state).Error
 }
 

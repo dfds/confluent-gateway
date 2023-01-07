@@ -62,13 +62,13 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 					return err
 				}
 
-				return tx.UpdateProcessState(state)
+				return tx.UpdateCreateProcessState(state)
 			})
 		})
 }
 
-func (p *process) prepareProcessState(session models.Session, input ProcessInput) (*models.ProcessState, error) {
-	var s *models.ProcessState
+func (p *process) prepareProcessState(session models.Session, input ProcessInput) (*models.CreateProcess, error) {
+	var s *models.CreateProcess
 
 	err := session.Transaction(func(tx models.Transaction) error {
 		outbox := p.getOutbox(tx)
@@ -87,15 +87,15 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 }
 
 type stateRepository interface {
-	GetProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.ProcessState, error)
+	GetCreateProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error)
 	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
-	CreateProcessState(state *models.ProcessState) error
+	SaveCreateProcessState(state *models.CreateProcess) error
 }
 
-func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessInput) (*models.ProcessState, error) {
+func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessInput) (*models.CreateProcess, error) {
 	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
 
-	state, err := repo.GetProcessState(capabilityRootId, clusterId, topic.Name)
+	state, err := repo.GetCreateProcessState(capabilityRootId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +118,9 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 			_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 		}
 
-		state = models.NewProcessState(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+		state = models.NewCreateProcess(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
 
-		if err := repo.CreateProcessState(state); err != nil {
+		if err := repo.SaveCreateProcessState(state); err != nil {
 			return nil, err
 		}
 
@@ -136,12 +136,12 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 		}
 	} else {
 		// TODO -- stop faking
-		state = models.NewProcessState(capabilityRootId, clusterId, topic, true, true)
+		state = models.NewCreateProcess(capabilityRootId, clusterId, topic, true, true)
 		state.HasApiKey = true
 		state.HasApiKeyInVault = true
 		state.MarkAsCompleted()
 
-		if err := repo.CreateProcessState(state); err != nil {
+		if err := repo.SaveCreateProcessState(state); err != nil {
 			return nil, err
 		}
 	}
@@ -149,7 +149,7 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 	return state, nil
 }
 
-func (p *process) getStepContext(ctx context.Context, tx models.Transaction, state *models.ProcessState) *StepContext {
+func (p *process) getStepContext(ctx context.Context, tx models.Transaction, state *models.CreateProcess) *StepContext {
 	logger := p.logger
 	newAccountService := NewAccountService(ctx, p.confluent, tx)
 	vault := NewVaultService(ctx, p.vault)

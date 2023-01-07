@@ -89,7 +89,7 @@ func Test_createProcessState(t *testing.T) {
 		},
 		{
 			name: "process already exists",
-			mock: &mock{ReturnProcessState: &models.ProcessState{
+			mock: &mock{ReturnProcessState: &models.CreateProcess{
 				CapabilityRootId:  someCapabilityRootId,
 				ClusterId:         someClusterId,
 				TopicName:         someTopicName,
@@ -139,12 +139,12 @@ func Test_createProcessState(t *testing.T) {
 }
 
 type mock struct {
-	ReturnProcessState   *models.ProcessState
+	ReturnProcessState   *models.CreateProcess
 	ReturnServiceAccount *models.ServiceAccount
 	EventProduced        *TopicProvisioningBegun
 }
 
-func (m *mock) GetProcessState(models.CapabilityRootId, models.ClusterId, string) (*models.ProcessState, error) {
+func (m *mock) GetCreateProcessState(models.CapabilityRootId, models.ClusterId, string) (*models.CreateProcess, error) {
 	return m.ReturnProcessState, nil
 }
 
@@ -158,7 +158,7 @@ func (m *mock) GetServiceAccount(models.CapabilityRootId) (*models.ServiceAccoun
 	return m.ReturnServiceAccount, nil
 }
 
-func (m *mock) CreateProcessState(*models.ProcessState) error {
+func (m *mock) SaveCreateProcessState(*models.CreateProcess) error {
 	return nil
 }
 
