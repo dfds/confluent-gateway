@@ -7,6 +7,7 @@ OUTPUT_DIR_MANIFESTS=${OUTPUT_DIR}/manifests
 OUTPUT_DIR_TESTS=${OUTPUT_DIR}/tests
 GOOS=linux
 GOARCH=amd64
+RICHGO:=$(shell which richgo 2>/dev/null)
 
 clean:
 	@rm -Rf $(OUTPUT_DIR)
@@ -31,10 +32,18 @@ build:
 test: tests
 
 tests:
+ifdef RICHGO
+	@cd src && richgo test \
+		-v \
+		-cover \
+		./...
+else
 	@cd src && go test \
 		-v \
 		-cover \
 		./...
+endif
+
 
 container:
 	@docker build -t $(APP_IMAGE_NAME) .
