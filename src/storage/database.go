@@ -26,7 +26,7 @@ func NewDatabase(dsn string, logger logging.Logger) (*Database, error) {
 	}
 }
 
-func (d *Database) WithContext(ctx context.Context) process.Database {
+func (d *Database) NewSession(ctx context.Context) process.Session {
 	return &Database{d.db.Session(&gorm.Session{Context: ctx})}
 }
 

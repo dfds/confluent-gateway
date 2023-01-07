@@ -34,9 +34,9 @@ type CreateTopicProcessInput struct {
 }
 
 func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicProcessInput) error {
-	database := ctp.database.WithContext(ctx)
+	session := ctp.database.NewSession(ctx)
 
-	state, err := ctp.prepareProcessState(database, input)
+	state, err := ctp.prepareProcessState(session, input)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		Step(ensureServiceAccountApiKeyAreStoredInVault).
 		Step(ensureTopicIsCreated).
 		Run(func(step Step) error {
-			return database.Transaction(func(tx Transaction) error {
+			return session.Transaction(func(tx Transaction) error {
 				stepContext := ctp.getStepContext(ctx, tx, state)
 
 				err := step(stepContext)
@@ -66,10 +66,10 @@ func (ctp *createTopicProcess) Process(ctx context.Context, input CreateTopicPro
 		})
 }
 
-func (ctp *createTopicProcess) prepareProcessState(database Database, input CreateTopicProcessInput) (*models.ProcessState, error) {
+func (ctp *createTopicProcess) prepareProcessState(session Session, input CreateTopicProcessInput) (*models.ProcessState, error) {
 	var s *models.ProcessState
 
-	err := database.Transaction(func(tx Transaction) error {
+	err := session.Transaction(func(tx Transaction) error {
 		outbox := ctp.getOutbox(tx)
 
 		state, err := getOrCreateProcessState(tx, outbox, input)

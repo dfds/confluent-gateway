@@ -7,7 +7,10 @@ import (
 )
 
 type Database interface {
-	WithContext(context.Context) Database
+	NewSession(context.Context) Session
+}
+
+type Session interface {
 	Transaction(func(Transaction) error) error
 }
 
