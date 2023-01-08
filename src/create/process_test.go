@@ -97,7 +97,7 @@ func Test_createProcessState(t *testing.T) {
 				HasClusterAccess:  true,
 				HasApiKey:         true,
 				HasApiKeyInVault:  true,
-				CompletedAt:       &time.Time{},
+				CompletedAt:       nil,
 			}},
 			input: ProcessInput{
 				CapabilityRootId: someCapabilityRootId,
@@ -108,11 +108,32 @@ func Test_createProcessState(t *testing.T) {
 			wantHasClusterAccess:  true,
 			wantHasApiKey:         true,
 			wantHasApiKeyInVault:  true,
-			wantIsCompleted:       true,
+			wantIsCompleted:       false,
 			wantErr:               assert.NoError,
 			wantEvent:             nil,
 		},
-	}
+		{
+			name: "process already finished",
+			mock: &mock{ReturnProcessState: &models.CreateProcess{
+				CompletedAt: &time.Time{},
+			}},
+			input: ProcessInput{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				Topic:            models.TopicDescription{Name: someTopicName},
+			},
+			wantHasServiceAccount: false,
+			wantHasClusterAccess:  false,
+			wantHasApiKey:         false,
+			wantHasApiKeyInVault:  false,
+			wantIsCompleted:       false,
+			wantErr:               assert.NoError,
+			wantEvent: &TopicProvisioningBegun{
+				CapabilityRootId: string(someCapabilityRootId),
+				ClusterId:        string(someClusterId),
+				TopicName:        someTopicName,
+			},
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := getOrCreateProcessState(tt.mock, tt.mock, tt.input)

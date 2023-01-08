@@ -34,9 +34,24 @@ func Test_createProcessState(t *testing.T) {
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
 		},
-
 		{
 			name: "process already exists",
+			mock: &mock{ReturnProcessState: &models.DeleteProcess{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				TopicName:        someTopicName,
+				CompletedAt:      nil,
+			}},
+			input: ProcessInput{
+				CapabilityRootId: someCapabilityRootId,
+				ClusterId:        someClusterId,
+				TopicName:        someTopicName,
+			},
+			wantIsCompleted: false,
+			wantErr:         assert.NoError,
+		},
+		{
+			name: "process already finished",
 			mock: &mock{ReturnProcessState: &models.DeleteProcess{
 				CapabilityRootId: someCapabilityRootId,
 				ClusterId:        someClusterId,
@@ -48,7 +63,7 @@ func Test_createProcessState(t *testing.T) {
 				ClusterId:        someClusterId,
 				TopicName:        someTopicName,
 			},
-			wantIsCompleted: true,
+			wantIsCompleted: false,
 			wantErr:         assert.NoError,
 		},
 	}

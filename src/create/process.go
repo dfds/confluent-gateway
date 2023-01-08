@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"errors"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
@@ -39,6 +40,11 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 
 	state, err := p.prepareProcessState(session, input)
 	if err != nil {
+		if errors.Is(err, ErrTopicAlreadyExists) {
+			// topic already exists => skip
+			return nil
+		}
+
 		return err
 	}
 
@@ -73,6 +79,11 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 	err := session.Transaction(func(tx models.Transaction) error {
 		outbox := p.getOutbox(tx)
 
+		if err := ensureNewTopic(tx, input); err != nil {
+			p.logger.Warning("{Topic} on {Cluster} for {Capability} already exists", input.Topic.Name, string(input.CapabilityRootId), string(input.ClusterId))
+			return err
+		}
+
 		state, err := getOrCreateProcessState(tx, outbox, input)
 		if err != nil {
 			return err
@@ -84,6 +95,23 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 	})
 
 	return s, err
+}
+
+var ErrTopicAlreadyExists = errors.New("topic already exists")
+
+func ensureNewTopic(tx models.Transaction, input ProcessInput) error {
+	capabilityRootId, clusterId, topicName := input.CapabilityRootId, input.ClusterId, input.Topic.Name
+
+	topic, err := tx.GetTopic(capabilityRootId, clusterId, topicName)
+	if err != nil {
+		return err
+	}
+
+	if topic != nil {
+		return ErrTopicAlreadyExists
+	}
+
+	return nil
 }
 
 type stateRepository interface {
@@ -100,7 +128,8 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 		return nil, err
 	}
 
-	if state != nil {
+	if state != nil && !state.IsCompleted() {
+		// is process is unfinished => continue
 		return state, nil
 	}
 

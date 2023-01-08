@@ -28,6 +28,7 @@ type Transaction interface {
 	SaveDeleteProcessState(*DeleteProcess) error
 	UpdateDeleteProcessState(*DeleteProcess) error
 
+	GetTopic(CapabilityRootId, ClusterId, string) (*Topic, error)
 	CreateTopic(*Topic) error
 	DeleteTopic(CapabilityRootId, ClusterId, string) error
 

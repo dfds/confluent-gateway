@@ -145,7 +145,7 @@ func (d *Database) CreateTopic(topic *models.Topic) error {
 	return d.db.Create(topic).Error
 }
 
-func (d *Database) DeleteTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) error {
+func (d *Database) GetTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.Topic, error) {
 	var topic = &models.Topic{}
 
 	err := d.db.
@@ -155,10 +155,25 @@ func (d *Database) DeleteTopic(capabilityRootId models.CapabilityRootId, cluster
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
+			return nil, nil
 		}
 
+		return nil, err
+	}
+
+	return topic, nil
+}
+
+func (d *Database) DeleteTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) error {
+
+	topic, err := d.GetTopic(capabilityRootId, clusterId, topicName)
+
+	if err != nil {
 		return err
+	}
+
+	if topic == nil {
+		return nil
 	}
 
 	return d.db.Delete(topic).Error
