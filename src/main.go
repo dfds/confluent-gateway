@@ -12,6 +12,7 @@ import (
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/storage"
 	"github.com/dfds/confluent-gateway/vault"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
@@ -110,8 +111,12 @@ func main() {
 		panic(err)
 	}
 
-	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, outgoingRegistry)
-	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, outgoingRegistry)
+	outboxFactory := func(repository messaging.OutboxRepository) *messaging.Outbox {
+		return messaging.NewOutbox(logger, outgoingRegistry, repository, func() string { return uuid.NewV4().String() })
+	}
+
+	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
+	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
 
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)

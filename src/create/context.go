@@ -39,6 +39,12 @@ type Outbox interface {
 	Produce(msg messaging.OutgoingMessage) error
 }
 
+type OutboxRepository interface {
+	AddToOutbox(entry *messaging.OutboxEntry) error
+}
+
+type OutboxFactory func(repository OutboxRepository) Outbox
+
 func (c *StepContext) MarkServiceAccountAsReady() {
 	c.state.HasServiceAccount = true
 }

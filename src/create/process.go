@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/dfds/confluent-gateway/logging"
-	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 	. "github.com/dfds/confluent-gateway/process"
-	"github.com/satori/go.uuid"
 	"strings"
 )
 
@@ -16,16 +14,16 @@ type process struct {
 	database  models.Database
 	confluent Confluent
 	vault     Vault
-	registry  messaging.OutgoingMessageRegistry
+	factory   OutboxFactory
 }
 
-func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, vault Vault, registry messaging.OutgoingMessageRegistry) Process {
+func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, vault Vault, factory OutboxFactory) Process {
 	return &process{
 		logger:    logger,
 		database:  database,
 		confluent: confluent,
 		vault:     vault,
-		registry:  registry,
+		factory:   factory,
 	}
 }
 
@@ -77,7 +75,7 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 	var s *models.CreateProcess
 
 	err := session.Transaction(func(tx models.Transaction) error {
-		outbox := p.getOutbox(tx)
+		outbox := p.factory(tx)
 
 		if err := ensureNewTopic(tx, input); err != nil {
 			p.logger.Warning("{Topic} on {Cluster} for {Capability} already exists", input.Topic.Name, string(input.CapabilityRootId), string(input.ClusterId))
@@ -183,13 +181,9 @@ func (p *process) getStepContext(ctx context.Context, tx models.Transaction, sta
 	newAccountService := NewAccountService(ctx, p.confluent, tx)
 	vault := NewVaultService(ctx, p.vault)
 	topic := NewTopicService(ctx, p.confluent, tx)
-	outbox := p.getOutbox(tx)
+	outbox := p.factory(tx)
 
 	return NewStepContext(logger, state, newAccountService, vault, topic, outbox)
-}
-
-func (p *process) getOutbox(tx models.Transaction) *messaging.Outbox {
-	return messaging.NewOutbox(p.logger, p.registry, tx, func() string { return uuid.NewV4().String() })
 }
 
 // region Steps

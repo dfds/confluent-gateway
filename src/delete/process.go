@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/dfds/confluent-gateway/logging"
-	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/models"
 	. "github.com/dfds/confluent-gateway/process"
-	"github.com/satori/go.uuid"
 	"strings"
 )
 
@@ -15,15 +13,15 @@ type process struct {
 	logger    logging.Logger
 	database  models.Database
 	confluent Confluent
-	registry  messaging.OutgoingMessageRegistry
+	factory   OutboxFactory
 }
 
-func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, registry messaging.OutgoingMessageRegistry) Process {
+func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, factory OutboxFactory) Process {
 	return &process{
 		logger:    logger,
 		database:  database,
 		confluent: confluent,
-		registry:  registry,
+		factory:   factory,
 	}
 }
 
@@ -141,13 +139,9 @@ func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.
 func (p *process) getStepContext(ctx context.Context, tx models.Transaction, state *models.DeleteProcess) *StepContext {
 	logger := p.logger
 	topic := NewTopicService(ctx, p.confluent, tx)
-	outbox := p.getOutbox(tx)
+	outbox := p.factory(tx)
 
 	return NewStepContext(logger, state, topic, outbox)
-}
-
-func (p *process) getOutbox(tx models.Transaction) *messaging.Outbox {
-	return messaging.NewOutbox(p.logger, p.registry, tx, func() string { return uuid.NewV4().String() })
 }
 
 // region Steps
