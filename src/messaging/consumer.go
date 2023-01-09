@@ -3,12 +3,89 @@ package messaging
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"time"
 )
+
+func ConfigureConsumer(logger logging.Logger, broker string, groupId string, options []ConsumerOption) (Consumer, error) {
+	registry := NewMessageRegistry()
+	deserializer := NewDefaultDeserializer(registry)
+
+	cfg := &consumerConfig{
+		options:  ConsumerOptions{},
+		registry: registry,
+	}
+
+	options = append([]ConsumerOption{
+		setBroker(broker),
+		setGroupId(groupId),
+	}, options...)
+
+	for _, option := range options {
+		if err := option(cfg); err != nil {
+			return nil, err
+		}
+	}
+
+	dispatcher := NewDispatcher(registry, deserializer)
+
+	consumerOptions := cfg.options
+	consumerOptions.Topics = registry.GetTopics()
+
+	consumer, err := NewConsumer(logger, dispatcher, consumerOptions)
+	if err != nil {
+		return nil, err
+	}
+	return consumer, nil
+}
+
+type ConsumerOption func(cfg *consumerConfig) error
+
+type consumerConfig struct {
+	options  ConsumerOptions
+	registry MessageRegistry
+}
+
+func setBroker(broker string) ConsumerOption {
+	return func(cfg *consumerConfig) error {
+		if len(broker) > 0 {
+			cfg.options.Broker = broker
+			return nil
+		}
+		return ErrNoBroker
+	}
+}
+
+var ErrNoBroker = errors.New("no bootstrap.servers specified")
+
+func setGroupId(groupId string) ConsumerOption {
+	return func(cfg *consumerConfig) error {
+		if len(groupId) > 0 {
+			cfg.options.GroupId = groupId
+			return nil
+		}
+		return ErrNoGroupId
+	}
+}
+
+var ErrNoGroupId = errors.New("no group.id specified")
+
+func WithCredentials(credentials *ConsumerCredentials) ConsumerOption {
+	return func(cfg *consumerConfig) error {
+		cfg.options.Credentials = credentials
+		return nil
+	}
+}
+
+func RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) ConsumerOption {
+	return func(config *consumerConfig) error {
+		return config.registry.RegisterMessageHandler(topicName, eventType, handler, message)
+	}
+}
 
 type Consumer interface {
 	Start(ctx context.Context) error

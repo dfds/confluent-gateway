@@ -12,7 +12,6 @@ import (
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/dfds/confluent-gateway/storage"
 	"github.com/dfds/confluent-gateway/vault"
-	uuid "github.com/satori/go.uuid"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
@@ -71,21 +70,25 @@ func main() {
 
 	// load configuration from .env and/or environment files
 	config := loadConfig()
-
 	logger := getLogger(config)
-
 	db := getDatabase(config, logger)
-
 	confluentClient := getConfluentClient(logger, config, db)
-
 	awsClient := getVault(config, logger)
 
-	outboxFactory := getOutboxFactory(config, logger)
+	outboxFactory := getOutboxFactory(logger,
+		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
+		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}),
+		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{}),
+	)
 
 	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
 	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
 
-	consumer := getConsumer(logger, config, createTopicProcess, deleteTopicProcess)
+	consumer := getConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
+		messaging.WithCredentials(config.CreateConsumerCredentials()),
+		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
+		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
+	)
 
 	m := NewMain(logger, consumer)
 
@@ -142,44 +145,16 @@ func getVault(config Configuration, logger logging.Logger) *vault.Vault {
 	return awsClient
 }
 
-func getOutboxFactory(config Configuration, logger logging.Logger) func(repository messaging.OutboxRepository) *messaging.Outbox {
-	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
-
-	if err := outgoingRegistry.RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}); err != nil {
+func getOutboxFactory(logger logging.Logger, options ...messaging.OutboxOption) messaging.OutboxFactory {
+	outbox, err := messaging.ConfigureOutbox(logger, options)
+	if err != nil {
 		panic(err)
 	}
-	if err := outgoingRegistry.RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}); err != nil {
-		panic(err)
-	}
-	if err := outgoingRegistry.RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{}); err != nil {
-		panic(err)
+	return outbox
 	}
 
-	outboxFactory := func(repository messaging.OutboxRepository) *messaging.Outbox {
-		return messaging.NewOutbox(logger, outgoingRegistry, repository, func() string { return uuid.NewV4().String() })
-	}
-	return outboxFactory
-}
-
-func getConsumer(logger logging.Logger, config Configuration, createTopicProcess create.Process, deleteTopicProcess del.Process) messaging.Consumer {
-	registry := messaging.NewMessageRegistry()
-	deserializer := messaging.NewDefaultDeserializer(registry)
-	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}); err != nil {
-		panic(err)
-	}
-	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}); err != nil {
-		panic(err)
-	}
-	dispatcher := messaging.NewDispatcher(registry, deserializer)
-
-	consumerOptions := messaging.ConsumerOptions{
-		Broker:      config.KafkaBroker,
-		GroupId:     config.KafkaGroupId,
-		Credentials: config.CreateConsumerCredentials(),
-		Topics:      registry.GetTopics(),
-	}
-
-	consumer, err := messaging.NewConsumer(logger, dispatcher, consumerOptions)
+func getConsumer(logger logging.Logger, broker string, groupId string, options ...messaging.ConsumerOption) messaging.Consumer {
+	consumer, err := messaging.ConfigureConsumer(logger, broker, groupId, options)
 	if err != nil {
 		panic(err)
 	}

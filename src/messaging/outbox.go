@@ -8,6 +8,40 @@ import (
 	"time"
 )
 
+func ConfigureOutbox(logger logging.Logger, options []OutboxOption) (OutboxFactory, error) {
+	outgoingRegistry := NewOutgoingMessageRegistry()
+
+	cfg := &outboxConfig{
+		registry:  outgoingRegistry,
+		generator: func() string { return uuid.NewV4().String() },
+	}
+
+	for _, option := range options {
+		if err := option(cfg); err != nil {
+			return nil, err
+		}
+	}
+
+	outboxFactory := func(repository OutboxRepository) *Outbox {
+		return NewOutbox(logger, outgoingRegistry, repository, defaultMessageIdGenerator)
+	}
+	return outboxFactory, nil
+}
+
+type OutboxOption func(cfg *outboxConfig) error
+type OutboxFactory = func(repository OutboxRepository) *Outbox
+
+type outboxConfig struct {
+	registry  OutgoingMessageRegistry
+	generator MessageIdGenerator
+}
+
+func RegisterMessage(topicName string, eventType string, message OutgoingMessage) OutboxOption {
+	return func(cfg *outboxConfig) error {
+		return cfg.registry.RegisterMessage(topicName, eventType, message)
+	}
+}
+
 type Outbox struct {
 	logger    logging.Logger
 	registry  OutgoingMessageRegistry
@@ -16,6 +50,10 @@ type Outbox struct {
 }
 
 type MessageIdGenerator func() string
+
+func defaultMessageIdGenerator() string {
+	return uuid.NewV4().String()
+}
 
 type OutboxRepository interface {
 	AddToOutbox(*OutboxEntry) error
