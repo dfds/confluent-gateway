@@ -6,7 +6,7 @@ import (
 )
 
 type OutgoingMessageRegistry interface {
-	RegisterMessage(topicName string, eventType string, message OutgoingMessage) *OutgoingRegistration
+	RegisterMessage(topicName string, eventType string, message OutgoingMessage) error
 	GetRegistration(message OutgoingMessage) (*OutgoingMessageRegistration, error)
 }
 
@@ -29,33 +29,20 @@ type outgoingMessageRegistry struct {
 	registrations map[string]OutgoingMessageRegistration
 }
 
-type OutgoingRegistration struct {
-	registry *outgoingMessageRegistry
-	Error    error
-}
-
-func (r *OutgoingRegistration) RegisterMessage(topicName string, eventType string, message OutgoingMessage) *OutgoingRegistration {
-	if r.Error != nil {
-		return r
-	}
-
-	return r.registry.RegisterMessage(topicName, eventType, message)
-}
-
-func (r *outgoingMessageRegistry) RegisterMessage(topicName string, eventType string, message OutgoingMessage) *OutgoingRegistration {
+func (r *outgoingMessageRegistry) RegisterMessage(topicName string, eventType string, message OutgoingMessage) error {
 	if len(topicName) == 0 {
-		return r.error(errors.New("topic name must be specified"))
+		return errors.New("topic name must be specified")
 	}
 
 	messageType, err := getMessageType(message)
 	if err != nil {
-		return r.error(err)
+		return err
 	}
 
 	messageTypeName := messageType.Name()
 
 	if _, ok := r.registrations[messageTypeName]; ok {
-		return r.error(fmt.Errorf("duplicate message already registered for message of type: %s", eventType))
+		return fmt.Errorf("duplicate message already registered for message of type: %s", eventType)
 	}
 
 	r.registrations[messageTypeName] = OutgoingMessageRegistration{
@@ -63,21 +50,7 @@ func (r *outgoingMessageRegistry) RegisterMessage(topicName string, eventType st
 		topic:     topicName,
 	}
 
-	return r.ok()
-}
-
-func (r *outgoingMessageRegistry) ok() *OutgoingRegistration {
-	return &OutgoingRegistration{
-		registry: r,
-		Error:    nil,
-	}
-}
-
-func (r *outgoingMessageRegistry) error(err error) *OutgoingRegistration {
-	return &OutgoingRegistration{
-		registry: r,
-		Error:    err,
-	}
+	return nil
 }
 
 func (r *outgoingMessageRegistry) GetRegistration(message OutgoingMessage) (*OutgoingMessageRegistration, error) {

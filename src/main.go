@@ -145,12 +145,13 @@ func getVault(config Configuration, logger logging.Logger) *vault.Vault {
 func getOutboxFactory(config Configuration, logger logging.Logger) func(repository messaging.OutboxRepository) *messaging.Outbox {
 	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
 
-	registration := outgoingRegistry.
-		RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}).
-		RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}).
-		RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{})
-
-	if err := registration.Error; err != nil {
+	if err := outgoingRegistry.RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}); err != nil {
+		panic(err)
+	}
+	if err := outgoingRegistry.RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}); err != nil {
+		panic(err)
+	}
+	if err := outgoingRegistry.RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{}); err != nil {
 		panic(err)
 	}
 
@@ -163,11 +164,10 @@ func getOutboxFactory(config Configuration, logger logging.Logger) func(reposito
 func getConsumer(logger logging.Logger, config Configuration, createTopicProcess create.Process, deleteTopicProcess del.Process) messaging.Consumer {
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
-	r := registry.
-		RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}).
-		RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{})
-
-	if err := r.Error; err != nil {
+	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}); err != nil {
+		panic(err)
+	}
+	if err := registry.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}); err != nil {
 		panic(err)
 	}
 	dispatcher := messaging.NewDispatcher(registry, deserializer)
