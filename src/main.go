@@ -70,26 +70,66 @@ func main() {
 	defer stop()
 
 	// load configuration from .env and/or environment files
+	config := loadConfig()
+
+	logger := getLogger(config)
+
+	db := getDatabase(config, logger)
+
+	confluentClient := getConfluentClient(logger, config, db)
+
+	awsClient := getVault(config, logger)
+
+	outboxFactory := getOutboxFactory(config, logger)
+
+	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
+	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
+
+	consumer := getConsumer(logger, config, createTopicProcess, deleteTopicProcess)
+
+	m := NewMain(logger, consumer)
+
+	logger.Information("Running")
+
+	if err := m.Run(ctx); err != nil {
+		logger.Error(err, "Exit reason {Reason}", err.Error())
+		os.Exit(1)
+	}
+
+	logger.Information("Done!")
+}
+
+func loadConfig() Configuration {
 	var config = Configuration{}
 	configuration.LoadInto(&config)
+	return config
+}
 
-	logger := logging.NewLogger(logging.LoggerOptions{
+func getLogger(config Configuration) logging.Logger {
+	return logging.NewLogger(logging.LoggerOptions{
 		IsProduction: config.IsProduction(),
 		AppName:      config.ApplicationName,
 	})
+}
 
+func getDatabase(config Configuration, logger logging.Logger) *storage.Database {
 	db, err := storage.NewDatabase(config.DbConnectionString, logger)
 	if err != nil {
 		panic(err)
 	}
+	return db
+}
 
-	confluentClient := confluent.NewClient(logger, confluent.CloudApiAccess{
+func getConfluentClient(logger logging.Logger, config Configuration, db *storage.Database) *confluent.Client {
+	return confluent.NewClient(logger, confluent.CloudApiAccess{
 		ApiEndpoint:     config.ConfluentCloudApiUrl,
 		Username:        config.ConfluentCloudApiUserName,
 		Password:        config.ConfluentCloudApiPassword,
 		UserApiEndpoint: config.ConfluentUserApiUrl,
 	}, db)
+}
 
+func getVault(config Configuration, logger logging.Logger) *vault.Vault {
 	vaultCfg, err := config.CreateVaultConfig()
 	if err != nil {
 		panic(err)
@@ -99,7 +139,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	return awsClient
+}
 
+func getOutboxFactory(config Configuration, logger logging.Logger) func(repository messaging.OutboxRepository) *messaging.Outbox {
 	outgoingRegistry := messaging.NewOutgoingMessageRegistry()
 
 	registration := outgoingRegistry.
@@ -114,10 +157,10 @@ func main() {
 	outboxFactory := func(repository messaging.OutboxRepository) *messaging.Outbox {
 		return messaging.NewOutbox(logger, outgoingRegistry, repository, func() string { return uuid.NewV4().String() })
 	}
+	return outboxFactory
+}
 
-	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
-	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
-
+func getConsumer(logger logging.Logger, config Configuration, createTopicProcess create.Process, deleteTopicProcess del.Process) messaging.Consumer {
 	registry := messaging.NewMessageRegistry()
 	deserializer := messaging.NewDefaultDeserializer(registry)
 	r := registry.
@@ -140,17 +183,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	m := NewMain(logger, consumer)
-
-	logger.Information("Running")
-
-	if err := m.Run(ctx); err != nil {
-		logger.Error(err, "Exit reason {Reason}", err.Error())
-		os.Exit(1)
-	}
-
-	logger.Information("Done!")
+	return consumer
 }
 
 type Main struct {
