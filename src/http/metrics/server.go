@@ -18,7 +18,7 @@ func NewServer(logger logging.Logger) *Server {
 	mux.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
-		Addr:    "127.0.0.1:8080",
+		Addr:    ":8888",
 		Handler: mux,
 	}
 

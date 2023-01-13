@@ -3,12 +3,13 @@ kind: Service
 metadata:
   name: confluent-gateway
   namespace: selfservice
-  # labels:
-  #   scrape-service-metrics: "true"
+  labels:
+    scrape-service-metrics: "true"
 spec:
   ports:
-  - name: external
-    port: 80
-    targetPort: web
+    - name: metrics
+      port: 8888
+      targetPort: metrics
+
   selector:
     app: confluent-gateway
