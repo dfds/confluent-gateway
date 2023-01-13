@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const someTopicName = "some-topic-name-cg"
+const someTopicName = "some-topic-name"
 
 var serviceError = errors.New("service error")
 

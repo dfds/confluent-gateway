@@ -6,7 +6,6 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
 	. "github.com/dfds/confluent-gateway/process"
-	"strings"
 )
 
 type process struct {
@@ -123,11 +122,6 @@ func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.
 	}
 
 	state = models.NewDeleteProcess(capabilityRootId, clusterId, topicName)
-
-	if !strings.HasSuffix(topicName, "-cg") {
-		// TODO -- stop faking
-		state.MarkAsCompleted()
-	}
 
 	if err := repo.SaveDeleteProcessState(state); err != nil {
 		return nil, err

@@ -6,7 +6,6 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/models"
 	. "github.com/dfds/confluent-gateway/process"
-	"strings"
 )
 
 type process struct {
@@ -131,46 +130,34 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 		return state, nil
 	}
 
-	if strings.HasSuffix(topic.Name, "-cg") {
-		serviceAccount, err := repo.GetServiceAccount(capabilityRootId)
-		if err != nil {
-			return nil, err
-		}
+	serviceAccount, err := repo.GetServiceAccount(capabilityRootId)
+	if err != nil {
+		return nil, err
+	}
 
-		HasServiceAccount := false
-		HasClusterAccess := false
+	HasServiceAccount := false
+	HasClusterAccess := false
 
-		if serviceAccount != nil {
-			HasServiceAccount = true
-			_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
-		}
+	if serviceAccount != nil {
+		HasServiceAccount = true
+		_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
+	}
 
-		state = models.NewCreateProcess(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+	state = models.NewCreateProcess(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
 
-		if err := repo.SaveCreateProcessState(state); err != nil {
-			return nil, err
-		}
+	if err := repo.SaveCreateProcessState(state); err != nil {
+		return nil, err
+	}
 
-		err = outbox.Produce(&TopicProvisioningBegun{
-			partitionKey:     state.Id.String(),
-			CapabilityRootId: string(capabilityRootId),
-			ClusterId:        string(clusterId),
-			TopicName:        topic.Name,
-		})
+	err = outbox.Produce(&TopicProvisioningBegun{
+		partitionKey:     state.Id.String(),
+		CapabilityRootId: string(capabilityRootId),
+		ClusterId:        string(clusterId),
+		TopicName:        topic.Name,
+	})
 
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// TODO -- stop faking
-		state = models.NewCreateProcess(capabilityRootId, clusterId, topic, true, true)
-		state.HasApiKey = true
-		state.HasApiKeyInVault = true
-		state.MarkAsCompleted()
-
-		if err := repo.SaveCreateProcessState(state); err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	return state, nil
