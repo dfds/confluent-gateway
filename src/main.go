@@ -146,15 +146,15 @@ func getVault(config Configuration, logger logging.Logger) *vault.Vault {
 }
 
 func getOutboxFactory(logger logging.Logger, options ...messaging.OutboxOption) messaging.OutboxFactory {
-	outbox, err := messaging.ConfigureOutbox(logger, options)
+	outbox, err := messaging.ConfigureOutbox(logger, options...)
 	if err != nil {
 		panic(err)
 	}
 	return outbox
-	}
+}
 
 func getConsumer(logger logging.Logger, broker string, groupId string, options ...messaging.ConsumerOption) messaging.Consumer {
-	consumer, err := messaging.ConfigureConsumer(logger, broker, groupId, options)
+	consumer, err := messaging.ConfigureConsumer(logger, broker, groupId, options...)
 	if err != nil {
 		panic(err)
 	}

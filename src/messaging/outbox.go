@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func ConfigureOutbox(logger logging.Logger, options []OutboxOption) (OutboxFactory, error) {
+func ConfigureOutbox(logger logging.Logger, options ...OutboxOption) (OutboxFactory, error) {
 	outgoingRegistry := NewOutgoingMessageRegistry()
 
 	cfg := &outboxConfig{
@@ -17,7 +17,7 @@ func ConfigureOutbox(logger logging.Logger, options []OutboxOption) (OutboxFacto
 	}
 
 	for _, option := range options {
-		if err := option(cfg); err != nil {
+		if err := option.apply(cfg); err != nil {
 			return nil, err
 		}
 	}
@@ -28,7 +28,6 @@ func ConfigureOutbox(logger logging.Logger, options []OutboxOption) (OutboxFacto
 	return outboxFactory, nil
 }
 
-type OutboxOption func(cfg *outboxConfig) error
 type OutboxFactory = func(repository OutboxRepository) *Outbox
 
 type outboxConfig struct {
@@ -36,9 +35,25 @@ type outboxConfig struct {
 	generator MessageIdGenerator
 }
 
+type OutboxOption interface {
+	apply(cfg *outboxConfig) error
+}
+
+type messageOption struct {
+	topicName string
+	eventType string
+	message   OutgoingMessage
+}
+
+func (o messageOption) apply(cfg *outboxConfig) error {
+	return cfg.registry.RegisterMessage(o.topicName, o.eventType, o.message)
+}
+
 func RegisterMessage(topicName string, eventType string, message OutgoingMessage) OutboxOption {
-	return func(cfg *outboxConfig) error {
-		return cfg.registry.RegisterMessage(topicName, eventType, message)
+	return messageOption{
+		topicName: topicName,
+		eventType: eventType,
+		message:   message,
 	}
 }
 

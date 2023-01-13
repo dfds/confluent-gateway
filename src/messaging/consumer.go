@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func ConfigureConsumer(logger logging.Logger, broker string, groupId string, options []ConsumerOption) (Consumer, error) {
+func ConfigureConsumer(logger logging.Logger, broker string, groupId string, options ...ConsumerOption) (Consumer, error) {
 	registry := NewMessageRegistry()
 	deserializer := NewDefaultDeserializer(registry)
 
@@ -26,7 +26,7 @@ func ConfigureConsumer(logger logging.Logger, broker string, groupId string, opt
 	}, options...)
 
 	for _, option := range options {
-		if err := option(cfg); err != nil {
+		if err := option.apply(cfg); err != nil {
 			return nil, err
 		}
 	}
@@ -43,47 +43,75 @@ func ConfigureConsumer(logger logging.Logger, broker string, groupId string, opt
 	return consumer, nil
 }
 
-type ConsumerOption func(cfg *consumerConfig) error
-
 type consumerConfig struct {
 	options  ConsumerOptions
 	registry MessageRegistry
 }
 
-func setBroker(broker string) ConsumerOption {
-	return func(cfg *consumerConfig) error {
-		if len(broker) > 0 {
-			cfg.options.Broker = broker
-			return nil
-		}
-		return ErrNoBroker
+type ConsumerOption interface {
+	apply(cfg *consumerConfig) error
+}
+
+type brokerOption struct{ broker string }
+
+func (o brokerOption) apply(cfg *consumerConfig) error {
+	if len(o.broker) > 0 {
+		cfg.options.Broker = o.broker
+		return nil
 	}
+	return ErrNoBroker
+}
+
+func setBroker(broker string) ConsumerOption {
+	return brokerOption{broker: broker}
 }
 
 var ErrNoBroker = errors.New("no bootstrap.servers specified")
 
-func setGroupId(groupId string) ConsumerOption {
-	return func(cfg *consumerConfig) error {
-		if len(groupId) > 0 {
-			cfg.options.GroupId = groupId
-			return nil
-		}
-		return ErrNoGroupId
+type groupIdOption struct{ groupId string }
+
+func (o groupIdOption) apply(cfg *consumerConfig) error {
+	if len(o.groupId) > 0 {
+		cfg.options.GroupId = o.groupId
+		return nil
 	}
+	return ErrNoGroupId
+}
+
+func setGroupId(groupId string) ConsumerOption {
+	return groupIdOption{groupId: groupId}
 }
 
 var ErrNoGroupId = errors.New("no group.id specified")
 
+type credentialsOption struct{ credentials *ConsumerCredentials }
+
+func (o credentialsOption) apply(cfg *consumerConfig) error {
+	cfg.options.Credentials = o.credentials
+	return nil
+}
+
 func WithCredentials(credentials *ConsumerCredentials) ConsumerOption {
-	return func(cfg *consumerConfig) error {
-		cfg.options.Credentials = credentials
-		return nil
-	}
+	return credentialsOption{credentials: credentials}
+}
+
+type messageHandlerOption struct {
+	topicName string
+	eventType string
+	handler   MessageHandler
+	message   interface{}
+}
+
+func (o messageHandlerOption) apply(cfg *consumerConfig) error {
+	return cfg.registry.RegisterMessageHandler(o.topicName, o.eventType, o.handler, o.message)
 }
 
 func RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) ConsumerOption {
-	return func(config *consumerConfig) error {
-		return config.registry.RegisterMessageHandler(topicName, eventType, handler, message)
+	return messageHandlerOption{
+		topicName: topicName,
+		eventType: eventType,
+		handler:   handler,
+		message:   message,
 	}
 }
 
