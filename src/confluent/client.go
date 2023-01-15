@@ -24,18 +24,18 @@ func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
 }
 
-type ClusterRepository interface {
-	GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error)
+type Clusters interface {
+	Get(clusterId models.ClusterId) (*models.Cluster, error)
 }
 
 type Client struct {
 	logger         logging.Logger
 	cloudApiAccess CloudApiAccess
-	repo           ClusterRepository
+	clusters       Clusters
 }
 
-func NewClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo ClusterRepository) *Client {
-	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, repo: repo}
+func NewClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo Clusters) *Client {
+	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, clusters: repo}
 }
 
 type createServiceAccountResponse struct {
@@ -122,7 +122,7 @@ func (c *Client) getResponseReader(request *http.Request, payload string) (*http
 }
 
 func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error {
-	cluster, err := c.repo.GetClusterById(ctx, clusterId)
+	cluster, err := c.clusters.Get(clusterId)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 }
 
 func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error {
-	cluster, _ := c.repo.GetClusterById(ctx, clusterId)
+	cluster, _ := c.clusters.Get(clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
 	payload := `{
@@ -234,7 +234,7 @@ func (c *Client) get(ctx context.Context, url string, apiKey models.ApiKey) (*ht
 }
 
 func (c *Client) DeleteTopic(ctx context.Context, clusterId models.ClusterId, topicName string) error {
-	cluster, _ := c.repo.GetClusterById(ctx, clusterId)
+	cluster, _ := c.clusters.Get(clusterId)
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics/%s", cluster.AdminApiEndpoint, clusterId, topicName)
 
 	response, err := c.delete(ctx, url, cluster.AdminApiKey)

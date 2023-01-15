@@ -124,12 +124,19 @@ func getDatabase(config Configuration, logger logging.Logger) *storage.Database 
 }
 
 func getConfluentClient(logger logging.Logger, config Configuration, db *storage.Database) *confluent.Client {
+	clusters, err := db.GetClusters(context.TODO())
+	if err != nil {
+		panic(err)
+	}
+
+	cache := storage.NewClusterCache(clusters)
+
 	return confluent.NewClient(logger, confluent.CloudApiAccess{
 		ApiEndpoint:     config.ConfluentCloudApiUrl,
 		Username:        config.ConfluentCloudApiUserName,
 		Password:        config.ConfluentCloudApiPassword,
 		UserApiEndpoint: config.ConfluentUserApiUrl,
-	}, db)
+	}, cache)
 }
 
 func getVault(config Configuration, logger logging.Logger) *vault.Vault {

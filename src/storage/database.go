@@ -35,15 +35,15 @@ func (d *Database) Transaction(f func(models.Transaction) error) error {
 	})
 }
 
-func (d *Database) GetClusterById(ctx context.Context, id models.ClusterId) (*models.Cluster, error) {
-	var cluster models.Cluster
+func (d *Database) GetClusters(ctx context.Context) ([]*models.Cluster, error) {
+	var clusters []*models.Cluster
 
-	err := d.db.WithContext(ctx).First(&cluster, id).Error
+	err := d.db.WithContext(ctx).Find(&clusters).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &cluster, nil
+	return clusters, nil
 }
 
 func (d *Database) GetCreateProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error) {

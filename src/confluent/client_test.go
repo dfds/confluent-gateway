@@ -40,7 +40,7 @@ func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			stubClient := Client{
 				logger:         logging.NilLogger(),
 				cloudApiAccess: CloudApiAccess{},
-				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
+				clusters:       &clustersStub{Cluster: stubCluster},
 			}
 
 			// act
@@ -78,7 +78,7 @@ func TestCreateTopicSendsExpectedPayload(t *testing.T) {
 	stubClient := Client{
 		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
-		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
+		clusters:       &clustersStub{Cluster: stubCluster},
 	}
 
 	// act
@@ -125,7 +125,7 @@ func TestCreateTopicUsesExpectedApiKey(t *testing.T) {
 	stubClient := Client{
 		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
-		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
+		clusters:       &clustersStub{Cluster: stubCluster},
 	}
 
 	// act
@@ -155,7 +155,7 @@ func TestCreateServiceAccountCallsExpectedEndpoint(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -182,7 +182,7 @@ func TestCreateServiceAccountSendsExpectedPayload(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -217,7 +217,7 @@ func TestCreateServiceAccountUsesExpectedApiKey(t *testing.T) {
 			Username:    "foo",
 			Password:    "bar",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -243,7 +243,7 @@ func TestCreateServiceAccountReturnsExpectedServiceAccountId(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -271,7 +271,7 @@ func TestCreateServiceAccountResponseError(t *testing.T) {
 			Username:    "foo",
 			Password:    "bar",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -300,7 +300,7 @@ func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -327,7 +327,7 @@ func TestCreateApiKeySendsExpectedPayload(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -370,7 +370,7 @@ func TestCreateApiKeyUsesExpectedApiKey(t *testing.T) {
 			Username:    "foo",
 			Password:    "bar",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -405,7 +405,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 			Username:    "dummy",
 			Password:    "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -445,7 +445,7 @@ func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 			stubClient := Client{
 				logger:         logging.NilLogger(),
 				cloudApiAccess: CloudApiAccess{},
-				repo:           &ClusterRepositoryStub{Cluster: stubCluster},
+				clusters:       &clustersStub{Cluster: stubCluster},
 			}
 
 			stubAclDefinition := models.AclDefinition{}
@@ -484,7 +484,7 @@ func TestCreateACLEntrySendsExpectedPayload(t *testing.T) {
 	stubClient := Client{
 		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
-		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
+		clusters:       &clustersStub{Cluster: stubCluster},
 	}
 
 	stubAclDefinition := models.AclDefinition{
@@ -539,7 +539,7 @@ func TestCreateACLEntryUsesExpectedApiKey(t *testing.T) {
 	stubClient := Client{
 		logger:         logging.NilLogger(),
 		cloudApiAccess: CloudApiAccess{},
-		repo:           &ClusterRepositoryStub{Cluster: stubCluster},
+		clusters:       &clustersStub{Cluster: stubCluster},
 	}
 
 	// act
@@ -583,7 +583,7 @@ func TestGetUsers(t *testing.T) {
 			Username:        "dummy",
 			Password:        "dummy",
 		},
-		repo: &ClusterRepositoryStub{},
+		clusters: &clustersStub{},
 	}
 
 	// act
@@ -606,10 +606,10 @@ func TestGetUsers(t *testing.T) {
 
 // ---------------------------------------------------------------------------------------------------------
 
-type ClusterRepositoryStub struct {
+type clustersStub struct {
 	Cluster models.Cluster
 }
 
-func (s *ClusterRepositoryStub) GetClusterById(context.Context, models.ClusterId) (*models.Cluster, error) {
+func (s *clustersStub) Get(models.ClusterId) (*models.Cluster, error) {
 	return &s.Cluster, nil
 }
