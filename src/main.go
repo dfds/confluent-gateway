@@ -90,7 +90,7 @@ func main() {
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
 	)
 
-	m := NewMain(logger, consumer)
+	m := NewMain(logger, config, consumer)
 
 	logger.Information("Running")
 
@@ -174,11 +174,11 @@ type Main struct {
 	MetricsServer *metrics.Server
 }
 
-func NewMain(logger logging.Logger, consumer messaging.Consumer) *Main {
+func NewMain(logger logging.Logger, config Configuration, consumer messaging.Consumer) *Main {
 	return &Main{
 		Logger:        logger,
 		Consumer:      consumer,
-		MetricsServer: metrics.NewServer(logger),
+		MetricsServer: metrics.NewServer(logger, config.IsProduction()),
 	}
 }
 

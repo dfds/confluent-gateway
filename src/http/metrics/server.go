@@ -13,12 +13,18 @@ type Server struct {
 	server *http.Server
 }
 
-func NewServer(logger logging.Logger) *Server {
+func NewServer(logger logging.Logger, isProduction bool) *Server {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
+	addr := "127.0.0.1:8888"
+
+	if isProduction {
+		addr = ":8888"
+	}
+
 	server := &http.Server{
-		Addr:    ":8888",
+		Addr:    addr,
 		Handler: mux,
 	}
 
@@ -29,7 +35,7 @@ func NewServer(logger logging.Logger) *Server {
 }
 
 func (s *Server) Open() error {
-	s.logger.Debug("Starting HTTP Server")
+	s.logger.Debug("Starting HTTP Server on {Addr}", s.server.Addr)
 
 	if err := s.server.ListenAndServe(); err != nil {
 		if err != http.ErrServerClosed {
