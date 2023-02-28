@@ -24,7 +24,8 @@ build:
 		-v \
 		-ldflags='-extldflags=-static -w -s' \
 		-tags netgo,osusergo \
-		-o $(OUTPUT_DIR_APP)/confluent-gateway
+		-o $(OUTPUT_DIR_APP)/confluent-gateway \
+		./cmd/main
 
 # NOTE: if CGO_BUILD=0 becomes a problem down the line
 # go build -ldflags='-extldflags=-static -w -s' -tags netgo,osusergo
