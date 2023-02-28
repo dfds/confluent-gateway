@@ -3,9 +3,9 @@ package create
 import (
 	"context"
 	"errors"
+	"github.com/dfds/confluent-gateway/internal/models"
+	. "github.com/dfds/confluent-gateway/internal/process"
 	"github.com/dfds/confluent-gateway/logging"
-	"github.com/dfds/confluent-gateway/models"
-	. "github.com/dfds/confluent-gateway/process"
 )
 
 type process struct {

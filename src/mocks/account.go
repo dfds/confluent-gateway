@@ -1,6 +1,6 @@
 package mocks
 
-import "github.com/dfds/confluent-gateway/models"
+import "github.com/dfds/confluent-gateway/internal/models"
 
 type AccountRepository struct {
 	ReturnServiceAccount        *models.ServiceAccount

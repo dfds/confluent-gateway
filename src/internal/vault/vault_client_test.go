@@ -2,8 +2,8 @@ package vault
 
 import (
 	"context"
+	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
-	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"

@@ -3,8 +3,8 @@ package create
 import (
 	"context"
 	"fmt"
+	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/messaging"
-	"github.com/dfds/confluent-gateway/models"
 )
 
 type handler struct {
@@ -22,11 +22,17 @@ type Process interface {
 func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContext) error {
 	switch message := msgContext.Message().(type) {
 
-	case *TopicDeletionRequested:
+	case *TopicRequested:
+		topic, err := models.NewTopicDescription(message.TopicName, message.Partitions, models.RetentionFromString(message.Retention))
+
+		if err != nil {
+			return err
+		}
+
 		input := ProcessInput{
 			CapabilityRootId: models.CapabilityRootId(message.CapabilityRootId),
 			ClusterId:        models.ClusterId(message.ClusterId),
-			TopicName:        message.TopicName,
+			Topic:            topic,
 		}
 		return h.process.Process(ctx, input)
 

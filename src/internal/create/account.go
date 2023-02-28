@@ -3,7 +3,7 @@ package create
 import (
 	"context"
 	"fmt"
-	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/internal/models"
 	"time"
 )
 

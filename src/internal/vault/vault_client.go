@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
+	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
-	"github.com/dfds/confluent-gateway/models"
 	"time"
 )
 

@@ -2,7 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/internal/models"
 )
 
 func NewClusterCache(items []*models.Cluster) *Cache[models.ClusterId, *models.Cluster] {

@@ -2,7 +2,7 @@ package create
 
 import (
 	"context"
-	"github.com/dfds/confluent-gateway/models"
+	"github.com/dfds/confluent-gateway/internal/models"
 )
 
 type Vault interface {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/mocks"
-	"github.com/dfds/confluent-gateway/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

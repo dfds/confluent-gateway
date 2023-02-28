@@ -1,9 +1,9 @@
 package create
 
 import (
+	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
-	"github.com/dfds/confluent-gateway/models"
 )
 
 type StepContext struct {
