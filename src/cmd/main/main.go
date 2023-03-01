@@ -24,25 +24,23 @@ func main() {
 
 	// load configuration from .env and/or environment files
 	config := configuration.LoadInto(&Configuration{})
-	logger := getLogger(config)
-	db := getDatabase(config, logger)
-	confluentClient := getConfluentClient(logger, config, db)
-	awsClient := getVault(config, logger)
-
-	outboxFactory := getOutboxFactory(logger,
+	logger := logging.NewLogger(logging.LoggerOptions{IsProduction: config.IsProduction(), AppName: config.ApplicationName})
+	db := Must(storage.NewDatabase(config.DbConnectionString, logger))
+	clusters := Must(db.GetClusters(ctx))
+	confluentClient := confluent.NewClient(logger, config.CreateCloudApiAccess(), storage.NewClusterCache(clusters))
+	awsClient := Must(vault.NewVaultClient(logger, Must(config.CreateVaultConfig())))
+	outboxFactory := Must(messaging.ConfigureOutbox(logger,
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}),
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{}),
-	)
-
+	))
 	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
 	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
-
-	consumer := getConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
+	consumer := Must(messaging.ConfigureConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
 		messaging.WithCredentials(config.CreateConsumerCredentials()),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
-	)
+	))
 
 	m := NewMain(logger, config, consumer)
 
@@ -56,59 +54,12 @@ func main() {
 	logger.Information("Done!")
 }
 
-func getLogger(config *Configuration) logging.Logger {
-	return logging.NewLogger(logging.LoggerOptions{
-		IsProduction: config.IsProduction(),
-		AppName:      config.ApplicationName,
-	})
-}
-
-func getDatabase(config *Configuration, logger logging.Logger) *storage.Database {
-	db, err := storage.NewDatabase(config.DbConnectionString, logger)
+func Must[T any](any T, err error) T {
 	if err != nil {
 		panic(err)
 	}
-	return db
-}
+	return any
 
-func getConfluentClient(logger logging.Logger, config *Configuration, db *storage.Database) *confluent.Client {
-	clusters, err := db.GetClusters(context.TODO())
-	if err != nil {
-		panic(err)
-	}
-
-	cache := storage.NewClusterCache(clusters)
-
-	return confluent.NewClient(logger, config.CreateCloudApiAccess(), cache)
-}
-
-func getVault(config *Configuration, logger logging.Logger) *vault.Vault {
-	vaultCfg, err := config.CreateVaultConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	awsClient, err := vault.NewVaultClient(logger, vaultCfg)
-	if err != nil {
-		panic(err)
-	}
-	return awsClient
-}
-
-func getOutboxFactory(logger logging.Logger, options ...messaging.OutboxOption) messaging.OutboxFactory {
-	outbox, err := messaging.ConfigureOutbox(logger, options...)
-	if err != nil {
-		panic(err)
-	}
-	return outbox
-}
-
-func getConsumer(logger logging.Logger, broker string, groupId string, options ...messaging.ConsumerOption) messaging.Consumer {
-	consumer, err := messaging.ConfigureConsumer(logger, broker, groupId, options...)
-	if err != nil {
-		panic(err)
-	}
-	return consumer
 }
 
 type Main struct {
@@ -155,8 +106,6 @@ func (m *Main) RunConsumer(g *errgroup.Group, ctx context.Context) {
 		}
 		log.Println("Consumer stopped")
 	}
-	//var once sync.Once
-	//defer once.Do(cleanup)
 
 	g.Go(func() error {
 		return m.Consumer.Start(ctx)
@@ -168,7 +117,6 @@ func (m *Main) RunConsumer(g *errgroup.Group, ctx context.Context) {
 
 		m.Logger.Warning("!!! STOPPING CONSUMER !!!")
 
-		//once.Do(cleanup)
 		cleanup()
 
 		m.Logger.Warning("!!! STOPPED CONSUMER !!!")
