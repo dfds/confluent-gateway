@@ -72,7 +72,7 @@ type reader struct {
 	sources []ValueSource
 }
 
-type ConfigurationReader interface {
+type Reader interface {
 	LoadConfigurationInto(cfg any)
 }
 type ValueSource interface {
@@ -129,7 +129,7 @@ func newValueSourceFrom(lines []string) ValueSource {
 	return &inMemoryValueSource{values: envVars}
 }
 
-func NewConfigurationReader() ConfigurationReader {
+func NewConfigurationReader() Reader {
 	return &reader{
 		sources: []ValueSource{
 			newValueSourceFrom(readLinesFromFile("./.env")),
@@ -138,8 +138,9 @@ func NewConfigurationReader() ConfigurationReader {
 	}
 }
 
-func LoadInto(cfg any) {
+func LoadInto[T any](cfg T) T {
 	NewConfigurationReader().LoadConfigurationInto(cfg)
+	return cfg
 }
 
 //func NewConfigurationReaderWithSources(sources ...ValueSource) ConfigurationReader {
