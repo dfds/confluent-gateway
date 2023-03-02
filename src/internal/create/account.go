@@ -14,7 +14,7 @@ type accountService struct {
 }
 
 type serviceAccountRepository interface {
-	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
+	GetServiceAccount(capabilityId models.CapabilityId) (*models.ServiceAccount, error)
 	CreateServiceAccount(serviceAccount *models.ServiceAccount) error
 	UpdateAclEntry(aclEntry *models.AclEntry) error
 	CreateClusterAccess(clusterAccess *models.ClusterAccess) error
@@ -29,8 +29,8 @@ func NewAccountService(ctx context.Context, confluent Confluent, repo serviceAcc
 	}
 }
 
-func (h *accountService) CreateServiceAccount(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) error {
-	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, string(capabilityRootId), "Created by Confluent Gateway")
+func (h *accountService) CreateServiceAccount(capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, string(capabilityId), "Created by Confluent Gateway")
 	if err != nil {
 		return err
 	}
@@ -54,29 +54,29 @@ func (h *accountService) CreateServiceAccount(capabilityRootId models.Capability
 	userAccountId := models.UserAccountId(fmt.Sprintf("User:%d", user.Id))
 
 	newServiceAccount := &models.ServiceAccount{
-		Id:               serviceAccountId,
-		UserAccountId:    userAccountId,
-		CapabilityRootId: capabilityRootId,
-		ClusterAccesses:  []models.ClusterAccess{*models.NewClusterAccess(serviceAccountId, userAccountId, clusterId, capabilityRootId)},
-		CreatedAt:        time.Now(),
+		Id:              serviceAccountId,
+		UserAccountId:   userAccountId,
+		CapabilityId:    capabilityId,
+		ClusterAccesses: []models.ClusterAccess{*models.NewClusterAccess(serviceAccountId, userAccountId, clusterId, capabilityId)},
+		CreatedAt:       time.Now(),
 	}
 
 	return h.repo.CreateServiceAccount(newServiceAccount)
 }
 
-func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
-	serviceAccount, err := h.repo.GetServiceAccount(capabilityRootId)
+func (h *accountService) GetOrCreateClusterAccess(capabilityId models.CapabilityId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
+	serviceAccount, err := h.repo.GetServiceAccount(capabilityId)
 	if err != nil {
 		return nil, err
 	}
 	if serviceAccount == nil {
-		return nil, fmt.Errorf("no service account for capability '%s' found", capabilityRootId)
+		return nil, fmt.Errorf("no service account for capability '%s' found", capabilityId)
 	}
 
 	clusterAccess, hasClusterAccess := serviceAccount.TryGetClusterAccess(clusterId)
 
 	if !hasClusterAccess {
-		clusterAccess = models.NewClusterAccess(serviceAccount.Id, serviceAccount.UserAccountId, clusterId, capabilityRootId)
+		clusterAccess = models.NewClusterAccess(serviceAccount.Id, serviceAccount.UserAccountId, clusterId, capabilityId)
 		serviceAccount.ClusterAccesses = append(serviceAccount.ClusterAccesses, *clusterAccess)
 
 		if err = h.repo.CreateClusterAccess(clusterAccess); err != nil {
@@ -86,13 +86,13 @@ func (h *accountService) GetOrCreateClusterAccess(capabilityRootId models.Capabi
 	return clusterAccess, nil
 }
 
-func (h *accountService) GetClusterAccess(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
-	serviceAccount, err := h.repo.GetServiceAccount(capabilityRootId)
+func (h *accountService) GetClusterAccess(capabilityId models.CapabilityId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
+	serviceAccount, err := h.repo.GetServiceAccount(capabilityId)
 	if err != nil {
 		return nil, err
 	}
 	if serviceAccount == nil {
-		return nil, fmt.Errorf("no service account for capability '%s' found", capabilityRootId)
+		return nil, fmt.Errorf("no service account for capability '%s' found", capabilityId)
 	}
 
 	clusterAccess, hasClusterAccess := serviceAccount.TryGetClusterAccess(clusterId)

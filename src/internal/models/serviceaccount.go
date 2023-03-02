@@ -14,14 +14,14 @@ func MakeUserAccountId(id int) UserAccountId {
 	return UserAccountId(fmt.Sprintf("User:%d", id))
 }
 
-type CapabilityRootId string
+type CapabilityId string
 
 type ServiceAccount struct {
-	Id               ServiceAccountId `gorm:"primarykey"`
-	UserAccountId    UserAccountId
-	CapabilityRootId CapabilityRootId
-	ClusterAccesses  []ClusterAccess
-	CreatedAt        time.Time
+	Id              ServiceAccountId `gorm:"primarykey"`
+	UserAccountId   UserAccountId
+	CapabilityId    CapabilityId
+	ClusterAccesses []ClusterAccess
+	CreatedAt       time.Time
 }
 
 func (*ServiceAccount) TableName() string {
@@ -63,7 +63,7 @@ func (ca *ClusterAccess) GetAclPendingCreation() []AclEntry {
 	return pending
 }
 
-func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId UserAccountId, clusterId ClusterId, capabilityRootId CapabilityRootId) *ClusterAccess {
+func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId UserAccountId, clusterId ClusterId, capabilityId CapabilityId) *ClusterAccess {
 	clusterAccessId := uuid.NewV4()
 
 	return &ClusterAccess{
@@ -72,13 +72,13 @@ func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId UserAccou
 		UserAccountId:    userAccountId,
 		ClusterId:        clusterId,
 		ApiKey:           ApiKey{},
-		Acl:              createAclEntries(capabilityRootId, clusterAccessId),
+		Acl:              createAclEntries(capabilityId, clusterAccessId),
 		CreatedAt:        time.Now(),
 	}
 }
 
-func createAclEntries(capabilityRootId CapabilityRootId, clusterAccessId uuid.UUID) []AclEntry {
-	allDefinitions := CreateAclDefinitions(capabilityRootId)
+func createAclEntries(capabilityId CapabilityId, clusterAccessId uuid.UUID) []AclEntry {
+	allDefinitions := CreateAclDefinitions(capabilityId)
 
 	acl := make([]AclEntry, len(allDefinitions))
 

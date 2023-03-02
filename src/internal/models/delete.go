@@ -6,22 +6,22 @@ import (
 )
 
 type DeleteProcess struct {
-	Id               uuid.UUID `gorm:"type:uuid;primarykey"`
-	CapabilityRootId CapabilityRootId
-	ClusterId        ClusterId
-	TopicName        string
-	CreatedAt        time.Time
-	CompletedAt      *time.Time
+	Id           uuid.UUID    `gorm:"type:uuid;primarykey"`
+	CapabilityId CapabilityId `gorm:"column:capability_id"`
+	ClusterId    ClusterId
+	TopicName    string
+	CreatedAt    time.Time
+	CompletedAt  *time.Time
 }
 
-func NewDeleteProcess(capabilityRootId CapabilityRootId, clusterId ClusterId, topicName string) *DeleteProcess {
+func NewDeleteProcess(capabilityId CapabilityId, clusterId ClusterId, topicName string) *DeleteProcess {
 	return &DeleteProcess{
-		Id:               uuid.NewV4(),
-		CapabilityRootId: capabilityRootId,
-		ClusterId:        clusterId,
-		TopicName:        topicName,
-		CreatedAt:        time.Now(),
-		CompletedAt:      nil,
+		Id:           uuid.NewV4(),
+		CapabilityId: capabilityId,
+		ClusterId:    clusterId,
+		TopicName:    topicName,
+		CreatedAt:    time.Now(),
+		CompletedAt:  nil,
 	}
 }
 

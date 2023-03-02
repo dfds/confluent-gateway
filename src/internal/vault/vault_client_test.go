@@ -31,7 +31,7 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 		config: *config,
 	}
 
-	stubCapabilityRootId := models.CapabilityRootId("foo")
+	stubCapabilityId := models.CapabilityId("foo")
 	stubClusterId := models.ClusterId("bar")
 	stubApiKey := models.ApiKey{
 		Username: "baz",
@@ -39,21 +39,21 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 	}
 
 	// act
-	err := sut.StoreApiKey(ctx, stubCapabilityRootId, stubClusterId, stubApiKey)
+	err := sut.StoreApiKey(ctx, stubCapabilityId, stubClusterId, stubApiKey)
 
 	// assert
 	assert.Nil(t, err)
 	assert.JSONEq(
 		t,
 		`{
-			"Name": "/capabilities/`+string(stubCapabilityRootId)+`/kafka/`+string(stubClusterId)+`/credentials",
+			"Name": "/capabilities/`+string(stubCapabilityId)+`/kafka/`+string(stubClusterId)+`/credentials",
 			"Tier": "Standard",
 			"Type": "SecureString",
 			"Value": "{ \"key\": \"`+stubApiKey.Username+`\", \"secret\": \"`+stubApiKey.Password+`\" }",
 			"Tags": [
 				{
-					"Key": "capabilityRootId",
-					"Value": "`+string(stubCapabilityRootId)+`"
+					"Key": "capabilityId",
+					"Value": "`+string(stubCapabilityId)+`"
 				},
 				{
 					"Key": "createdBy",
@@ -84,7 +84,7 @@ func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
 	// act
 	err := sut.StoreApiKey(
 		ctx,
-		models.CapabilityRootId("foo"),
+		models.CapabilityId("foo"),
 		models.ClusterId("bar"),
 		models.ApiKey{
 			Username: "baz",

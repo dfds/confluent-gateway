@@ -12,32 +12,32 @@ import (
 
 func TestTopicRequestedHandler_Handle(t *testing.T) {
 	tests := []struct {
-		name                 string
-		process              *processStub
-		msgContext           messaging.MessageContext
-		wantCapabilityRootId models.CapabilityRootId
-		wantClusterId        models.ClusterId
-		wantTopicName        string
-		wantPartition        int
-		wantRetention        time.Duration
-		wantErr              assert.ErrorAssertionFunc
+		name             string
+		process          *processStub
+		msgContext       messaging.MessageContext
+		wantCapabilityId models.CapabilityId
+		wantClusterId    models.ClusterId
+		wantTopicName    string
+		wantPartition    int
+		wantRetention    time.Duration
+		wantErr          assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "process ok",
 			process: &processStub{},
 			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicRequested{
-				CapabilityRootId: string(someCapabilityRootId),
-				ClusterId:        string(someClusterId),
-				TopicName:        someTopicName,
-				Partitions:       1,
-				Retention:        "-1",
+				CapabilityId: string(someCapabilityId),
+				ClusterId:    string(someClusterId),
+				TopicName:    someTopicName,
+				Partitions:   1,
+				Retention:    "-1",
 			}),
-			wantCapabilityRootId: someCapabilityRootId,
-			wantClusterId:        someClusterId,
-			wantTopicName:        someTopicName,
-			wantPartition:        1,
-			wantRetention:        -1 * time.Millisecond,
-			wantErr:              assert.NoError,
+			wantCapabilityId: someCapabilityId,
+			wantClusterId:    someClusterId,
+			wantTopicName:    someTopicName,
+			wantPartition:    1,
+			wantRetention:    -1 * time.Millisecond,
+			wantErr:          assert.NoError,
 		},
 		{
 			name:       "bad retention",
@@ -62,7 +62,7 @@ func TestTopicRequestedHandler_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewTopicRequestedHandler(tt.process)
 			tt.wantErr(t, h.Handle(context.TODO(), tt.msgContext))
-			assert.Equal(t, tt.wantCapabilityRootId, tt.process.input.CapabilityRootId)
+			assert.Equal(t, tt.wantCapabilityId, tt.process.input.CapabilityId)
 			assert.Equal(t, tt.wantClusterId, tt.process.input.ClusterId)
 			assert.Equal(t, tt.wantTopicName, tt.process.input.Topic.Name)
 			assert.Equal(t, tt.wantPartition, tt.process.input.Topic.Partitions)

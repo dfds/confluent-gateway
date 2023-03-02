@@ -11,26 +11,26 @@ import (
 
 func TestTopicRequestedHandler_Handle(t *testing.T) {
 	tests := []struct {
-		name                 string
-		process              *processStub
-		msgContext           messaging.MessageContext
-		wantCapabilityRootId models.CapabilityRootId
-		wantClusterId        models.ClusterId
-		wantTopicName        string
-		wantErr              assert.ErrorAssertionFunc
+		name             string
+		process          *processStub
+		msgContext       messaging.MessageContext
+		wantCapabilityId models.CapabilityId
+		wantClusterId    models.ClusterId
+		wantTopicName    string
+		wantErr          assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "process ok",
 			process: &processStub{},
 			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicDeletionRequested{
-				CapabilityRootId: string(someCapabilityRootId),
-				ClusterId:        string(someClusterId),
-				TopicName:        someTopicName,
+				CapabilityId: string(someCapabilityId),
+				ClusterId:    string(someClusterId),
+				TopicName:    someTopicName,
 			}),
-			wantCapabilityRootId: someCapabilityRootId,
-			wantClusterId:        someClusterId,
-			wantTopicName:        someTopicName,
-			wantErr:              assert.NoError,
+			wantCapabilityId: someCapabilityId,
+			wantClusterId:    someClusterId,
+			wantTopicName:    someTopicName,
+			wantErr:          assert.NoError,
 		},
 		{
 			name:       "process fail",
@@ -49,7 +49,7 @@ func TestTopicRequestedHandler_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewTopicRequestedHandler(tt.process)
 			tt.wantErr(t, h.Handle(context.TODO(), tt.msgContext))
-			assert.Equal(t, tt.wantCapabilityRootId, tt.process.input.CapabilityRootId)
+			assert.Equal(t, tt.wantCapabilityId, tt.process.input.CapabilityId)
 			assert.Equal(t, tt.wantClusterId, tt.process.input.ClusterId)
 			assert.Equal(t, tt.wantTopicName, tt.process.input.TopicName)
 		})

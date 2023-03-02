@@ -13,7 +13,7 @@ type AccountRepository struct {
 	OnUpdateAclEntryError       error
 }
 
-func (m *AccountRepository) GetServiceAccount(models.CapabilityRootId) (*models.ServiceAccount, error) {
+func (m *AccountRepository) GetServiceAccount(models.CapabilityId) (*models.ServiceAccount, error) {
 	return m.ReturnServiceAccount, m.OnGetServiceAccountError
 }
 func (m *AccountRepository) CreateServiceAccount(serviceAccount *models.ServiceAccount) error {

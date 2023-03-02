@@ -58,12 +58,12 @@ const (
 	PermissionTypeAllow                = "ALLOW"
 )
 
-func CreateAclDefinitions(capabilityRootId CapabilityRootId) []AclDefinition {
+func CreateAclDefinitions(capabilityId CapabilityId) []AclDefinition {
 	const publicTopicPrefix = "pub."
 	const allTopics = "'*'"
 	const clusterResourceName = "kafka-cluster"
 
-	capabilityPrefix := string(capabilityRootId)
+	capabilityPrefix := string(capabilityId)
 	publicCapabilityPrefix := fmt.Sprintf("%s%s", publicTopicPrefix, capabilityPrefix)
 	connectPrefix := fmt.Sprintf("connect-%s", capabilityPrefix)
 

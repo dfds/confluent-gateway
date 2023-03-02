@@ -14,23 +14,23 @@ type Session interface {
 }
 
 type Transaction interface {
-	GetServiceAccount(CapabilityRootId) (*ServiceAccount, error)
+	GetServiceAccount(CapabilityId) (*ServiceAccount, error)
 	CreateServiceAccount(*ServiceAccount) error
 	UpdateAclEntry(*AclEntry) error
 	CreateClusterAccess(*ClusterAccess) error
 	UpdateClusterAccess(*ClusterAccess) error
 
-	GetCreateProcessState(CapabilityRootId, ClusterId, string) (*CreateProcess, error)
+	GetCreateProcessState(CapabilityId, ClusterId, string) (*CreateProcess, error)
 	SaveCreateProcessState(*CreateProcess) error
 	UpdateCreateProcessState(*CreateProcess) error
 
-	GetDeleteProcessState(CapabilityRootId, ClusterId, string) (*DeleteProcess, error)
+	GetDeleteProcessState(CapabilityId, ClusterId, string) (*DeleteProcess, error)
 	SaveDeleteProcessState(*DeleteProcess) error
 	UpdateDeleteProcessState(*DeleteProcess) error
 
-	GetTopic(CapabilityRootId, ClusterId, string) (*Topic, error)
+	GetTopic(CapabilityId, ClusterId, string) (*Topic, error)
 	CreateTopic(*Topic) error
-	DeleteTopic(CapabilityRootId, ClusterId, string) error
+	DeleteTopic(CapabilityId, ClusterId, string) error
 
 	AddToOutbox(*messaging.OutboxEntry) error
 }

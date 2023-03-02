@@ -18,10 +18,10 @@ type Vault struct {
 	config aws.Config
 }
 
-func (v *Vault) StoreApiKey(ctx context.Context, capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+func (v *Vault) StoreApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
 
-	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityRootId, clusterId)
-	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityRootId} in cluster {ClusterId} at location {ParameterName}", apiKey.Username, string(capabilityRootId), string(clusterId), parameterName)
+	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
+	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", apiKey.Username, string(capabilityId), string(clusterId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
 
@@ -31,8 +31,8 @@ func (v *Vault) StoreApiKey(ctx context.Context, capabilityRootId models.Capabil
 		Value: aws.String(`{ "key": "` + apiKey.Username + `", "secret": "` + apiKey.Password + `" }`),
 		Tags: []types.Tag{
 			{
-				Key:   aws.String("capabilityRootId"),
-				Value: aws.String(string(capabilityRootId)),
+				Key:   aws.String("capabilityId"),
+				Value: aws.String(string(capabilityId)),
 			},
 			{
 				Key:   aws.String("createdBy"),
@@ -44,11 +44,11 @@ func (v *Vault) StoreApiKey(ctx context.Context, capabilityRootId models.Capabil
 	})
 
 	if err != nil {
-		v.logger.Error(err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityRootId} i cluster {ClusterId}", apiKey.Username, string(capabilityRootId), string(clusterId))
+		v.logger.Error(err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityId} i cluster {ClusterId}", apiKey.Username, string(capabilityId), string(clusterId))
 		return err
 	}
 
-	v.logger.Information("Successfully stored api key {ApiKeyUserName} for capability {CapabilityRootId} at location {ParameterName}", apiKey.Username, string(capabilityRootId), parameterName)
+	v.logger.Information("Successfully stored api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
 
 	return nil
 }

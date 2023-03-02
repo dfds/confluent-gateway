@@ -24,9 +24,9 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 
 	case *TopicDeletionRequested:
 		input := ProcessInput{
-			CapabilityRootId: models.CapabilityRootId(message.CapabilityRootId),
-			ClusterId:        models.ClusterId(message.ClusterId),
-			TopicName:        message.TopicName,
+			CapabilityId: models.CapabilityId(message.CapabilityId),
+			ClusterId:    models.ClusterId(message.ClusterId),
+			TopicName:    message.TopicName,
 		}
 		return h.process.Process(ctx, input)
 

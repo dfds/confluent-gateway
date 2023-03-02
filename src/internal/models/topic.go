@@ -7,24 +7,24 @@ import (
 )
 
 type Topic struct {
-	Id               uuid.UUID `gorm:"type:uuid;primarykey"`
-	CapabilityRootId CapabilityRootId
-	ClusterId        ClusterId
-	Name             string
-	Partitions       int
-	Retention        int64
-	CreatedAt        time.Time
+	Id           uuid.UUID `gorm:"type:uuid;primarykey"`
+	CapabilityId CapabilityId
+	ClusterId    ClusterId
+	Name         string
+	Partitions   int
+	Retention    int64
+	CreatedAt    time.Time
 }
 
-func NewTopic(capabilityRootId CapabilityRootId, clusterId ClusterId, topic TopicDescription) *Topic {
+func NewTopic(capabilityId CapabilityId, clusterId ClusterId, topic TopicDescription) *Topic {
 	return &Topic{
-		Id:               uuid.NewV4(),
-		CapabilityRootId: capabilityRootId,
-		ClusterId:        clusterId,
-		Name:             topic.Name,
-		Partitions:       topic.Partitions,
-		Retention:        topic.RetentionInMs(),
-		CreatedAt:        time.Now(),
+		Id:           uuid.NewV4(),
+		CapabilityId: capabilityId,
+		ClusterId:    clusterId,
+		Name:         topic.Name,
+		Partitions:   topic.Partitions,
+		Retention:    topic.RetentionInMs(),
+		CreatedAt:    time.Now(),
 	}
 }
 

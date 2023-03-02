@@ -19,11 +19,11 @@ func NewTopicService(context context.Context, confluent Confluent, repo topicRep
 	return &topicService{context: context, confluent: confluent, repo: repo}
 }
 
-func (p *topicService) CreateTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topic models.TopicDescription) error {
+func (p *topicService) CreateTopic(capabilityId models.CapabilityId, clusterId models.ClusterId, topic models.TopicDescription) error {
 	err := p.confluent.CreateTopic(p.context, clusterId, topic.Name, topic.Partitions, topic.RetentionInMs())
 	if err != nil {
 		return err
 	}
 
-	return p.repo.CreateTopic(models.NewTopic(capabilityRootId, clusterId, topic))
+	return p.repo.CreateTopic(models.NewTopic(capabilityId, clusterId, topic))
 }

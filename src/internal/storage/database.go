@@ -46,12 +46,12 @@ func (d *Database) GetClusters(ctx context.Context) ([]*models.Cluster, error) {
 	return clusters, nil
 }
 
-func (d *Database) GetCreateProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error) {
+func (d *Database) GetCreateProcessState(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error) {
 	var state = models.CreateProcess{}
 
 	err := d.db.
 		Model(&state).
-		First(&state, "capability_root_id = ? and cluster_id = ? and topic_name = ?", capabilityRootId, clusterId, topicName).
+		First(&state, "capability_id = ? and cluster_id = ? and topic_name = ?", capabilityId, clusterId, topicName).
 		Error
 
 	if err != nil {
@@ -73,12 +73,12 @@ func (d *Database) UpdateCreateProcessState(state *models.CreateProcess) error {
 	return d.db.Save(state).Error
 }
 
-func (d *Database) GetDeleteProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.DeleteProcess, error) {
+func (d *Database) GetDeleteProcessState(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.DeleteProcess, error) {
 	var state = models.DeleteProcess{}
 
 	err := d.db.
 		Model(&state).
-		First(&state, "capability_root_id = ? and cluster_id = ? and topic_name = ?", capabilityRootId, clusterId, topicName).
+		First(&state, "capability_id = ? and cluster_id = ? and topic_name = ?", capabilityId, clusterId, topicName).
 		Error
 
 	if err != nil {
@@ -100,14 +100,14 @@ func (d *Database) UpdateDeleteProcessState(state *models.DeleteProcess) error {
 	return d.db.Save(state).Error
 }
 
-func (d *Database) GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error) {
+func (d *Database) GetServiceAccount(capabilityId models.CapabilityId) (*models.ServiceAccount, error) {
 	var serviceAccount models.ServiceAccount
 
 	err := d.db.
 		Model(&serviceAccount).
 		Preload("ClusterAccesses").
 		Preload("ClusterAccesses.Acl").
-		First(&serviceAccount, "capability_root_id = ?", capabilityRootId).
+		First(&serviceAccount, "capability_id = ?", capabilityId).
 		Error
 
 	if err != nil {
@@ -145,12 +145,12 @@ func (d *Database) CreateTopic(topic *models.Topic) error {
 	return d.db.Create(topic).Error
 }
 
-func (d *Database) GetTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.Topic, error) {
+func (d *Database) GetTopic(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.Topic, error) {
 	var topic = &models.Topic{}
 
 	err := d.db.
 		Model(topic).
-		First(topic, "capability_root_id = ? and cluster_id = ? and name = ?", capabilityRootId, clusterId, topicName).
+		First(topic, "capability_id = ? and cluster_id = ? and name = ?", capabilityId, clusterId, topicName).
 		Error
 
 	if err != nil {
@@ -164,9 +164,9 @@ func (d *Database) GetTopic(capabilityRootId models.CapabilityRootId, clusterId 
 	return topic, nil
 }
 
-func (d *Database) DeleteTopic(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) error {
+func (d *Database) DeleteTopic(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) error {
 
-	topic, err := d.GetTopic(capabilityRootId, clusterId, topicName)
+	topic, err := d.GetTopic(capabilityId, clusterId, topicName)
 
 	if err != nil {
 		return err

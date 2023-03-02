@@ -27,9 +27,9 @@ func NewProcess(logger logging.Logger, database models.Database, confluent Confl
 }
 
 type ProcessInput struct {
-	CapabilityRootId models.CapabilityRootId
-	ClusterId        models.ClusterId
-	Topic            models.TopicDescription
+	CapabilityId models.CapabilityId
+	ClusterId    models.ClusterId
+	Topic        models.TopicDescription
 }
 
 func (p *process) Process(ctx context.Context, input ProcessInput) error {
@@ -77,7 +77,7 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 		outbox := p.factory(tx)
 
 		if err := ensureNewTopic(tx, input); err != nil {
-			p.logger.Warning("{Topic} on {Cluster} for {Capability} already exists", input.Topic.Name, string(input.CapabilityRootId), string(input.ClusterId))
+			p.logger.Warning("{Topic} on {Cluster} for {Capability} already exists", input.Topic.Name, string(input.CapabilityId), string(input.ClusterId))
 			return err
 		}
 
@@ -97,9 +97,9 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 var ErrTopicAlreadyExists = errors.New("topic already exists")
 
 func ensureNewTopic(tx models.Transaction, input ProcessInput) error {
-	capabilityRootId, clusterId, topicName := input.CapabilityRootId, input.ClusterId, input.Topic.Name
+	capabilityId, clusterId, topicName := input.CapabilityId, input.ClusterId, input.Topic.Name
 
-	topic, err := tx.GetTopic(capabilityRootId, clusterId, topicName)
+	topic, err := tx.GetTopic(capabilityId, clusterId, topicName)
 	if err != nil {
 		return err
 	}
@@ -112,15 +112,15 @@ func ensureNewTopic(tx models.Transaction, input ProcessInput) error {
 }
 
 type stateRepository interface {
-	GetCreateProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error)
-	GetServiceAccount(capabilityRootId models.CapabilityRootId) (*models.ServiceAccount, error)
+	GetCreateProcessState(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.CreateProcess, error)
+	GetServiceAccount(capabilityId models.CapabilityId) (*models.ServiceAccount, error)
 	SaveCreateProcessState(state *models.CreateProcess) error
 }
 
 func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessInput) (*models.CreateProcess, error) {
-	capabilityRootId, clusterId, topic := input.CapabilityRootId, input.ClusterId, input.Topic
+	capabilityId, clusterId, topic := input.CapabilityId, input.ClusterId, input.Topic
 
-	state, err := repo.GetCreateProcessState(capabilityRootId, clusterId, topic.Name)
+	state, err := repo.GetCreateProcessState(capabilityId, clusterId, topic.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 		return state, nil
 	}
 
-	serviceAccount, err := repo.GetServiceAccount(capabilityRootId)
+	serviceAccount, err := repo.GetServiceAccount(capabilityId)
 	if err != nil {
 		return nil, err
 	}
@@ -143,17 +143,17 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 		_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 	}
 
-	state = models.NewCreateProcess(capabilityRootId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+	state = models.NewCreateProcess(capabilityId, clusterId, topic, HasServiceAccount, HasClusterAccess)
 
 	if err := repo.SaveCreateProcessState(state); err != nil {
 		return nil, err
 	}
 
 	err = outbox.Produce(&TopicProvisioningBegun{
-		partitionKey:     state.Id.String(),
-		CapabilityRootId: string(capabilityRootId),
-		ClusterId:        string(clusterId),
-		TopicName:        topic.Name,
+		partitionKey: state.Id.String(),
+		CapabilityId: string(capabilityId),
+		ClusterId:    string(clusterId),
+		TopicName:    topic.Name,
 	})
 
 	if err != nil {

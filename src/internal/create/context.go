@@ -20,19 +20,19 @@ func NewStepContext(logger logging.Logger, state *models.CreateProcess, account 
 }
 
 type AccountService interface {
-	CreateServiceAccount(models.CapabilityRootId, models.ClusterId) error
-	GetOrCreateClusterAccess(models.CapabilityRootId, models.ClusterId) (*models.ClusterAccess, error)
-	GetClusterAccess(models.CapabilityRootId, models.ClusterId) (*models.ClusterAccess, error)
+	CreateServiceAccount(models.CapabilityId, models.ClusterId) error
+	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
+	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
 	CreateApiKey(*models.ClusterAccess) error
 }
 
 type VaultService interface {
-	StoreApiKey(models.CapabilityRootId, *models.ClusterAccess) error
+	StoreApiKey(models.CapabilityId, *models.ClusterAccess) error
 }
 
 type TopicService interface {
-	CreateTopic(models.CapabilityRootId, models.ClusterId, models.TopicDescription) error
+	CreateTopic(models.CapabilityId, models.ClusterId, models.TopicDescription) error
 }
 
 type Outbox interface {
@@ -50,7 +50,7 @@ func (c *StepContext) MarkServiceAccountAsReady() {
 }
 
 func (c *StepContext) CreateServiceAccount() error {
-	return c.account.CreateServiceAccount(c.state.CapabilityRootId, c.state.ClusterId)
+	return c.account.CreateServiceAccount(c.state.CapabilityId, c.state.ClusterId)
 }
 
 func (c *StepContext) HasServiceAccount() bool {
@@ -62,7 +62,7 @@ func (c *StepContext) HasClusterAccess() bool {
 }
 
 func (c *StepContext) GetOrCreateClusterAccess() (*models.ClusterAccess, error) {
-	return c.account.GetOrCreateClusterAccess(c.state.CapabilityRootId, c.state.ClusterId)
+	return c.account.GetOrCreateClusterAccess(c.state.CapabilityId, c.state.ClusterId)
 }
 
 func (c *StepContext) CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
@@ -78,7 +78,7 @@ func (c *StepContext) HasApiKey() bool {
 }
 
 func (c *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
-	return c.account.GetClusterAccess(c.state.CapabilityRootId, c.state.ClusterId)
+	return c.account.GetClusterAccess(c.state.CapabilityId, c.state.ClusterId)
 }
 
 func (c *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
@@ -94,7 +94,7 @@ func (c *StepContext) HasApiKeyInVault() bool {
 }
 
 func (c *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.vault.StoreApiKey(c.state.CapabilityRootId, clusterAccess)
+	return c.vault.StoreApiKey(c.state.CapabilityId, clusterAccess)
 }
 
 func (c *StepContext) MarkApiKeyInVaultAsReady() {
@@ -106,7 +106,7 @@ func (c *StepContext) IsCompleted() bool {
 }
 
 func (c *StepContext) CreateTopic() error {
-	return c.topic.CreateTopic(c.state.CapabilityRootId, c.state.ClusterId, c.state.TopicDescription())
+	return c.topic.CreateTopic(c.state.CapabilityId, c.state.ClusterId, c.state.TopicDescription())
 }
 
 func (c *StepContext) MarkAsCompleted() {
@@ -115,10 +115,10 @@ func (c *StepContext) MarkAsCompleted() {
 
 func (c *StepContext) RaiseTopicProvisionedEvent() error {
 	event := &TopicProvisioned{
-		partitionKey:     c.state.Id.String(),
-		CapabilityRootId: string(c.state.CapabilityRootId),
-		ClusterId:        string(c.state.ClusterId),
-		TopicName:        c.state.TopicName,
+		partitionKey: c.state.Id.String(),
+		CapabilityId: string(c.state.CapabilityId),
+		ClusterId:    string(c.state.ClusterId),
+		TopicName:    c.state.TopicName,
 	}
 	return c.outbox.Produce(event)
 }

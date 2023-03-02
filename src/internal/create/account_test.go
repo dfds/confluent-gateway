@@ -11,7 +11,7 @@ import (
 )
 
 const someServiceAccountId = models.ServiceAccountId("sa-1234")
-const someCapabilityRootId = models.CapabilityRootId("some-capability-root-id")
+const someCapabilityId = models.CapabilityId("some-capability-id")
 const someClusterId = models.ClusterId("some-cluster-id")
 const someUserAccountId = 1234
 
@@ -20,12 +20,12 @@ func TestAccountHelper_CreateServiceAccount_Ok(t *testing.T) {
 	spy := &mocks.AccountRepository{}
 	sut := NewAccountService(context.TODO(), stub, spy)
 
-	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+	err := sut.CreateServiceAccount(someCapabilityId, someClusterId)
 
 	assert.NoError(t, err)
 	assert.Equal(t, someServiceAccountId, spy.GotServiceAccount.Id)
 	assert.Equal(t, models.MakeUserAccountId(someUserAccountId), spy.GotServiceAccount.UserAccountId)
-	assert.Equal(t, someCapabilityRootId, spy.GotServiceAccount.CapabilityRootId)
+	assert.Equal(t, someCapabilityId, spy.GotServiceAccount.CapabilityId)
 	assert.Equal(t, someServiceAccountId, spy.GotServiceAccount.ClusterAccesses[0].ServiceAccountId)
 	assert.Equal(t, someClusterId, spy.GotServiceAccount.ClusterAccesses[0].ClusterId)
 }
@@ -35,7 +35,7 @@ func TestAccountHelper_CreateServiceAccount_ErrorCreatingServiceAccount(t *testi
 	stub := &mocks.MockClient{OnCreateServiceAccountError: errors.New(errorText)}
 	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
 
-	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+	err := sut.CreateServiceAccount(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, errorText)
 }
@@ -45,7 +45,7 @@ func TestAccountHelper_CreateServiceAccount_ErrorGettingUsers(t *testing.T) {
 	stub := &mocks.MockClient{OnGetUsersError: errors.New(errorText)}
 	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
 
-	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+	err := sut.CreateServiceAccount(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, errorText)
 }
@@ -55,7 +55,7 @@ func TestAccountHelper_CreateServiceAccount_MissingUserAccount(t *testing.T) {
 	stub := &mocks.MockClient{ReturnServiceAccountId: someServiceAccountId}
 	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
 
-	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+	err := sut.CreateServiceAccount(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, fmt.Sprintf("unable to find matching user account for %q", someServiceAccountId))
 }
@@ -66,7 +66,7 @@ func TestAccountHelper_CreateServiceAccount_ErrorPersistingServiceAccount(t *tes
 	clientStub := &mocks.MockClient{ReturnServiceAccountId: someServiceAccountId, ReturnUsers: []models.User{{Id: someUserAccountId, ResourceID: string(someServiceAccountId)}}}
 	sut := NewAccountService(context.TODO(), clientStub, repoStub)
 
-	err := sut.CreateServiceAccount(someCapabilityRootId, someClusterId)
+	err := sut.CreateServiceAccount(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, errorText)
 }
@@ -82,7 +82,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_GetExistingClusterAccess(t *test
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	result, err := sut.GetOrCreateClusterAccess(someCapabilityRootId, someClusterId)
+	result, err := sut.GetOrCreateClusterAccess(someCapabilityId, someClusterId)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &clusterAccess, result)
@@ -95,7 +95,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_GetExistingClusterAccessError(t 
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	_, err := sut.GetOrCreateClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetOrCreateClusterAccess(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, errorText)
 
@@ -107,7 +107,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_CreateNewClusterAccess(t *testin
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, spy)
 
-	_, err := sut.GetOrCreateClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetOrCreateClusterAccess(someCapabilityId, someClusterId)
 
 	assert.NoError(t, err)
 	assert.Equal(t, spy.GotClusterAccess.ClusterId, someClusterId)
@@ -125,7 +125,7 @@ func TestAccountHelper_GetOrCreateClusterAccess_DatabaseError(t *testing.T) {
 
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	_, err := sut.GetOrCreateClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetOrCreateClusterAccess(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, errorText)
 }
@@ -133,9 +133,9 @@ func TestAccountHelper_GetOrCreateClusterAccess_DatabaseError(t *testing.T) {
 func TestAccountHelper_GetOrCreateClusterAccess_NoServiceAccount(t *testing.T) {
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, &mocks.AccountRepository{})
 
-	_, err := sut.GetOrCreateClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetOrCreateClusterAccess(someCapabilityId, someClusterId)
 
-	assert.EqualError(t, err, fmt.Sprintf("no service account for capability '%s' found", someCapabilityRootId))
+	assert.EqualError(t, err, fmt.Sprintf("no service account for capability '%s' found", someCapabilityId))
 }
 
 func TestAccountHelper_GetClusterAccess_GetExistingClusterAccess(t *testing.T) {
@@ -149,7 +149,7 @@ func TestAccountHelper_GetClusterAccess_GetExistingClusterAccess(t *testing.T) {
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	result, err := sut.GetClusterAccess(someCapabilityRootId, someClusterId)
+	result, err := sut.GetClusterAccess(someCapabilityId, someClusterId)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &clusterAccess, result)
@@ -163,7 +163,7 @@ func TestAccountHelper_GetClusterAccess_DatabaseError(t *testing.T) {
 	}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	_, err := sut.GetClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetClusterAccess(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, errorText)
 }
@@ -171,16 +171,16 @@ func TestAccountHelper_GetClusterAccess_DatabaseError(t *testing.T) {
 func TestAccountHelper_GetClusterAccess_NoServiceAccount(t *testing.T) {
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, &mocks.AccountRepository{})
 
-	_, err := sut.GetClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetClusterAccess(someCapabilityId, someClusterId)
 
-	assert.EqualError(t, err, fmt.Sprintf("no service account for capability '%s' found", someCapabilityRootId))
+	assert.EqualError(t, err, fmt.Sprintf("no service account for capability '%s' found", someCapabilityId))
 }
 
 func TestAccountHelper_GetClusterAccess_NoClusterAccess(t *testing.T) {
 	stub := &mocks.AccountRepository{ReturnServiceAccount: &models.ServiceAccount{Id: someServiceAccountId}}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	_, err := sut.GetClusterAccess(someCapabilityRootId, someClusterId)
+	_, err := sut.GetClusterAccess(someCapabilityId, someClusterId)
 
 	assert.EqualError(t, err, fmt.Sprintf("no cluster access for service account '%s' found", someServiceAccountId))
 }

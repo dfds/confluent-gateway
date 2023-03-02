@@ -1,16 +1,16 @@
 package create
 
 type TopicDeletionRequested struct {
-	CapabilityRootId string `json:"capabilityRootId"`
-	ClusterId        string `json:"clusterId"`
-	TopicName        string `json:"topicName"`
+	CapabilityId string `json:"capabilityRootId"`
+	ClusterId    string `json:"clusterId"`
+	TopicName    string `json:"topicName"`
 }
 
 type TopicDeleted struct {
-	partitionKey     string
-	CapabilityRootId string `json:"capabilityRootId"`
-	ClusterId        string `json:"clusterId"`
-	TopicName        string `json:"topicName"`
+	partitionKey string
+	CapabilityId string `json:"capabilityRootId"`
+	ClusterId    string `json:"clusterId"`
+	TopicName    string `json:"topicName"`
 }
 
 func (t *TopicDeleted) PartitionKey() string {

@@ -1,18 +1,18 @@
 package create
 
 type TopicRequested struct {
-	CapabilityRootId string `json:"capabilityRootId"`
-	ClusterId        string `json:"clusterId"`
-	TopicName        string `json:"topicName"`
-	Partitions       int    `json:"partitions"`
-	Retention        string `json:"retention"`
+	CapabilityId string `json:"capabilityRootId"`
+	ClusterId    string `json:"clusterId"`
+	TopicName    string `json:"topicName"`
+	Partitions   int    `json:"partitions"`
+	Retention    string `json:"retention"`
 }
 
 type TopicProvisioned struct {
-	partitionKey     string
-	CapabilityRootId string `json:"capabilityRootId"`
-	ClusterId        string `json:"clusterId"`
-	TopicName        string `json:"topicName"`
+	partitionKey string
+	CapabilityId string `json:"capabilityRootId"`
+	ClusterId    string `json:"clusterId"`
+	TopicName    string `json:"topicName"`
 }
 
 func (t *TopicProvisioned) PartitionKey() string {
@@ -20,10 +20,10 @@ func (t *TopicProvisioned) PartitionKey() string {
 }
 
 type TopicProvisioningBegun struct {
-	partitionKey     string
-	CapabilityRootId string `json:"capabilityRootId"`
-	ClusterId        string `json:"clusterId"`
-	TopicName        string `json:"topicName"`
+	partitionKey string
+	CapabilityId string `json:"capabilityRootId"`
+	ClusterId    string `json:"clusterId"`
+	TopicName    string `json:"topicName"`
 }
 
 func (t *TopicProvisioningBegun) PartitionKey() string {

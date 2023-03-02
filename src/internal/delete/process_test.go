@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const someCapabilityRootId = models.CapabilityRootId("some-capability-root-id")
+const someCapabilityId = models.CapabilityId("some-capability-id")
 const someClusterId = models.ClusterId("some-cluster-id")
 const someTopicName = "some-topic-name"
 
@@ -27,9 +27,9 @@ func Test_createProcessState(t *testing.T) {
 			name: "ok",
 			mock: &mock{},
 			input: ProcessInput{
-				CapabilityRootId: someCapabilityRootId,
-				ClusterId:        someClusterId,
-				TopicName:        someTopicName,
+				CapabilityId: someCapabilityId,
+				ClusterId:    someClusterId,
+				TopicName:    someTopicName,
 			},
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
@@ -37,15 +37,15 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "process already exists",
 			mock: &mock{ReturnProcessState: &models.DeleteProcess{
-				CapabilityRootId: someCapabilityRootId,
-				ClusterId:        someClusterId,
-				TopicName:        someTopicName,
-				CompletedAt:      nil,
+				CapabilityId: someCapabilityId,
+				ClusterId:    someClusterId,
+				TopicName:    someTopicName,
+				CompletedAt:  nil,
 			}},
 			input: ProcessInput{
-				CapabilityRootId: someCapabilityRootId,
-				ClusterId:        someClusterId,
-				TopicName:        someTopicName,
+				CapabilityId: someCapabilityId,
+				ClusterId:    someClusterId,
+				TopicName:    someTopicName,
 			},
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
@@ -53,15 +53,15 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "process already finished",
 			mock: &mock{ReturnProcessState: &models.DeleteProcess{
-				CapabilityRootId: someCapabilityRootId,
-				ClusterId:        someClusterId,
-				TopicName:        someTopicName,
-				CompletedAt:      &time.Time{},
+				CapabilityId: someCapabilityId,
+				ClusterId:    someClusterId,
+				TopicName:    someTopicName,
+				CompletedAt:  &time.Time{},
 			}},
 			input: ProcessInput{
-				CapabilityRootId: someCapabilityRootId,
-				ClusterId:        someClusterId,
-				TopicName:        someTopicName,
+				CapabilityId: someCapabilityId,
+				ClusterId:    someClusterId,
+				TopicName:    someTopicName,
 			},
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
@@ -73,7 +73,7 @@ func Test_createProcessState(t *testing.T) {
 			if !tt.wantErr(t, err) {
 				return
 			}
-			assert.Equal(t, someCapabilityRootId, got.CapabilityRootId)
+			assert.Equal(t, someCapabilityId, got.CapabilityId)
 			assert.Equal(t, someClusterId, got.ClusterId)
 			assert.Equal(t, someTopicName, got.TopicName)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
@@ -86,7 +86,7 @@ type mock struct {
 	ReturnServiceAccount *models.ServiceAccount
 }
 
-func (m *mock) GetDeleteProcessState(models.CapabilityRootId, models.ClusterId, string) (*models.DeleteProcess, error) {
+func (m *mock) GetDeleteProcessState(models.CapabilityId, models.ClusterId, string) (*models.DeleteProcess, error) {
 	return m.ReturnProcessState, nil
 }
 

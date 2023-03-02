@@ -25,9 +25,9 @@ func NewProcess(logger logging.Logger, database models.Database, confluent Confl
 }
 
 type ProcessInput struct {
-	CapabilityRootId models.CapabilityRootId
-	ClusterId        models.ClusterId
-	TopicName        string
+	CapabilityId models.CapabilityId
+	ClusterId    models.ClusterId
+	TopicName    string
 }
 
 func (p *process) Process(ctx context.Context, input ProcessInput) error {
@@ -37,7 +37,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 	if err != nil {
 		if errors.Is(err, ErrTopicNotFound) {
 			// topic already exists => skip
-			p.logger.Warning("{Topic} on {Cluster} for {Capability} not found", input.TopicName, string(input.CapabilityRootId), string(input.ClusterId))
+			p.logger.Warning("{Topic} on {Cluster} for {Capability} not found", input.TopicName, string(input.CapabilityId), string(input.ClusterId))
 			return nil
 		}
 
@@ -89,9 +89,9 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 var ErrTopicNotFound = errors.New("topic not found")
 
 func ensureTopicExists(tx models.Transaction, input ProcessInput) error {
-	capabilityRootId, clusterId, topicName := input.CapabilityRootId, input.ClusterId, input.TopicName
+	capabilityId, clusterId, topicName := input.CapabilityId, input.ClusterId, input.TopicName
 
-	topic, err := tx.GetTopic(capabilityRootId, clusterId, topicName)
+	topic, err := tx.GetTopic(capabilityId, clusterId, topicName)
 	if err != nil {
 		return err
 	}
@@ -104,14 +104,14 @@ func ensureTopicExists(tx models.Transaction, input ProcessInput) error {
 }
 
 type stateRepository interface {
-	GetDeleteProcessState(capabilityRootId models.CapabilityRootId, clusterId models.ClusterId, topicName string) (*models.DeleteProcess, error)
+	GetDeleteProcessState(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.DeleteProcess, error)
 	SaveDeleteProcessState(state *models.DeleteProcess) error
 }
 
 func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.DeleteProcess, error) {
-	capabilityRootId, clusterId, topicName := input.CapabilityRootId, input.ClusterId, input.TopicName
+	capabilityId, clusterId, topicName := input.CapabilityId, input.ClusterId, input.TopicName
 
-	state, err := repo.GetDeleteProcessState(capabilityRootId, clusterId, topicName)
+	state, err := repo.GetDeleteProcessState(capabilityId, clusterId, topicName)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.
 		return state, nil
 	}
 
-	state = models.NewDeleteProcess(capabilityRootId, clusterId, topicName)
+	state = models.NewDeleteProcess(capabilityId, clusterId, topicName)
 
 	if err := repo.SaveDeleteProcessState(state); err != nil {
 		return nil, err
