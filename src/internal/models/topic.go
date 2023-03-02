@@ -57,40 +57,53 @@ type Retention interface {
 	apply(*TopicDescription) error
 }
 
-type fromDuration struct{ retention time.Duration }
+type fromDuration struct{ duration time.Duration }
 
 func (r fromDuration) apply(topic *TopicDescription) error {
-	topic.Retention = r.retention
+	topic.Retention = r.duration
 	return nil
 }
 
 func RetentionFromDuration(retention time.Duration) Retention {
-	return fromDuration{retention: retention}
+	return fromDuration{duration: retention}
 }
 
-type fromMs struct{ retention int64 }
+type fromMs struct{ ms int64 }
 
 func (r fromMs) apply(topic *TopicDescription) error {
-	topic.Retention = time.Duration(r.retention) * time.Millisecond
+	topic.Retention = time.Duration(r.ms) * time.Millisecond
 	return nil
-
 }
 
 func RetentionFromMs(retention int64) Retention {
-	return fromMs{retention: retention}
+	return fromMs{ms: retention}
 }
 
 const foreverString = "-1"
 
-type fromString struct{ retention string }
+var stringToDuration = map[string]int64{
+	"forever": -1,
+	"1d":      86_400_000,
+	"7d":      604_800_000,
+	"31d":     2_678_400_000,
+	"365d":    31_536_000_000,
+}
+
+type fromString struct{ s string }
 
 func (r fromString) apply(topic *TopicDescription) error {
-	if r.retention == foreverString {
+	if r.s == foreverString {
 		topic.Retention = -1 * time.Millisecond
 		return nil
 	}
 
-	d, err := time.ParseDuration(r.retention)
+	retention, ok := stringToDuration[r.s]
+	if ok {
+		topic.Retention = time.Duration(retention) * time.Millisecond
+		return nil
+	}
+
+	d, err := time.ParseDuration(r.s)
 	if err != nil {
 		return fmt.Errorf("unable to parse retention: %w", err)
 	}
@@ -101,5 +114,5 @@ func (r fromString) apply(topic *TopicDescription) error {
 }
 
 func RetentionFromString(retention string) Retention {
-	return fromString{retention: retention}
+	return fromString{s: retention}
 }

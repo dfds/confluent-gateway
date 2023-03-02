@@ -40,12 +40,6 @@ func TestNewTopicDescription_WithRetentionFromString(t *testing.T) {
 			wantRetention: 0,
 		},
 		{
-			name:          "365 days",
-			retention:     "365d",
-			wantErr:       assert.Error,
-			wantRetention: 0,
-		},
-		{
 			name:          "forever",
 			retention:     foreverString,
 			wantErr:       assert.NoError,
@@ -66,6 +60,30 @@ func TestNewTopicDescription_WithRetentionFromString(t *testing.T) {
 		{
 			name:          "365 days",
 			retention:     "31536000000ms",
+			wantErr:       assert.NoError,
+			wantRetention: 365 * days,
+		},
+		{
+			name:          "1 day",
+			retention:     "1d",
+			wantErr:       assert.NoError,
+			wantRetention: 1 * days,
+		},
+		{
+			name:          "7 days",
+			retention:     "7d",
+			wantErr:       assert.NoError,
+			wantRetention: 7 * days,
+		},
+		{
+			name:          "31 days",
+			retention:     "31d",
+			wantErr:       assert.NoError,
+			wantRetention: 31 * days,
+		},
+		{
+			name:          "365 days",
+			retention:     "365d",
 			wantErr:       assert.NoError,
 			wantRetention: 365 * days,
 		},
