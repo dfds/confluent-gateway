@@ -23,15 +23,15 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 	switch message := msgContext.Message().(type) {
 
 	case *TopicRequested:
-		topic, err := models.NewTopicDescription(message.TopicName, message.Partitions, models.RetentionFromString(message.Retention))
+		topic, err := models.NewTopicDescription(message.GetTopicName(), message.Partitions, models.RetentionFromString(message.Retention))
 
 		if err != nil {
 			return err
 		}
 
 		input := ProcessInput{
-			CapabilityId: models.CapabilityId(message.CapabilityId),
-			ClusterId:    models.ClusterId(message.ClusterId),
+			CapabilityId: models.CapabilityId(message.GetCapabilityId()),
+			ClusterId:    models.ClusterId(message.GetClusterId()),
 			Topic:        topic,
 		}
 		return h.process.Process(ctx, input)

@@ -40,6 +40,23 @@ func TestTopicRequestedHandler_Handle(t *testing.T) {
 			wantErr:          assert.NoError,
 		},
 		{
+			name:    "process ok",
+			process: &processStub{},
+			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicRequested{
+				CapabilityId:   string(someCapabilityId),
+				KafkaClusterId: string(someClusterId),
+				KafkaTopicName: someTopicName,
+				Partitions:     1,
+				Retention:      "-1",
+			}),
+			wantCapabilityId: someCapabilityId,
+			wantClusterId:    someClusterId,
+			wantTopicName:    someTopicName,
+			wantPartition:    1,
+			wantRetention:    -1 * time.Millisecond,
+			wantErr:          assert.NoError,
+		},
+		{
 			name:       "bad retention",
 			process:    &processStub{},
 			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicRequested{Retention: "1y"}),
