@@ -77,6 +77,14 @@ func main() {
 }`))
 	})
 
+	r.POST("/subjects/:subject/versions", func(c *gin.Context) {
+		c.Data(200, "application/vnd.schemaregistry.v1+json", []byte(`
+			{
+			   "id":  100001
+			}
+		`))
+	})
+
 	// [THFIS] trailing slash (!!) because of AWS SDK
 	r.POST("/aws-ssm-put/", func(c *gin.Context) {
 
