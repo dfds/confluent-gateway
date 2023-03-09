@@ -23,6 +23,8 @@ type Configuration struct {
 	DbConnectionString        string `env:"CG_DB_CONNECTION_STRING"`
 	TopicNameSelfService      string `env:"CG_TOPIC_NAME_SELF_SERVICE"`
 	TopicNameProvisioning     string `env:"CG_TOPIC_NAME_PROVISIONING"`
+	TopicNameMessageContract  string `env:"CG_TOPIC_NAME_MESSAGE_CONTRACT"`
+	TopicNameSchema           string `env:"CG_TOPIC_NAME_SCHEMA"`
 }
 
 func (c *Configuration) IsProduction() bool {

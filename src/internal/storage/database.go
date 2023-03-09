@@ -164,3 +164,30 @@ func (d *Database) GetTopic(topicId string) (*models.Topic, error) {
 func (d *Database) DeleteTopic(topicId string) error {
 	return d.db.Delete(&models.Topic{}, "id = ?", topicId).Error
 }
+
+func (d *Database) GetSchemaProcessState(messageContractId string) (*models.SchemaProcess, error) {
+	var schema = &models.SchemaProcess{}
+
+	err := d.db.
+		Model(schema).
+		First(schema, "message_contract_id = ?", messageContractId).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return schema, nil
+}
+
+func (d *Database) SaveSchemaProcessState(schema *models.SchemaProcess) error {
+	return d.db.Create(schema).Error
+}
+
+func (d *Database) UpdateSchemaProcessState(schema *models.SchemaProcess) error {
+	return d.db.Save(schema).Error
+}

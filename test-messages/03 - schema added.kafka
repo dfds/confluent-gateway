@@ -1,0 +1,14 @@
+PRODUCER json-output
+topic: cloudengineering.selfservice.kafkatopic
+{
+  "messageId": "42879dca-797f-45d0-b03c-c018f98266a6",
+  "type": "message-contract-requested",
+  "data": {
+    "messageContractId": "965b0317-ddc3-4922-9cda-a65b2f32cc6e",
+    "kafkaTopicId": "a8194a4e-b008-41c4-bbce-d79740eac773",
+    "messageType": "foo-created2",
+    "schema": "{\"foo\": \"bar\"}",
+    "description": "lalala"
+  }
+}
+

@@ -7,6 +7,7 @@ import (
 	"github.com/dfds/confluent-gateway/internal/create"
 	del "github.com/dfds/confluent-gateway/internal/delete"
 	"github.com/dfds/confluent-gateway/internal/http/metrics"
+	schema "github.com/dfds/confluent-gateway/internal/schema"
 	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/internal/vault"
 	"github.com/dfds/confluent-gateway/logging"
@@ -33,14 +34,17 @@ func main() {
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}),
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_deleted", &del.TopicDeleted{}),
+		messaging.RegisterMessage(config.TopicNameSchema, "schema-registered", &schema.SchemaRegistered{}),
 	))
 	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
 	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
+	addSchemaProcess := schema.NewProcess(logger, db, confluentClient, func(repository schema.OutboxRepository) schema.Outbox { return outboxFactory(repository) })
 	consumer := Must(messaging.ConfigureConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
 		messaging.WithCredentials(config.CreateConsumerCredentials()),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic-requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
+		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-requested", schema.NewSchemaAddedHandler(addSchemaProcess), &schema.MessageContractRequested{}),
 	))
 
 	m := NewMain(logger, config, consumer)
@@ -60,7 +64,6 @@ func Must[T any](any T, err error) T {
 		panic(err)
 	}
 	return any
-
 }
 
 type Main struct {

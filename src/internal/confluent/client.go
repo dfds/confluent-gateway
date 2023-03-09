@@ -250,3 +250,32 @@ func (c *Client) delete(ctx context.Context, url string, apiKey models.ApiKey) (
 
 	return c.getResponseReader(request, "")
 }
+
+type schemaPayload struct {
+	SchemaType string `json:"schemaType"`
+	Schema     string `json:"schema"`
+}
+
+func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
+	cluster, _ := c.clusters.Get(clusterId)
+	url := fmt.Sprintf("%s/subjects/%s/versions", cluster.SchemaRegistryApiEndpoint, subject)
+
+	payload, err := json.Marshal(schemaPayload{
+		SchemaType: "JSON",
+		Schema:     schema,
+	})
+	if err != nil {
+		return err
+	}
+
+	// "Content-Type: application/vnd.schemaregistry.v1+json"
+
+	response, err := c.post(ctx, url, string(payload), cluster.SchemaRegistryApiKey)
+	defer response.Body.Close()
+
+	if err != nil {
+		// log
+	}
+
+	return err
+}

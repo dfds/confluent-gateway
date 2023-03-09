@@ -32,5 +32,9 @@ type Transaction interface {
 	CreateTopic(*Topic) error
 	DeleteTopic(string) error
 
+	GetSchemaProcessState(string) (*SchemaProcess, error)
+	SaveSchemaProcessState(*SchemaProcess) error
+	UpdateSchemaProcessState(*SchemaProcess) error
+
 	AddToOutbox(*messaging.OutboxEntry) error
 }
