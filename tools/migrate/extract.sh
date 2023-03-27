@@ -20,7 +20,8 @@ select c."Name" as "capability_name",
        t."Name" as topic_name,
        t."Partitions" as partitions,
        t."Created" as created,
-       ((t."Configurations"::json) ->> 'retention.ms')::bigint as retention
+       ((t."Configurations"::json) ->> 'retention.ms')::bigint as retention,
+	   t."Id" as topic_id
 from "KafkaTopic" t
 inner join "Capability" c on t."CapabilityId" = c."Id"
 inner join "KafkaCluster" k on k."Id" = t."KafkaClusterId"

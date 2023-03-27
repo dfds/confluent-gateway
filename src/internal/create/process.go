@@ -27,6 +27,7 @@ func NewProcess(logger logging.Logger, database models.Database, confluent Confl
 }
 
 type ProcessInput struct {
+	TopicId      string
 	CapabilityId models.CapabilityId
 	ClusterId    models.ClusterId
 	Topic        models.TopicDescription
@@ -97,9 +98,7 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 var ErrTopicAlreadyExists = errors.New("topic already exists")
 
 func ensureNewTopic(tx models.Transaction, input ProcessInput) error {
-	capabilityId, clusterId, topicName := input.CapabilityId, input.ClusterId, input.Topic.Name
-
-	topic, err := tx.GetTopic(capabilityId, clusterId, topicName)
+	topic, err := tx.GetTopic(input.TopicId)
 	if err != nil {
 		return err
 	}
@@ -143,14 +142,14 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 		_, HasClusterAccess = serviceAccount.TryGetClusterAccess(clusterId)
 	}
 
-	state = models.NewCreateProcess(capabilityId, clusterId, topic, HasServiceAccount, HasClusterAccess)
+	state = models.NewCreateProcess(capabilityId, clusterId, input.TopicId, topic, HasServiceAccount, HasClusterAccess)
 
 	if err := repo.SaveCreateProcessState(state); err != nil {
 		return nil, err
 	}
 
 	err = outbox.Produce(&TopicProvisioningBegun{
-		partitionKey: state.Id.String(),
+		TopicId:      input.TopicId,
 		CapabilityId: string(capabilityId),
 		ClusterId:    string(clusterId),
 		TopicName:    topic.Name,

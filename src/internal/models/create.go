@@ -9,6 +9,7 @@ type CreateProcess struct {
 	Id                uuid.UUID    `gorm:"type:uuid;primarykey"`
 	CapabilityId      CapabilityId `gorm:"column:capability_id"`
 	ClusterId         ClusterId
+	TopicId           string
 	TopicName         string
 	TopicPartitions   int
 	TopicRetention    int64
@@ -20,11 +21,12 @@ type CreateProcess struct {
 	CompletedAt       *time.Time
 }
 
-func NewCreateProcess(capabilityId CapabilityId, clusterId ClusterId, topic TopicDescription, hasServiceAccount bool, hasClusterAccess bool) *CreateProcess {
+func NewCreateProcess(capabilityId CapabilityId, clusterId ClusterId, topicId string, topic TopicDescription, hasServiceAccount bool, hasClusterAccess bool) *CreateProcess {
 	return &CreateProcess{
 		Id:                uuid.NewV4(),
 		CapabilityId:      capabilityId,
 		ClusterId:         clusterId,
+		TopicId:           topicId,
 		TopicName:         topic.Name,
 		TopicPartitions:   topic.Partitions,
 		TopicRetention:    topic.RetentionInMs(),

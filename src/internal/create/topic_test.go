@@ -13,7 +13,7 @@ func TestTopicService_CreateTopic(t *testing.T) {
 	confluentSpy := &mocks.MockClient{}
 	repoSpy := &topicRepositoryMock{}
 	sut := NewTopicService(context.TODO(), confluentSpy, repoSpy)
-	err := sut.CreateTopic(someCapabilityId, someClusterId, models.TopicDescription{
+	err := sut.CreateTopic(someCapabilityId, someClusterId, someTopicId, models.TopicDescription{
 		Name:       someTopicName,
 		Partitions: 1,
 		Retention:  -1 * time.Millisecond,
@@ -32,14 +32,14 @@ func TestTopicService_CreateTopic(t *testing.T) {
 func TestTopicService_CreateTopic_ConfluentError(t *testing.T) {
 	spy := &mocks.MockClient{OnCreateTopicError: serviceError}
 	sut := NewTopicService(context.TODO(), spy, &topicRepositoryMock{})
-	err := sut.CreateTopic(someCapabilityId, someClusterId, models.TopicDescription{})
+	err := sut.CreateTopic(someCapabilityId, someClusterId, someTopicId, models.TopicDescription{})
 
 	assert.Error(t, err)
 }
 
 func TestTopicService_CreateTopic_DatabaseError(t *testing.T) {
 	sut := NewTopicService(context.TODO(), &mocks.MockClient{}, &topicRepositoryMock{OnCreateTopicError: serviceError})
-	err := sut.CreateTopic(someCapabilityId, someClusterId, models.TopicDescription{})
+	err := sut.CreateTopic(someCapabilityId, someClusterId, someTopicId, models.TopicDescription{})
 
 	assert.Error(t, err)
 }

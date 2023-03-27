@@ -145,13 +145,10 @@ func (d *Database) CreateTopic(topic *models.Topic) error {
 	return d.db.Create(topic).Error
 }
 
-func (d *Database) GetTopic(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.Topic, error) {
+func (d *Database) GetTopic(topicId string) (*models.Topic, error) {
 	var topic = &models.Topic{}
 
-	err := d.db.
-		Model(topic).
-		First(topic, "capability_id = ? and cluster_id = ? and name = ?", capabilityId, clusterId, topicName).
-		Error
+	err := d.db.First(topic, "id = ?", topicId).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -164,17 +161,6 @@ func (d *Database) GetTopic(capabilityId models.CapabilityId, clusterId models.C
 	return topic, nil
 }
 
-func (d *Database) DeleteTopic(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) error {
-
-	topic, err := d.GetTopic(capabilityId, clusterId, topicName)
-
-	if err != nil {
-		return err
-	}
-
-	if topic == nil {
-		return nil
-	}
-
-	return d.db.Delete(topic).Error
+func (d *Database) DeleteTopic(topicId string) error {
+	return d.db.Delete(&models.Topic{}, "id = ?", topicId).Error
 }

@@ -11,6 +11,7 @@ import (
 
 const someCapabilityId = models.CapabilityId("some-capability-id")
 const someClusterId = models.ClusterId("some-cluster-id")
+const someTopicId = "e72d7a14-b240-4ace-a8e0-27ee0b0ccb25"
 const someTopicName = "some-topic-name"
 
 var serviceError = errors.New("service error")

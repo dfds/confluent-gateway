@@ -28,9 +28,9 @@ type Transaction interface {
 	SaveDeleteProcessState(*DeleteProcess) error
 	UpdateDeleteProcessState(*DeleteProcess) error
 
-	GetTopic(CapabilityId, ClusterId, string) (*Topic, error)
+	GetTopic(string) (*Topic, error)
 	CreateTopic(*Topic) error
-	DeleteTopic(CapabilityId, ClusterId, string) error
+	DeleteTopic(string) error
 
 	AddToOutbox(*messaging.OutboxEntry) error
 }

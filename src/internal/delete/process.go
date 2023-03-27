@@ -27,6 +27,7 @@ func NewProcess(logger logging.Logger, database models.Database, confluent Confl
 type ProcessInput struct {
 	CapabilityId models.CapabilityId
 	ClusterId    models.ClusterId
+	TopicId      string
 	TopicName    string
 }
 
@@ -89,9 +90,7 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 var ErrTopicNotFound = errors.New("topic not found")
 
 func ensureTopicExists(tx models.Transaction, input ProcessInput) error {
-	capabilityId, clusterId, topicName := input.CapabilityId, input.ClusterId, input.TopicName
-
-	topic, err := tx.GetTopic(capabilityId, clusterId, topicName)
+	topic, err := tx.GetTopic(input.TopicId)
 	if err != nil {
 		return err
 	}
@@ -121,7 +120,7 @@ func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.
 		return state, nil
 	}
 
-	state = models.NewDeleteProcess(capabilityId, clusterId, topicName)
+	state = models.NewDeleteProcess(capabilityId, clusterId, input.TopicId, topicName)
 
 	if err := repo.SaveDeleteProcessState(state); err != nil {
 		return nil, err

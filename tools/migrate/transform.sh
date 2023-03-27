@@ -13,10 +13,11 @@ function get_topic_sql() {
     # 6   partitions
     # 7   created
     # 8   retention
+    # 9   topic_id
 
     cat topics.csv | \
-        awk -F',' '{ printf "(uuid_generate_v4(), '\''%s'\'', '\''%s'\'', '\''%s'\'', %d, %d, '\''%s'\'');\n", $2, $4, $5, $6, $8, $7 }' | \
-        sed 's/^/insert into topic (id, capability_root_id, cluster_id, name, partitions, retention, created_at) values /' | \
+        awk -F',' '{ printf "('\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'', %d, %d, '\''%s'\'');\n", $9, $2, $4, $5, $6, $8, $7 }' | \
+        sed 's/^/insert into topic (id, capability_id, cluster_id, name, partitions, retention, created_at) values /' | \
         tail -n +2
 
 }
@@ -31,7 +32,7 @@ function get_service_account_sql() {
         xsv sort --select 'serviceaccount_id,created' | \
         awk -F',' '!seen[$1]++' | \
         awk -F',' '{ printf "('\''%s'\'', '\''%s'\'', '\''%s'\'', '\''%s'\'');\n", $1, $2, $3, $4 }' | \
-        sed 's/^/insert into service_account (id, user_account_id, capability_root_id, created_at) values /' | \
+        sed 's/^/insert into service_account (id, user_account_id, capability_id, created_at) values /' | \
         tail -n +2
 
 }

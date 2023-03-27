@@ -13,6 +13,7 @@ import (
 const someServiceAccountId = models.ServiceAccountId("sa-1234")
 const someCapabilityId = models.CapabilityId("some-capability-id")
 const someClusterId = models.ClusterId("some-cluster-id")
+const someTopicId = "e72d7a14-b240-4ace-a8e0-27ee0b0ccb25"
 const someUserAccountId = 1234
 
 func TestAccountHelper_CreateServiceAccount_Ok(t *testing.T) {

@@ -26,6 +26,7 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 		input := ProcessInput{
 			CapabilityId: models.CapabilityId(message.CapabilityId),
 			ClusterId:    models.ClusterId(message.ClusterId),
+			TopicId:      message.TopicId,
 			TopicName:    message.TopicName,
 		}
 		return h.process.Process(ctx, input)

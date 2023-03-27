@@ -150,10 +150,6 @@ func Test_createProcessState(t *testing.T) {
 			assert.Equal(t, tt.wantHasApiKey, got.HasApiKey)
 			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasApiKeyInVault)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
-			if tt.mock.EventProduced != nil {
-				// ignore partitionKey
-				tt.mock.EventProduced.partitionKey = ""
-			}
 			assert.Equal(t, tt.wantEvent, tt.mock.EventProduced)
 		})
 	}

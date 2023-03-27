@@ -2,12 +2,11 @@ package models
 
 import (
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"time"
 )
 
 type Topic struct {
-	Id           uuid.UUID `gorm:"type:uuid;primarykey"`
+	Id           string `gorm:"primarykey"`
 	CapabilityId CapabilityId
 	ClusterId    ClusterId
 	Name         string
@@ -16,9 +15,9 @@ type Topic struct {
 	CreatedAt    time.Time
 }
 
-func NewTopic(capabilityId CapabilityId, clusterId ClusterId, topic TopicDescription) *Topic {
+func NewTopic(capabilityId CapabilityId, clusterId ClusterId, topicId string, topic TopicDescription) *Topic {
 	return &Topic{
-		Id:           uuid.NewV4(),
+		Id:           topicId,
 		CapabilityId: capabilityId,
 		ClusterId:    clusterId,
 		Name:         topic.Name,

@@ -4,9 +4,10 @@ topic: cloudengineering.selfservice.kafkatopic
     "messageId": "1",
     "type": "topic_requested",
     "data": {
-        "capabilityRootId": "new-cap",
-        "clusterId": "abc-1234",
-        "topicName": "new-topic",
+        "capabilityId": "new-cap",
+        "kafkaClusterId": "abc-1234",
+        "kafkaTopicId": "a8194a4e-b008-41c4-bbce-d79740eac773",
+        "kafkaTopicName": "new-topic",
         "partitions": 1,
         "retention": "-1"
     }

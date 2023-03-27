@@ -30,6 +30,7 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 		}
 
 		input := ProcessInput{
+			TopicId:      message.GetTopicId(),
 			CapabilityId: models.CapabilityId(message.GetCapabilityId()),
 			ClusterId:    models.ClusterId(message.GetClusterId()),
 			Topic:        topic,

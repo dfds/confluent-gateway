@@ -18,7 +18,7 @@ func NewStepContext(logger logging.Logger, state *models.DeleteProcess, topic To
 }
 
 type TopicService interface {
-	DeleteTopic(models.CapabilityId, models.ClusterId, string) error
+	DeleteTopic(models.ClusterId, string, string) error
 }
 
 type Outbox interface {
@@ -36,7 +36,7 @@ func (c *StepContext) IsCompleted() bool {
 }
 
 func (c *StepContext) DeleteTopic() error {
-	return c.topic.DeleteTopic(c.state.CapabilityId, c.state.ClusterId, c.state.TopicName)
+	return c.topic.DeleteTopic(c.state.ClusterId, c.state.TopicId, c.state.TopicName)
 }
 
 func (c *StepContext) MarkAsCompleted() {
@@ -45,7 +45,7 @@ func (c *StepContext) MarkAsCompleted() {
 
 func (c *StepContext) RaiseTopicDeletedEvent() error {
 	event := &TopicDeleted{
-		partitionKey: c.state.Id.String(),
+		TopicId:      c.state.TopicId,
 		CapabilityId: string(c.state.CapabilityId),
 		ClusterId:    string(c.state.ClusterId),
 		TopicName:    c.state.TopicName,
