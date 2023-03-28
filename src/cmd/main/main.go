@@ -39,6 +39,7 @@ func main() {
 	consumer := Must(messaging.ConfigureConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
 		messaging.WithCredentials(config.CreateConsumerCredentials()),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
+		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic-requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
 	))
 
