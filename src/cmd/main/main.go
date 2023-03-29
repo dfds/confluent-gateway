@@ -46,6 +46,7 @@ func main() {
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic-requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_deletion_requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-requested", schema.NewSchemaAddedHandler(addSchemaProcess), &schema.MessageContractRequested{}),
+		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-provisioned", messaging.NewNopHandler(logger), &messaging.Nop{}),
 	))
 
 	m := NewMain(logger, config, consumer)

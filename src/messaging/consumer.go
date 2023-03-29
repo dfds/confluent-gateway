@@ -106,6 +106,22 @@ func (o messageHandlerOption) apply(cfg *consumerConfig) error {
 	return cfg.registry.RegisterMessageHandler(o.topicName, o.eventType, o.handler, o.message)
 }
 
+type nopHandler struct {
+	logger logging.Logger
+}
+
+func NewNopHandler(logger logging.Logger) MessageHandler {
+	return &nopHandler{logger: logger}
+}
+
+func (h *nopHandler) Handle(ctx context.Context, msgContext MessageContext) error {
+	h.logger.Information("Ignoring unregistered message")
+	return nil
+}
+
+type Nop struct {
+}
+
 func RegisterMessageHandler(topicName string, eventType string, handler MessageHandler, message interface{}) ConsumerOption {
 	return messageHandlerOption{
 		topicName: topicName,
