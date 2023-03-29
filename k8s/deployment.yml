@@ -56,6 +56,10 @@ spec:
               value: cloudengineering.selfservice.kafkatopic
             - name: CG_TOPIC_NAME_PROVISIONING
               value: cloudengineering.confluentgateway.provisioning
+            - name: CG_TOPIC_NAME_MESSAGE_CONTRACT
+              value: cloudengineering.selfservice.messagecontract
+            - name: CG_TOPIC_NAME_SCHEMA
+              value: cloudengineering.confluentgateway.schema
             - name: AWS_REGION
               value: eu-central-1
           envFrom:
