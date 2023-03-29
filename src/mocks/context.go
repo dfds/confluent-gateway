@@ -12,6 +12,8 @@ type StepContextMock struct {
 	MarkAsCompletedWasCalled           bool
 	TopicProvisionedEventWasRaised     bool
 	TopicDeletedEventWasRaised         bool
+	SchemaRegisteredEventWasRaised     bool
+	SchemaRegistrationFailedWasRaised  bool
 
 	OnCreateServiceAccountError     error
 	OnGetOrCreateClusterAccessError error
@@ -21,6 +23,7 @@ type StepContextMock struct {
 	OnStoreApiKeyError              error
 	OnCreateTopicError              error
 	OnDeleteTopicError              error
+	OnRegisterSchemaError           error
 }
 
 func (m *StepContextMock) HasServiceAccount() bool {
@@ -102,5 +105,19 @@ func (m *StepContextMock) DeleteTopic() error {
 
 func (m *StepContextMock) RaiseTopicDeletedEvent() error {
 	m.TopicDeletedEventWasRaised = true
+	return nil
+}
+
+func (m *StepContextMock) RegisterSchema() error {
+	return m.OnRegisterSchemaError
+}
+
+func (m *StepContextMock) RaiseSchemaRegisteredEvent() error {
+	m.SchemaRegisteredEventWasRaised = true
+	return nil
+}
+
+func (m *StepContextMock) RaiseSchemaRegistrationFailed(s string) error {
+	m.SchemaRegistrationFailedWasRaised = true
 	return nil
 }

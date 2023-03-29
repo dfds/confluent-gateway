@@ -150,7 +150,14 @@ func ensureSchemaIsRegisteredStep(step EnsureSchemaIsRegisteredStep) error {
 	err := step.RegisterSchema()
 
 	if errors.Is(err, confluent.ErrNoSchemaRegistry) {
+		step.MarkAsCompleted()
 		return step.RaiseSchemaRegistrationFailed(err.Error())
+	}
+
+	var mr *confluent.ClientError
+	if errors.As(err, &mr) {
+		step.MarkAsCompleted()
+		return step.RaiseSchemaRegistrationFailed(mr.Error())
 	}
 
 	if err != nil {

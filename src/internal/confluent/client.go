@@ -119,7 +119,7 @@ func (c *Client) getResponseReader(request *http.Request, payload string) (*http
 		return response, nil
 	}
 
-	return response, fmt.Errorf("confluent client (%s) failed with status code %d: %s", url, response.StatusCode, content)
+	return response, NewClientError(url, response.StatusCode, string(content))
 }
 
 func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error {
@@ -257,8 +257,6 @@ type schemaPayload struct {
 	Schema     string `json:"schema"`
 }
 
-var ErrNoSchemaRegistry = errors.New("no schema registry")
-
 func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
 	cluster, _ := c.clusters.Get(clusterId)
 
@@ -287,3 +285,19 @@ func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId,
 
 	return err
 }
+
+type ClientError struct {
+	Url     string
+	Status  int
+	Message string
+}
+
+func (mr *ClientError) Error() string {
+	return fmt.Sprintf("confluent client (%s) failed with status code %d: %s", mr.Url, mr.Status, mr.Message)
+}
+
+func NewClientError(url string, status int, message string) error {
+	return &ClientError{Url: url, Status: status, Message: message}
+}
+
+var ErrNoSchemaRegistry = errors.New("no schema registry")
