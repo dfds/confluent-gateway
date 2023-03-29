@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/models"
 	. "github.com/dfds/confluent-gateway/internal/process"
 	"github.com/dfds/confluent-gateway/logging"
@@ -138,6 +139,7 @@ type EnsureSchemaIsRegisteredStep interface {
 	RegisterSchema() error
 	MarkAsCompleted()
 	RaiseSchemaRegisteredEvent() error
+	RaiseSchemaRegistrationFailed(string) error
 }
 
 func ensureSchemaIsRegisteredStep(step EnsureSchemaIsRegisteredStep) error {
@@ -146,6 +148,11 @@ func ensureSchemaIsRegisteredStep(step EnsureSchemaIsRegisteredStep) error {
 	}
 
 	err := step.RegisterSchema()
+
+	if errors.Is(err, confluent.ErrNoSchemaRegistry) {
+		return step.RaiseSchemaRegistrationFailed(err.Error())
+	}
+
 	if err != nil {
 		return err
 	}

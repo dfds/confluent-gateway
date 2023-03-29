@@ -47,3 +47,11 @@ func (c *StepContext) RaiseSchemaRegisteredEvent() error {
 	}
 	return c.outbox.Produce(event)
 }
+
+func (c *StepContext) RaiseSchemaRegistrationFailed(reason string) error {
+	event := &SchemaRegistrationFailed{
+		MessageContractId: c.state.MessageContractId,
+		Reason:            reason,
+	}
+	return c.outbox.Produce(event)
+}

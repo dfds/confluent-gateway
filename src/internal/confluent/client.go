@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
@@ -256,8 +257,15 @@ type schemaPayload struct {
 	Schema     string `json:"schema"`
 }
 
+var ErrNoSchemaRegistry = errors.New("no schema registry")
+
 func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
 	cluster, _ := c.clusters.Get(clusterId)
+
+	if len(cluster.SchemaRegistryApiEndpoint) == 0 {
+		return ErrNoSchemaRegistry
+	}
+
 	url := fmt.Sprintf("%s/subjects/%s/versions", cluster.SchemaRegistryApiEndpoint, subject)
 
 	payload, err := json.Marshal(schemaPayload{
