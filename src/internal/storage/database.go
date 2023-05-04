@@ -73,12 +73,12 @@ func (d *Database) UpdateCreateProcessState(state *models.CreateProcess) error {
 	return d.db.Save(state).Error
 }
 
-func (d *Database) GetDeleteProcessState(capabilityId models.CapabilityId, clusterId models.ClusterId, topicName string) (*models.DeleteProcess, error) {
+func (d *Database) GetDeleteProcessState(topicId string) (*models.DeleteProcess, error) {
 	var state = models.DeleteProcess{}
 
 	err := d.db.
 		Model(&state).
-		First(&state, "capability_id = ? and cluster_id = ? and topic_name = ?", capabilityId, clusterId, topicName).
+		First(&state, "topic_id = ?", topicId).
 		Error
 
 	if err != nil {

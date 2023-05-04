@@ -12,6 +12,7 @@ type topicService struct {
 }
 
 type topicRepository interface {
+	GetTopic(topicId string) (*models.Topic, error)
 	DeleteTopic(topicId string) error
 }
 
@@ -19,8 +20,13 @@ func NewTopicService(context context.Context, confluent Confluent, repo topicRep
 	return &topicService{context: context, confluent: confluent, repo: repo}
 }
 
-func (p *topicService) DeleteTopic(clusterId models.ClusterId, topicId string, topicName string) error {
-	err := p.confluent.DeleteTopic(p.context, clusterId, topicName)
+func (p *topicService) DeleteTopic(topicId string) error {
+	topic, err := p.repo.GetTopic(topicId)
+	if err != nil {
+		return err
+	}
+
+	err = p.confluent.DeleteTopic(p.context, topic.ClusterId, topic.Name)
 	if err != nil {
 		return err
 	}

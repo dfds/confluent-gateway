@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"errors"
-	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -11,26 +10,20 @@ import (
 
 func TestTopicRequestedHandler_Handle(t *testing.T) {
 	tests := []struct {
-		name             string
-		process          *processStub
-		msgContext       messaging.MessageContext
-		wantCapabilityId models.CapabilityId
-		wantClusterId    models.ClusterId
-		wantTopicName    string
-		wantErr          assert.ErrorAssertionFunc
+		name        string
+		process     *processStub
+		msgContext  messaging.MessageContext
+		wantTopicId string
+		wantErr     assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "process ok",
 			process: &processStub{},
 			msgContext: messaging.NewMessageContext(map[string]string{}, &TopicDeletionRequested{
-				CapabilityId: string(someCapabilityId),
-				ClusterId:    string(someClusterId),
-				TopicName:    someTopicName,
+				TopicId: someTopicId,
 			}),
-			wantCapabilityId: someCapabilityId,
-			wantClusterId:    someClusterId,
-			wantTopicName:    someTopicName,
-			wantErr:          assert.NoError,
+			wantTopicId: someTopicId,
+			wantErr:     assert.NoError,
 		},
 		{
 			name:       "process fail",
@@ -49,9 +42,7 @@ func TestTopicRequestedHandler_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewTopicRequestedHandler(tt.process)
 			tt.wantErr(t, h.Handle(context.TODO(), tt.msgContext))
-			assert.Equal(t, tt.wantCapabilityId, tt.process.input.CapabilityId)
-			assert.Equal(t, tt.wantClusterId, tt.process.input.ClusterId)
-			assert.Equal(t, tt.wantTopicName, tt.process.input.TopicName)
+			assert.Equal(t, tt.wantTopicId, tt.process.input.TopicId)
 		})
 	}
 }

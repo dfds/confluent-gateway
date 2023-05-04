@@ -24,7 +24,7 @@ type Transaction interface {
 	SaveCreateProcessState(*CreateProcess) error
 	UpdateCreateProcessState(*CreateProcess) error
 
-	GetDeleteProcessState(CapabilityId, ClusterId, string) (*DeleteProcess, error)
+	GetDeleteProcessState(string) (*DeleteProcess, error)
 	SaveDeleteProcessState(*DeleteProcess) error
 	UpdateDeleteProcessState(*DeleteProcess) error
 

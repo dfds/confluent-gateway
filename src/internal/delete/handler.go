@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"fmt"
-	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/messaging"
 )
 
@@ -24,10 +23,7 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 
 	case *TopicDeletionRequested:
 		input := ProcessInput{
-			CapabilityId: models.CapabilityId(message.CapabilityId),
-			ClusterId:    models.ClusterId(message.ClusterId),
-			TopicId:      message.TopicId,
-			TopicName:    message.TopicName,
+			TopicId: message.TopicId,
 		}
 		return h.process.Process(ctx, input)
 

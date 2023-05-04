@@ -28,9 +28,7 @@ func Test_createProcessState(t *testing.T) {
 			name: "ok",
 			mock: &mock{},
 			input: ProcessInput{
-				CapabilityId: someCapabilityId,
-				ClusterId:    someClusterId,
-				TopicName:    someTopicName,
+				TopicId: someTopicId,
 			},
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
@@ -38,15 +36,11 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "process already exists",
 			mock: &mock{ReturnProcessState: &models.DeleteProcess{
-				CapabilityId: someCapabilityId,
-				ClusterId:    someClusterId,
-				TopicName:    someTopicName,
-				CompletedAt:  nil,
+				TopicId:     someTopicId,
+				CompletedAt: nil,
 			}},
 			input: ProcessInput{
-				CapabilityId: someCapabilityId,
-				ClusterId:    someClusterId,
-				TopicName:    someTopicName,
+				TopicId: someTopicId,
 			},
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
@@ -54,15 +48,11 @@ func Test_createProcessState(t *testing.T) {
 		{
 			name: "process already finished",
 			mock: &mock{ReturnProcessState: &models.DeleteProcess{
-				CapabilityId: someCapabilityId,
-				ClusterId:    someClusterId,
-				TopicName:    someTopicName,
-				CompletedAt:  &time.Time{},
+				TopicId:     someTopicId,
+				CompletedAt: &time.Time{},
 			}},
 			input: ProcessInput{
-				CapabilityId: someCapabilityId,
-				ClusterId:    someClusterId,
-				TopicName:    someTopicName,
+				TopicId: someTopicId,
 			},
 			wantIsCompleted: false,
 			wantErr:         assert.NoError,
@@ -74,9 +64,7 @@ func Test_createProcessState(t *testing.T) {
 			if !tt.wantErr(t, err) {
 				return
 			}
-			assert.Equal(t, someCapabilityId, got.CapabilityId)
-			assert.Equal(t, someClusterId, got.ClusterId)
-			assert.Equal(t, someTopicName, got.TopicName)
+			assert.Equal(t, someTopicId, got.TopicId)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
 		})
 	}
@@ -87,7 +75,7 @@ type mock struct {
 	ReturnServiceAccount *models.ServiceAccount
 }
 
-func (m *mock) GetDeleteProcessState(models.CapabilityId, models.ClusterId, string) (*models.DeleteProcess, error) {
+func (m *mock) GetDeleteProcessState(string) (*models.DeleteProcess, error) {
 	return m.ReturnProcessState, nil
 }
 
