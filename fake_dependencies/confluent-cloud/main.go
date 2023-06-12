@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 const serviceAccountId = "sa-150405"
@@ -42,14 +43,15 @@ func main() {
 		})
 	})
 
-	r.POST("/aws-ssm-put", func(c *gin.Context) {
-
-		c.Data(200, "application/x-amz-json-1.1", []byte(`
-			{
-			   "Tier": "Standard",
-			   "Version": 1
-			}
-		`))
+	r.GET("/iam/v2/api-keys", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"api_version": "iam/v2",
+			"kind":        "ApiKeyList",
+			"metadata": gin.H{
+				"total_size": 0,
+			},
+			"data": []gin.H{},
+		})
 	})
 
 	r.GET("/api/service_accounts", func(c *gin.Context) {
@@ -81,6 +83,16 @@ func main() {
 		c.Data(200, "application/vnd.schemaregistry.v1+json", []byte(`
 			{
 			   "id":  100001
+			}
+		`))
+	})
+
+	r.POST("/aws-ssm-put", func(c *gin.Context) {
+
+		c.Data(200, "application/x-amz-json-1.1", []byte(`
+			{
+			   "Tier": "Standard",
+			   "Version": 1
 			}
 		`))
 	})

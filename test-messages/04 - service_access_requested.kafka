@@ -1,0 +1,11 @@
+PRODUCER json-output
+topic: cloudengineering.selfservice.kafkatopic
+{
+    "messageId": "42",
+    "type": "cluster-access-requested",
+    "data": {
+        "capabilityId": "new-cap",
+        "kafkaClusterId": "def-5678"
+    }
+}
+

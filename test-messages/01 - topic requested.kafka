@@ -2,7 +2,7 @@ PRODUCER json-output
 topic: cloudengineering.selfservice.kafkatopic
 {
     "messageId": "1",
-    "type": "topic_requested",
+    "type": "topic-requested",
     "data": {
         "capabilityId": "new-cap",
         "kafkaClusterId": "abc-1234",
