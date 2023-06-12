@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
-	"time"
 )
 
 type Vault struct {
@@ -51,6 +52,27 @@ func (v *Vault) StoreApiKey(ctx context.Context, capabilityId models.CapabilityI
 	v.logger.Information("Successfully stored api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
 
 	return nil
+}
+
+func (v *Vault) QueryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
+	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
+	v.logger.Trace("Querying existence of API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(capabilityId), string(clusterId), parameterName)
+
+	client := ssm.NewFromConfig(v.config)
+
+	v.logger.Trace("Sending request to AWS Parameter Store")
+	_, err := client.GetParameter(ctx, &ssm.GetParameterInput{
+		Name: aws.String(parameterName),
+	})
+	if err != nil {
+		var pnf *types.ParameterNotFound
+		if errors.As(err, &pnf) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 func NewDefaultConfig() (*aws.Config, error) {

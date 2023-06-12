@@ -2,21 +2,23 @@ package main
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/create"
 	del "github.com/dfds/confluent-gateway/internal/delete"
 	"github.com/dfds/confluent-gateway/internal/http/metrics"
 	schema "github.com/dfds/confluent-gateway/internal/schema"
+	"github.com/dfds/confluent-gateway/internal/serviceaccount"
 	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/internal/vault"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"golang.org/x/sync/errgroup"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -39,6 +41,9 @@ func main() {
 		messaging.RegisterMessage(config.TopicNameSchema, "schema-registration-failed", &schema.SchemaRegistrationFailed{}),
 	))
 	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
+	createServiceAccountProcess := serviceaccount.NewProcess(logger, db, confluentClient, awsClient, func(repository serviceaccount.OutboxRepository) serviceaccount.Outbox {
+		return outboxFactory(repository)
+	})
 	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
 	addSchemaProcess := schema.NewProcess(logger, db, confluentClient, func(repository schema.OutboxRepository) schema.Outbox { return outboxFactory(repository) })
 	consumer := Must(messaging.ConfigureConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
@@ -48,6 +53,7 @@ func main() {
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic-deletion-requested", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-requested", schema.NewSchemaAddedHandler(addSchemaProcess), &schema.MessageContractRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-provisioned", messaging.NewNopHandler(logger), &messaging.Nop{}),
+		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "cluster-access-requested", serviceaccount.ServiceAccountAccessRequestedHandler(createServiceAccountProcess), &serviceaccount.ServiceAccountAccessRequested{}),
 	))
 
 	m := NewMain(logger, config, consumer)
