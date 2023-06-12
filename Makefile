@@ -62,4 +62,4 @@ ci: clean restore build tests container manifests
 cd: ci deliver
 
 run:
-	@cd src && go run main.go
+	@cd src && go run ./cmd/main

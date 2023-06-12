@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dfds/confluent-gateway/internal/models"
-	"github.com/dfds/confluent-gateway/logging"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/dfds/confluent-gateway/internal/models"
+	"github.com/dfds/confluent-gateway/logging"
 )
 
 type CloudApiAccess struct {
@@ -56,6 +57,12 @@ type usersResponse struct {
 		PageSize  int    `json:"page_size"`
 		PageToken string `json:"page_token"`
 	} `json:"page_info"`
+}
+
+type apiKeysResponse struct {
+	Metadata struct {
+		TotalSize int `json:"total_size"`
+	} `json:"metadata"`
 }
 
 func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
@@ -149,6 +156,23 @@ func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 	return err
 }
 
+func (c *Client) CountApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error) {
+	url := fmt.Sprintf("%s/iam/v2/api-keys?spec.owner=%s&spec.resource=%s", c.cloudApiAccess.ApiEndpoint, string(serviceAccountId), string(clusterId))
+	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+
+	var apiKeys apiKeysResponse
+	if err := json.NewDecoder(response.Body).Decode(&apiKeys); err != nil {
+		return 0, err
+	}
+
+	return apiKeys.Metadata.TotalSize, nil
+
+}
+
 func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
 	payload := `{
@@ -212,11 +236,10 @@ func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
 	url := c.cloudApiAccess.UserApiEndpoint
 
 	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
-	defer response.Body.Close()
-
 	if err != nil {
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	var users usersResponse
 	if err := json.NewDecoder(response.Body).Decode(&users); err != nil {
