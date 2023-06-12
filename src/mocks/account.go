@@ -16,6 +16,11 @@ type AccountRepository struct {
 func (m *AccountRepository) GetServiceAccount(models.CapabilityId) (*models.ServiceAccount, error) {
 	return m.ReturnServiceAccount, m.OnGetServiceAccountError
 }
+
+func (m *AccountRepository) HasClusterAccess(models.CapabilityId, models.ClusterId) (bool, error) {
+	return true, m.OnGetServiceAccountError
+}
+
 func (m *AccountRepository) CreateServiceAccount(serviceAccount *models.ServiceAccount) error {
 	m.GotServiceAccount = serviceAccount
 	return m.OnCreateServiceAccountError

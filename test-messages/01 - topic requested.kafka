@@ -5,7 +5,7 @@ topic: cloudengineering.selfservice.kafkatopic
     "type": "topic-requested",
     "data": {
         "capabilityId": "new-cap",
-        "kafkaClusterId": "abc-1234",
+        "kafkaClusterId": "def-5678",
         "kafkaTopicId": "a8194a4e-b008-41c4-bbce-d79740eac773",
         "kafkaTopicName": "new-topic",
         "partitions": 1,

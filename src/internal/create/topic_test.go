@@ -2,11 +2,12 @@ package create
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestTopicService_CreateTopic(t *testing.T) {
