@@ -1,14 +1,15 @@
 package models
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAclDefinition_String(t *testing.T) {
-	acl := defineAcl(PatternTypePrefix, "pub.", PatternTypePrefix, OperationTypeRead, PermissionTypeAllow)
+	acl := defineAcl(ResourceTypeTopic, "pub.", PatternTypePrefix, OperationTypeRead, PermissionTypeAllow)
 
-	assert.Equal(t, "PREFIXED | pub. | PREFIXED | READ | ALLOW", acl.String())
+	assert.Equal(t, "TOPIC | pub. | PREFIXED | READ | ALLOW", acl.String())
 }
 
 func TestCreateAclDefinitions(t *testing.T) {

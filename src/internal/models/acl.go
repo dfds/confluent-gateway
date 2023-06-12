@@ -27,20 +27,20 @@ type OperationType string
 
 const (
 	OperationTypeCreate          OperationType = "CREATE"
-	OperationTypeRead                          = "READ"
-	OperationTypeWrite                         = "WRITE"
-	OperationTypeDescribe                      = "DESCRIBE"
-	OperationTypeDescribeConfigs               = "DESCRIBE_CONFIGS"
-	OperationTypeAlter                         = "ALTER"
-	OperationTypeAlterConfigs                  = "ALTER_CONFIGS"
-	OperationTypeClusterAction                 = "CLUSTER_ACTION"
+	OperationTypeRead            OperationType = "READ"
+	OperationTypeWrite           OperationType = "WRITE"
+	OperationTypeDescribe        OperationType = "DESCRIBE"
+	OperationTypeDescribeConfigs OperationType = "DESCRIBE_CONFIGS"
+	OperationTypeAlter           OperationType = "ALTER"
+	OperationTypeAlterConfigs    OperationType = "ALTER_CONFIGS"
+	OperationTypeClusterAction   OperationType = "CLUSTER_ACTION"
 )
 
 type PatternType string
 
 const (
 	PatternTypeLiteral PatternType = "LITERAL"
-	PatternTypePrefix              = "PREFIXED"
+	PatternTypePrefix  PatternType = "PREFIXED"
 )
 
 type ResourceType string
@@ -55,7 +55,7 @@ type PermissionType string
 
 const (
 	PermissionTypeDeny  PermissionType = "DENY"
-	PermissionTypeAllow                = "ALLOW"
+	PermissionTypeAllow PermissionType = "ALLOW"
 )
 
 func CreateAclDefinitions(capabilityId CapabilityId) []AclDefinition {
