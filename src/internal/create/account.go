@@ -38,8 +38,5 @@ func (h *accountService) HasClusterAccess(capabilityId models.CapabilityId, clus
 
 	_, hasClusterAccess := serviceAccount.TryGetClusterAccess(clusterId)
 
-	if !hasClusterAccess {
-		return false, fmt.Errorf("no cluster access for service account '%s' found", serviceAccount.Id)
-	}
-	return true, nil
+	return hasClusterAccess, nil
 }

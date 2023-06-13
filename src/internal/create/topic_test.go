@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const someTopicId = "e72d7a14-b240-4ace-a8e0-27ee0b0ccb25"
+
 func TestTopicService_CreateTopic(t *testing.T) {
 	confluentSpy := &mocks.MockClient{}
 	repoSpy := &topicRepositoryMock{}

@@ -72,39 +72,21 @@ type EnsureServiceAccountStepRequirement interface {
 	CreateServiceAccount() error
 }
 
-<<<<<<< HEAD
-func ensureServiceAccountStepInner(sr EnsureServiceAccountStepRequirement) error {
-	sr.LogTrace("Running {Step}", "EnsureServiceAccount")
-	if sr.HasServiceAccount() {
-=======
-func EnsureServiceAccountStep(step *StepContext) error {
-	fmt.Printf("Step:1\n\n")
-	inner := func(sr EnsureServiceAccountStepRequirement) error {
-		sr.LogTrace("Running {Step}", "EnsureServiceAccount")
-		if sr.HasServiceAccount() {
-			fmt.Printf("Step 1: SKIPPED\n\n")
+func ensureServiceAccountStep(step *StepContext) error {
+	inner := func(step EnsureServiceAccountStepRequirement) error {
+		step.LogTrace("Running {Step}", "EnsureServiceAccount")
+		if step.HasServiceAccount() {
 			return nil
 		}
 
-		err := sr.CreateServiceAccount()
+		err := step.CreateServiceAccount()
 		if err != nil {
 			return err
 		}
 
->>>>>>> 704232d (Separate service account creation from topic creation)
 		return nil
 	}
-
-	err := sr.CreateServiceAccount()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ensureServiceAccountStep(step *StepContext) error {
-	return ensureServiceAccountStepInner(step)
+	return inner(step)
 }
 
 type EnsureServiceAccountAclStep interface {

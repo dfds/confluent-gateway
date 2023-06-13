@@ -172,35 +172,6 @@ func (m *mock) SaveCreateProcessState(*models.CreateProcess) error {
 	return nil
 }
 
-func Test_ensureServiceAccount(t *testing.T) {
-	tests := []struct {
-		name    string
-		context *mocks.StepContextMock
-		wantErr assert.ErrorAssertionFunc
-		marked  bool
-	}{
-		{
-			name:    "ok",
-			context: &mocks.StepContextMock{},
-			wantErr: assert.NoError,
-			marked:  true,
-		},
-		{
-			name:    "error",
-			context: &mocks.StepContextMock{OnCreateServiceAccountError: serviceError},
-			wantErr: assert.Error,
-			marked:  false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.wantErr(t, ensureServiceAccountStep(tt.context))
-
-			assert.Equal(t, tt.marked, tt.context.MarkServiceAccountAsReadyWasCalled)
-		})
-	}
-}
-
 func Test_ensureTopicIsCreated(t *testing.T) {
 	tests := []struct {
 		name        string
