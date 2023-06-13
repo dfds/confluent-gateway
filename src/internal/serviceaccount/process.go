@@ -2,7 +2,6 @@ package serviceaccount
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dfds/confluent-gateway/internal/models"
 	proc "github.com/dfds/confluent-gateway/internal/process"
@@ -40,20 +39,17 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 	session := p.database.NewSession(ctx)
 
 	return proc.PrepareSteps[*StepContext]().
-		Step(EnsureServiceAccountStep).
+		Step(ensureServiceAccountStep).
 		Step(ensureServiceAccountAclStep).Until(func(c *StepContext) bool { return c.HasClusterAccess() }).
 		Step(ensureServiceAccountApiKeyStep).
 		Step(ensureServiceAccountApiKeyAreStoredInVaultStep).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
 				stepContext := p.getStepContext(ctx, tx, input)
-				fmt.Printf("Starting Step\n")
 				err := step(stepContext)
 				if err != nil {
-					fmt.Printf("Step: FAIL\n")
 					return err
 				}
-				fmt.Printf("Step: SUCCESS\n")
 				return nil
 			})
 		})
@@ -76,24 +72,22 @@ type EnsureServiceAccountStepRequirement interface {
 	CreateServiceAccount() error
 }
 
-func EnsureServiceAccountStep(step *StepContext) error {
-	fmt.Printf("Step:1\n\n")
-	inner := func(sr EnsureServiceAccountStepRequirement) error {
-		sr.LogTrace("Running {Step}", "EnsureServiceAccount")
-		if sr.HasServiceAccount() {
-			fmt.Printf("Step 1: SKIPPED\n\n")
-			return nil
-		}
-
-		err := sr.CreateServiceAccount()
-		if err != nil {
-			fmt.Printf("FLUTTERSHY\n")
-			return err
-		}
-
+func ensureServiceAccountStepInner(sr EnsureServiceAccountStepRequirement) error {
+	sr.LogTrace("Running {Step}", "EnsureServiceAccount")
+	if sr.HasServiceAccount() {
 		return nil
 	}
-	return inner(step)
+
+	err := sr.CreateServiceAccount()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ensureServiceAccountStep(step *StepContext) error {
+	return ensureServiceAccountStepInner(step)
 }
 
 type EnsureServiceAccountAclStep interface {
@@ -104,11 +98,9 @@ type EnsureServiceAccountAclStep interface {
 }
 
 func ensureServiceAccountAclStep(step *StepContext) error {
-	fmt.Printf("Step:2\n\n")
 	inner := func(step EnsureServiceAccountAclStep) error {
 		step.LogTrace("Running {Step}", "EnsureServiceAccountAcl")
 		if step.HasClusterAccess() {
-			fmt.Printf("Step 2: SKIPPED\n\n")
 			return nil
 		}
 
@@ -139,7 +131,6 @@ type EnsureServiceAccountApiKeyStep interface {
 }
 
 func ensureServiceAccountApiKeyStep(step *StepContext) error {
-	fmt.Printf("Step:3\n\n")
 	inner := func(step EnsureServiceAccountApiKeyStep) error {
 		step.LogTrace("Running {Step}", "EnsureServiceAccountApiKey")
 
@@ -149,7 +140,6 @@ func ensureServiceAccountApiKeyStep(step *StepContext) error {
 		}
 
 		if step.HasApiKey(clusterAccess) {
-			fmt.Printf("Step 3: SKIPPED\n\n")
 			return nil
 		}
 
@@ -171,7 +161,6 @@ type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
 }
 
 func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
-	fmt.Printf("Step:4\n\n")
 	inner := func(step EnsureServiceAccountApiKeyAreStoredInVaultStep) error {
 		step.LogTrace("Running {Step}", "EnsureServiceAccountApiKeyAreStoredInVault")
 
@@ -185,7 +174,6 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 			return err
 		}
 		if hasKey {
-			fmt.Printf("Step 4: SKIPPED\n\n")
 			return nil
 		}
 
