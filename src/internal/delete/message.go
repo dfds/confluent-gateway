@@ -1,4 +1,4 @@
-package create
+package delete
 
 type TopicDeletionRequested struct {
 	TopicId string `json:"topicId"`
