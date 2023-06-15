@@ -195,7 +195,7 @@ func (d *Database) UpdateSchemaProcessState(schema *models.SchemaProcess) error 
 func (d *Database) SelectSchemaProcessStatesByTopicId(s string) ([]models.SchemaProcess, error) {
 
 	var schemas []models.SchemaProcess
-	err := d.db.Where("topicId = ?", s).Find(&schemas).Error
+	err := d.db.Where("topic_id = ?", s).Find(&schemas).Error
 	if err != nil {
 		return nil, err
 	}

@@ -48,8 +48,8 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 	}
 
 	return PrepareSteps[*StepContext]().
-		Step(ensureTopicIsDeleted).
 		Step(ensureTopicSchemasAreDeleted).
+		Step(ensureTopicIsDeleted).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
 				stepContext := p.getStepContext(ctx, tx, state)
