@@ -7,14 +7,15 @@ import (
 )
 
 type StepContext struct {
-	logger logging.Logger
-	state  *models.DeleteProcess
-	topic  TopicService
-	outbox Outbox
+	logger        logging.Logger
+	state         *models.DeleteProcess
+	topicService  TopicService
+	schemaService SchemaService
+	outbox        Outbox
 }
 
-func NewStepContext(logger logging.Logger, state *models.DeleteProcess, topic TopicService, outbox Outbox) *StepContext {
-	return &StepContext{logger: logger, state: state, topic: topic, outbox: outbox}
+func NewStepContext(logger logging.Logger, state *models.DeleteProcess, topicService TopicService, schemaService SchemaService, outbox Outbox) *StepContext {
+	return &StepContext{logger: logger, state: state, topicService: topicService, schemaService: schemaService, outbox: outbox}
 }
 
 type TopicService interface {
@@ -36,7 +37,17 @@ func (c *StepContext) IsCompleted() bool {
 }
 
 func (c *StepContext) DeleteTopic() error {
-	return c.topic.DeleteTopic(c.state.TopicId)
+	return c.topicService.DeleteTopic(c.state.TopicId)
+}
+
+func (c *StepContext) DeleteSchemasByTopicId() error {
+	return c.schemaService.DeleteSchemasByTopicId(c.state.TopicId)
+}
+func (c *StepContext) MarkSchemasAsDeleted() {
+	c.state.MarkSchemasAsDeleted()
+}
+func (c *StepContext) AreSchemasDeleted() bool {
+	return c.state.AreSchemasDeleted()
 }
 
 func (c *StepContext) MarkAsCompleted() {
@@ -44,7 +55,7 @@ func (c *StepContext) MarkAsCompleted() {
 }
 
 func (c *StepContext) RaiseTopicDeletedEvent() error {
-	event := &TopicDeleted{
+	event := &TopicDeleted{ // TODO: Figure out if we want this event
 		TopicId: c.state.TopicId,
 	}
 	return c.outbox.Produce(event)

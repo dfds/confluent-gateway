@@ -6,10 +6,11 @@ import (
 )
 
 type DeleteProcess struct {
-	Id          uuid.UUID `gorm:"type:uuid;primarykey"`
-	TopicId     string
-	CreatedAt   time.Time
-	CompletedAt *time.Time
+	Id               uuid.UUID `gorm:"type:uuid;primarykey"`
+	TopicId          string
+	CreatedAt        time.Time
+	SchemasDeletedAt *time.Time
+	CompletedAt      *time.Time
 }
 
 func NewDeleteProcess(topicId string) *DeleteProcess {
@@ -23,6 +24,19 @@ func NewDeleteProcess(topicId string) *DeleteProcess {
 
 func (*DeleteProcess) TableName() string {
 	return "delete_process"
+}
+
+func (p *DeleteProcess) AreSchemasDeleted() bool {
+	return p.SchemasDeletedAt != nil
+}
+
+func (p *DeleteProcess) MarkSchemasAsDeleted() {
+	if p.AreSchemasDeleted() {
+		return
+	}
+
+	now := time.Now()
+	p.SchemasDeletedAt = &now
 }
 
 func (p *DeleteProcess) IsCompleted() bool {

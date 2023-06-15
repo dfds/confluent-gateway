@@ -309,6 +309,26 @@ func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId,
 	return err
 }
 
+func (c *Client) DeleteSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version string) error {
+
+	cluster, err := c.clusters.Get(clusterId)
+
+	if err != nil {
+		return err
+	}
+
+	if len(cluster.SchemaRegistryApiEndpoint) == 0 {
+		return ErrNoSchemaRegistry
+	}
+
+	url := fmt.Sprintf("%s/subjects/%s/versions/%s", cluster.SchemaRegistryApiEndpoint, subject, version)
+
+	response, err := c.delete(ctx, url, cluster.SchemaRegistryApiKey)
+	defer response.Body.Close()
+
+	return err
+}
+
 type ClientError struct {
 	Url     string
 	Status  int

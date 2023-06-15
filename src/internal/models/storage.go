@@ -36,5 +36,8 @@ type Transaction interface {
 	SaveSchemaProcessState(*SchemaProcess) error
 	UpdateSchemaProcessState(*SchemaProcess) error
 
+	SelectSchemaProcessStatesByTopicId(string) ([]SchemaProcess, error)
+	DeleteSchemaProcessStateById(string) error
+
 	AddToOutbox(*messaging.OutboxEntry) error
 }
