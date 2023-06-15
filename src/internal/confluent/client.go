@@ -100,17 +100,16 @@ func (c *Client) getResponseReader(request *http.Request, payload string) (*http
 	url := request.URL.String()
 	start := time.Now()
 	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		c.logger.Error(err, "{Method} {Url} failed", request.Method, url)
+		return nil, err
+	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			c.logger.Error(err, "Closing response body failed")
 		}
 	}(response.Body)
-
-	if err != nil {
-		c.logger.Error(err, "{Method} {Url} failed", request.Method, url)
-		return nil, err
-	}
 
 	elapsed := time.Since(start)
 
@@ -323,8 +322,7 @@ func (c *Client) DeleteSchema(ctx context.Context, clusterId models.ClusterId, s
 
 	url := fmt.Sprintf("%s/subjects/%s/versions/%s", cluster.SchemaRegistryApiEndpoint, subject, version)
 
-	response, err := c.delete(ctx, url, cluster.SchemaRegistryApiKey)
-	defer response.Body.Close()
+	_, err = c.delete(ctx, url, cluster.SchemaRegistryApiKey)
 
 	return err
 }
