@@ -20,6 +20,10 @@ func main() {
 		c.Status(204)
 	})
 
+	r.DELETE("/subjects/:subject/versions/:version", func(c *gin.Context) {
+		c.Status(204)
+	})
+
 	r.POST("/iam/v2/service-accounts", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			//"id": fmt.Sprintf("sa-%s", time.Now().Format("150405")),

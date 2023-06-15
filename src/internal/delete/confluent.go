@@ -1,4 +1,4 @@
-package create
+package delete
 
 import (
 	"context"
@@ -7,4 +7,5 @@ import (
 
 type Confluent interface {
 	DeleteTopic(ctx context.Context, clusterId models.ClusterId, topicName string) error
+	DeleteSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version string) error
 }

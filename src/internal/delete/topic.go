@@ -1,4 +1,4 @@
-package create
+package delete
 
 import (
 	"context"

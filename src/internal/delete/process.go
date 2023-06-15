@@ -1,4 +1,4 @@
-package create
+package delete
 
 import (
 	"context"
@@ -48,6 +48,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 	}
 
 	return PrepareSteps[*StepContext]().
+		Step(ensureTopicSchemasAreDeleted).
 		Step(ensureTopicIsDeleted).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
@@ -127,15 +128,16 @@ func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.
 func (p *process) getStepContext(ctx context.Context, tx models.Transaction, state *models.DeleteProcess) *StepContext {
 	logger := p.logger
 	topic := NewTopicService(ctx, p.confluent, tx)
+	schema := NewSchemaService(ctx, p.confluent, tx)
 	outbox := p.factory(tx)
 
-	return NewStepContext(logger, state, topic, outbox)
+	return NewStepContext(logger, state, topic, schema, outbox)
 }
 
 // region Steps
 
 func ensureTopicIsDeleted(stepContext *StepContext) error {
-	stepContext.logger.Trace("Running {Step}", "EnsureTopicIsCreated")
+	stepContext.logger.Trace("Running {Step}", "EnsureTopicIsDeleted")
 	return ensureTopicIsDeletedStep(stepContext)
 }
 
@@ -159,6 +161,35 @@ func ensureTopicIsDeletedStep(step EnsureTopicIsDeletedStep) error {
 	step.MarkAsCompleted()
 
 	return step.RaiseTopicDeletedEvent()
+}
+
+// endregion
+
+// region Schema deletion
+
+func ensureTopicSchemasAreDeleted(stepContext *StepContext) error {
+	stepContext.logger.Trace("Running {Step}", "EnsureTopicSchemasAreDeleted")
+	return ensureTopicSchemasAreDeletedStep(stepContext)
+}
+
+func ensureTopicSchemasAreDeletedStep(step EnsureTopicSchemasAreDeletedStep) error {
+	if step.AreSchemasDeleted() {
+		return nil
+	}
+
+	err := step.DeleteSchemasByTopicId()
+	if err != nil {
+		return err
+	}
+
+	step.MarkSchemasAsDeleted()
+	return nil
+}
+
+type EnsureTopicSchemasAreDeletedStep interface {
+	DeleteSchemasByTopicId() error
+	MarkSchemasAsDeleted()
+	AreSchemasDeleted() bool
 }
 
 // endregion

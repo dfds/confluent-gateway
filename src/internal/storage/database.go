@@ -191,3 +191,18 @@ func (d *Database) SaveSchemaProcessState(schema *models.SchemaProcess) error {
 func (d *Database) UpdateSchemaProcessState(schema *models.SchemaProcess) error {
 	return d.db.Save(schema).Error
 }
+
+func (d *Database) SelectSchemaProcessStatesByTopicId(s string) ([]models.SchemaProcess, error) {
+
+	var schemas []models.SchemaProcess
+	err := d.db.Where("topic_id = ?", s).Find(&schemas).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return schemas, nil
+}
+
+func (d *Database) DeleteSchemaProcessStateById(id string) error {
+	return d.db.Delete(&models.SchemaProcess{}, "id = ?", id).Error
+}

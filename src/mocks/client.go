@@ -20,6 +20,7 @@ type MockClient struct {
 	OnCreateTopicError          error
 	OnGetUsersError             error
 	OnDeleteTopicError          error
+	OnDeleteSchemaError         error
 }
 
 func (m *MockClient) CreateServiceAccount(_ context.Context, name string, description string) (models.ServiceAccountId, error) {
@@ -54,4 +55,9 @@ func (m *MockClient) DeleteTopic(ctx context.Context, clusterId models.ClusterId
 	m.GotClusterId = string(clusterId)
 	m.GotName = topicName
 	return m.OnDeleteTopicError
+}
+
+func (m *MockClient) DeleteSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version string) error {
+	fmt.Printf("Deleting Schema %s.%s/%s@%s\n", clusterId, subject, schema, version)
+	return m.OnDeleteSchemaError
 }
