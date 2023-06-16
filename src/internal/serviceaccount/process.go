@@ -43,6 +43,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 		Step(ensureServiceAccountAclStep).Until(func(c *StepContext) bool { return c.HasClusterAccess() }).
 		Step(ensureServiceAccountApiKeyStep).
 		Step(ensureServiceAccountApiKeyAreStoredInVaultStep).
+		Step(ensureServiceAccountHasSchemaRegistryAccessStep).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
 				stepContext := p.getStepContext(ctx, tx, input)
@@ -127,7 +128,7 @@ type EnsureServiceAccountApiKeyStep interface {
 	logger
 	HasApiKey(clusterAccess *models.ClusterAccess) bool
 	GetClusterAccess() (*models.ClusterAccess, error)
-	CreateApiKey(clusterAccess *models.ClusterAccess) error
+	CreateClusterApiKey(clusterAccess *models.ClusterAccess) error
 }
 
 func ensureServiceAccountApiKeyStep(step *StepContext) error {
@@ -143,7 +144,7 @@ func ensureServiceAccountApiKeyStep(step *StepContext) error {
 			return nil
 		}
 
-		err = step.CreateApiKey(clusterAccess)
+		err = step.CreateClusterApiKey(clusterAccess)
 		if err != nil {
 			return err
 		}
@@ -178,6 +179,39 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 		}
 
 		if err = step.StoreApiKey(clusterAccess); err != nil {
+			return err
+		}
+
+		return nil
+	}
+	return inner(step)
+}
+
+type EnsureServiceAccountHasSchemaRegistryAccess interface {
+	logger
+	GetServiceAccount() (*models.ServiceAccount, error)
+	EnsureSchemaRegistryApiKey(models.ServiceAccountId) error
+	CreateServiceAccountRoleBinding() error
+	StoreSchemaRegistryApiKey() error
+}
+
+func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
+	inner := func(step EnsureServiceAccountHasSchemaRegistryAccess) error {
+		step.LogTrace("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
+
+		account, err := step.GetServiceAccount()
+
+		err = step.EnsureSchemaRegistryApiKey(account.Id)
+		if err != nil {
+			return err
+		}
+
+		err = step.CreateServiceAccountRoleBinding()
+		if err != nil {
+			return err
+		}
+
+		if err = step.StoreSchemaRegistryApiKey(); err != nil {
 			return err
 		}
 

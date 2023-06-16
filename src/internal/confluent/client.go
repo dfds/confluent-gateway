@@ -65,6 +65,10 @@ type apiKeysResponse struct {
 	} `json:"metadata"`
 }
 
+type createRoleBindingResponse struct {
+	Id string `json:"id"`
+}
+
 func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
 	payload := `{
@@ -172,17 +176,17 @@ func (c *Client) CountApiKeys(ctx context.Context, serviceAccountId models.Servi
 
 }
 
-func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) createApiKey(ctx context.Context, id string, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
 	payload := `{
 		"spec": {
-			"display_name": "` + fmt.Sprintf("%s-%s", clusterId, serviceAccountId) + `",
+			"display_name": "` + fmt.Sprintf("%s-%s", id, serviceAccountId) + `",
 			"description": "Created with Confluent Gateway",
 			"owner": {
 				"id": "` + string(serviceAccountId) + `"
 			},
 			"resource": {
-				"id": "` + string(clusterId) + `"
+				"id": "` + id + `"
 			}
 		}
 	}`
@@ -205,6 +209,39 @@ func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 		Username: apiKeyResponse.Id,
 		Password: apiKeyResponse.Spec.Secret,
 	}, nil
+}
+
+func (c *Client) CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+	return c.createApiKey(ctx, string(clusterId), serviceAccountId)
+}
+
+func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, schemaRegistryId models.SchemaRegistryId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+	return c.createApiKey(ctx, string(schemaRegistryId), serviceAccountId)
+}
+
+func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, orgId, envId string, schemaRegistryId models.SchemaRegistryId) error {
+	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
+	payload := fmt.Sprintf(`{
+		"principal": "User:%s",
+		"role_name": "DeveloperRead",
+		"crn_pattern": "crn://confluent.cloud/organization=%s/environment=%s/schema-registry=%s/subject=*"
+	}`, serviceAccount, orgId, envId, schemaRegistryId)
+
+	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
+	defer response.Body.Close()
+
+	if err != nil {
+		//log -> response.Status
+		return err
+	}
+
+	roleBindingResponse := &createRoleBindingResponse{}
+	derr := json.NewDecoder(response.Body).Decode(roleBindingResponse)
+	if derr != nil {
+		return derr
+	}
+	// TODO: Return id?
+	return nil
 }
 
 func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error {

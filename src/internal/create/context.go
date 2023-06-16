@@ -24,7 +24,7 @@ type AccountService interface {
 	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
-	CreateApiKey(*models.ClusterAccess) error
+	CreateClusterApiKey(*models.ClusterAccess) error
 }
 
 type VaultService interface {
@@ -82,7 +82,7 @@ func (c *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
 }
 
 func (c *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.account.CreateApiKey(clusterAccess)
+	return c.account.CreateClusterApiKey(clusterAccess)
 }
 
 func (c *StepContext) MarkApiKeyAsReady() {

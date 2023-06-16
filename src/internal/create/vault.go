@@ -6,7 +6,8 @@ import (
 )
 
 type Vault interface {
-	StoreApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error
+	StoreClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error
+	StoreSchemaRegistryApiKey(ctx context.Context, capabilityID models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error
 }
 
 type vaultService struct {
@@ -19,5 +20,5 @@ func NewVaultService(context context.Context, vault Vault) *vaultService {
 }
 
 func (v *vaultService) StoreApiKey(capabilityId models.CapabilityId, clusterAccess *models.ClusterAccess) error {
-	return v.vault.StoreApiKey(v.context, capabilityId, clusterAccess.ClusterId, clusterAccess.ApiKey)
+	return v.vault.StoreClusterApiKey(v.context, capabilityId, clusterAccess.ClusterId, clusterAccess.ApiKey)
 }

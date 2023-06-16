@@ -113,8 +113,8 @@ func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountI
 	return h.repo.UpdateAclEntry(entry)
 }
 
-func (h *accountService) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	key, err := h.confluent.CreateApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+func (h *accountService) CreateClusterApiKey(clusterAccess *models.ClusterAccess) error {
+	key, err := h.confluent.CreateClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
 	}
