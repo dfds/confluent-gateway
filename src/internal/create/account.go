@@ -123,3 +123,14 @@ func (h *accountService) CreateClusterApiKey(clusterAccess *models.ClusterAccess
 
 	return h.repo.UpdateClusterAccess(clusterAccess)
 }
+
+func (h *accountService) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {
+	key, err := h.confluent.CreateClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+	if err != nil {
+		return err
+	}
+
+	clusterAccess.ApiKey = *key
+
+	return h.repo.UpdateClusterAccess(clusterAccess)
+}

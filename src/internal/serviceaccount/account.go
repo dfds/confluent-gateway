@@ -20,7 +20,6 @@ type serviceAccountRepository interface {
 	UpdateAclEntry(aclEntry *models.AclEntry) error
 	CreateClusterAccess(clusterAccess *models.ClusterAccess) error
 	UpdateClusterAccess(clusterAccess *models.ClusterAccess) error
-	CreateServiceAccountRoleBinding() error
 }
 
 func NewAccountService(ctx context.Context, confluent Confluent, repo serviceAccountRepository) *accountService {
