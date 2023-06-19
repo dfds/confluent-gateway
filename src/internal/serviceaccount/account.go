@@ -146,7 +146,7 @@ func (h *accountService) CreateSchemaRegistryApiKey(serviceAccountId models.Serv
 }
 
 func (h *accountService) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {
-	err := h.confluent.CreateServiceAccountRoleBinding(h.context, clusterAccess.ServiceAccountId, "someOrg", "someEnvId", models.SchemaRegistryId("sr-id"))
+	err := h.confluent.CreateServiceAccountRoleBinding(h.context, clusterAccess.ServiceAccountId, clusterAccess.ClusterId)
 	if err != nil {
 		return err
 	}

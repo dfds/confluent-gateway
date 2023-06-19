@@ -219,19 +219,24 @@ func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, schemaRegistryI
 	return c.createApiKey(ctx, string(schemaRegistryId), serviceAccountId)
 }
 
-func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, orgId, envId string, schemaRegistryId models.SchemaRegistryId) error {
+func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error {
+
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return err
+	}
+
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/role-bindings"
 	payload := fmt.Sprintf(`{
 		"principal": "User:%s",
 		"role_name": "DeveloperRead",
 		"crn_pattern": "crn://confluent.cloud/organization=%s/environment=%s/schema-registry=%s/subject=*"
-	}`, serviceAccount, orgId, envId, schemaRegistryId)
+	}`, serviceAccount, cluster.OrganizationId, cluster.EnvironmentId, cluster.SchemaRegistryId)
 
 	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
 	defer response.Body.Close()
 
 	if err != nil {
-		//log -> response.Status
 		return err
 	}
 
@@ -240,7 +245,7 @@ func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAcc
 	if derr != nil {
 		return derr
 	}
-	// TODO: Return id?
+
 	return nil
 }
 
