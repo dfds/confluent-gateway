@@ -29,7 +29,7 @@ type AccountService interface {
 	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
 	CreateClusterApiKey(*models.ClusterAccess) error
-	CreateSchemaRegistryApiKey(models.ServiceAccountId) error
+	CreateSchemaRegistryApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error
 	CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error
 	CountApiKeys(clusterAccess *models.ClusterAccess) (int, error)
 }
@@ -53,6 +53,10 @@ type OutboxFactory func(repository OutboxRepository) Outbox
 
 func (c *StepContext) LogTrace(format string, args ...string) {
 	c.logger.Trace(format, args...)
+}
+
+func (c *StepContext) LogError(err error, format string, args ...string) {
+	c.logger.Error(err, format, args...)
 }
 
 func (c *StepContext) HasServiceAccount() bool {
@@ -111,7 +115,7 @@ func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
 }
 
 func (c *StepContext) EnsureSchemaRegistryApiKey(serviceAccountId models.ServiceAccountId) error {
-	return c.account.CreateSchemaRegistryApiKey(serviceAccountId)
+	return c.account.CreateSchemaRegistryApiKey(c.input.ClusterId, serviceAccountId)
 }
 
 func (c *StepContext) CreateServiceAccountRoleBinding() error {

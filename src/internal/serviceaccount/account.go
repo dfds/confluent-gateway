@@ -137,8 +137,8 @@ func (h *accountService) CountApiKeys(clusterAccess *models.ClusterAccess) (int,
 	return keyCount, nil
 }
 
-func (h *accountService) CreateSchemaRegistryApiKey(serviceAccountId models.ServiceAccountId) error {
-	_, err := h.confluent.CreateSchemaRegistryApiKey(h.context, "sr-id", serviceAccountId)
+func (h *accountService) CreateSchemaRegistryApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
+	_, err := h.confluent.CreateSchemaRegistryApiKey(h.context, clusterId, serviceAccountId)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,8 @@ package serviceaccount
 
 import (
 	"context"
+	"errors"
+	"github.com/dfds/confluent-gateway/internal/confluent"
 
 	"github.com/dfds/confluent-gateway/internal/models"
 	proc "github.com/dfds/confluent-gateway/internal/process"
@@ -10,6 +12,7 @@ import (
 
 type logger interface {
 	LogTrace(string, ...string)
+	LogError(error, string, ...string)
 }
 
 type process struct {
@@ -200,16 +203,23 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 		step.LogTrace("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
 
 		account, err := step.GetServiceAccount()
-
 		err = step.EnsureSchemaRegistryApiKey(account.Id)
 		if err != nil {
+			if errors.Is(err, confluent.ErrSchemaRegistryIdIsEmpty) {
+				step.LogError(err, "unable to setup schema registry access")
+				return nil // fallback: setup cluster without schema registry access
+			}
 			return err
 		}
 
 		err = step.CreateServiceAccountRoleBinding()
 		if err != nil {
-			return err
+			if errors.Is(err, confluent.ErrMissingSchemaRegistryIds) {
+				step.LogError(err, "unable to setup schema registry access")
+				return nil // fallback: setup cluster without schema registry access
+			}
 		}
+		return err
 
 		if err = step.StoreSchemaRegistryApiKey(); err != nil {
 			return err

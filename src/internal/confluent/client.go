@@ -22,6 +22,9 @@ type CloudApiAccess struct {
 	UserApiEndpoint string
 }
 
+var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
+var ErrMissingSchemaRegistryIds = errors.New("unable to create schema registry role binding: cluster table has any or all missing ids: organization_id, environment_id, schema_registry_id")
+
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
 }
@@ -215,8 +218,17 @@ func (c *Client) CreateClusterApiKey(ctx context.Context, clusterId models.Clust
 	return c.createApiKey(ctx, string(clusterId), serviceAccountId)
 }
 
-func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, schemaRegistryId models.SchemaRegistryId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
-	return c.createApiKey(ctx, string(schemaRegistryId), serviceAccountId)
+func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	if cluster.SchemaRegistryId == "" {
+		return nil, ErrSchemaRegistryIdIsEmpty
+	}
+
+	return c.createApiKey(ctx, string(cluster.SchemaRegistryId), serviceAccountId)
 }
 
 func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error {
@@ -224,6 +236,12 @@ func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAcc
 	cluster, err := c.clusters.Get(clusterId)
 	if err != nil {
 		return err
+	}
+
+	if cluster.OrganizationId == "" ||
+		cluster.EnvironmentId == "" ||
+		cluster.SchemaRegistryId == "" {
+		return ErrMissingSchemaRegistryIds
 	}
 
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/role-bindings"
