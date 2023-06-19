@@ -33,6 +33,7 @@ stages:
               ArtifactName: manifests
 
   - stage: Deploy
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
     dependsOn: CD
     displayName: 'Deployments'
     jobs:
