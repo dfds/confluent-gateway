@@ -220,7 +220,7 @@ func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, schemaRegistryI
 }
 
 func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, orgId, envId string, schemaRegistryId models.SchemaRegistryId) error {
-	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
+	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/role-bindings"
 	payload := fmt.Sprintf(`{
 		"principal": "User:%s",
 		"role_name": "DeveloperRead",
