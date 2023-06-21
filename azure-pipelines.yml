@@ -1,10 +1,6 @@
-trigger:
-  branches:
-    include:
-    - main
-
 variables:
   agent-pool: 'Docker-pool'
+  isPrimary: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
 
 stages:
   - stage: CD
@@ -33,7 +29,7 @@ stages:
               ArtifactName: manifests
 
   - stage: Deploy
-    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    condition: and(succeeded(), eq(variables.isPrimary, true))
     dependsOn: CD
     displayName: 'Deployments'
     jobs:
