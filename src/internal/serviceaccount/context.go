@@ -101,3 +101,11 @@ func (c *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
 func (c *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
 	return c.vault.StoreApiKey(c.input.CapabilityId, clusterAccess)
 }
+
+func (c *StepContext) RaiseServiceAccountAccessGranted() error {
+	event := &ServiceAccountAccessGranted{
+		CapabilityId:   string(c.input.CapabilityId),
+		KafkaClusterId: string(c.input.ClusterId),
+	}
+	return c.outbox.Produce(event)
+}

@@ -158,6 +158,7 @@ type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
 	HasApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
 	GetClusterAccess() (*models.ClusterAccess, error)
 	StoreApiKey(clusterAccess *models.ClusterAccess) error
+	RaiseServiceAccountAccessGranted() error
 }
 
 func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
@@ -181,7 +182,7 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 			return err
 		}
 
-		return nil
+		return step.RaiseServiceAccountAccessGranted()
 	}
 	return inner(step)
 }
