@@ -41,7 +41,7 @@ func main() {
 		messaging.RegisterMessage(config.TopicNameSchema, "schema-registration-failed", &schema.SchemaRegistrationFailed{}),
 		messaging.RegisterMessage(config.TopicNameKafkaClusterAccessGranted, "cluster-access-granted", &serviceaccount.ServiceAccountAccessGranted{}),
 	))
-	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
+	createTopicProcess := create.NewProcess(logger, db, confluentClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
 	createServiceAccountProcess := serviceaccount.NewProcess(logger, db, confluentClient, awsClient, func(repository serviceaccount.OutboxRepository) serviceaccount.Outbox {
 		return outboxFactory(repository)
 	})
