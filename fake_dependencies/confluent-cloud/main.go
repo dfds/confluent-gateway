@@ -108,6 +108,7 @@ func main() {
 	})
 
 	// [THFIS] trailing slash (!!) because of AWS SDK
+	// Imperative to have this _after_ the non-trailing version ^^
 	r.POST("/aws-ssm-put/", func(c *gin.Context) {
 
 		c.Data(200, "application/x-amz-json-1.1", []byte(`

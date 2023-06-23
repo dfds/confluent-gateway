@@ -28,6 +28,13 @@ type Configuration struct {
 	TopicNameProvisioning              string `env:"CG_TOPIC_NAME_PROVISIONING"`
 	TopicNameMessageContract           string `env:"CG_TOPIC_NAME_MESSAGE_CONTRACT"`
 	TopicNameSchema                    string `env:"CG_TOPIC_NAME_SCHEMA"`
+	// access to specific kafka clusters
+	KafkaClusterProdBroker   string `env:"KAFKA_CLUSTER_PROD_BROKER"`
+	KafkaClusterProdUserName string `env:"KAFKA_CLUSTER_PROD_SASL_USERNAME"`
+	KafkaClusterProdPassword string `env:"KAFKA_CLUSTER_PROD_SASL_PASSWORD"`
+	KafkaClusterDevBroker    string `env:"KAFKA_CLUSTER_DEV_BROKER"`
+	KafkaClusterDevUserName  string `env:"KAFKA_CLUSTER_DEV_SASL_USERNAME"`
+	KafkaClusterDevPassword  string `env:"KAFKA_CLUSTER_DEV_SASL_PASSWORD"`
 }
 
 func (c *Configuration) IsProduction() bool {

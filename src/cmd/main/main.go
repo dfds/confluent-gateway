@@ -11,6 +11,7 @@ import (
 	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/create"
 	del "github.com/dfds/confluent-gateway/internal/delete"
+	httpslistener "github.com/dfds/confluent-gateway/internal/http/listener"
 	"github.com/dfds/confluent-gateway/internal/http/metrics"
 	schema "github.com/dfds/confluent-gateway/internal/schema"
 	"github.com/dfds/confluent-gateway/internal/serviceaccount"
@@ -27,6 +28,7 @@ func main() {
 
 	// load configuration from .env and/or environment files
 	config := configuration.LoadInto("", &configuration.Configuration{})
+
 	logger := logging.NewLogger(logging.LoggerOptions{IsProduction: config.IsProduction(), AppName: config.ApplicationName})
 	db := Must(storage.NewDatabase(config.DbConnectionString, logger))
 	clusters := Must(db.GetClusters(ctx))
@@ -58,7 +60,12 @@ func main() {
 		messaging.RegisterMessageHandler(config.TopicNameKafkaClusterAccess, "cluster-access-requested", serviceaccount.NewAccessRequestedHandler(createServiceAccountProcess), &serviceaccount.ServiceAccountAccessRequested{}),
 	))
 
-	m := NewMain(logger, config, consumer)
+	httpslistener, err := httpslistener.NewServer(config)
+	if err != nil {
+		panic(err)
+	}
+
+	m := NewMain(logger, config, consumer, httpslistener)
 
 	logger.Information("Running")
 
@@ -81,12 +88,14 @@ type Main struct {
 	Logger        logging.Logger
 	Consumer      messaging.Consumer
 	MetricsServer *metrics.Server
+	HttpsListener *httpslistener.HttpsListener
 }
 
-func NewMain(logger logging.Logger, config *configuration.Configuration, consumer messaging.Consumer) *Main {
+func NewMain(logger logging.Logger, config *configuration.Configuration, consumer messaging.Consumer, httpslistener *httpslistener.HttpsListener) *Main {
 	return &Main{
 		Logger:        logger,
 		Consumer:      consumer,
+		HttpsListener: httpslistener,
 		MetricsServer: metrics.NewServer(logger, config.IsProduction()),
 	}
 }
@@ -96,6 +105,7 @@ func (m *Main) Run(ctx context.Context) error {
 
 	m.RunMetricsServer(g, gCtx)
 	m.RunConsumer(g, gCtx)
+	m.RunHttpsListener(g, gCtx)
 
 	// wait for context or all go routines to finish
 	return g.Wait()
@@ -140,6 +150,26 @@ func (m *Main) RunConsumer(g *errgroup.Group, ctx context.Context) {
 	})
 }
 
+func (m *Main) RunHttpsListener(g *errgroup.Group, ctx context.Context) {
+	g.Go(func() error {
+		return m.HttpsListener.Start(ctx)
+	})
+
+	g.Go(func() error {
+		// wait until cancelled
+		<-ctx.Done()
+
+		log.Println("Stopping HTTPS listener")
+		err := m.HttpsListener.Stop()
+		if err != nil {
+			log.Fatalf("ERROR: %v", err)
+		}
+		log.Println("HTTPS listener stopped")
+
+		return nil
+	})
+}
+
 func (m *Main) Close() {
 	if m.Consumer != nil {
 		err := m.Consumer.Stop()
@@ -149,6 +179,12 @@ func (m *Main) Close() {
 	}
 	if m.MetricsServer != nil {
 		err := m.MetricsServer.Close()
+		if err != nil {
+			m.Logger.Error(err, err.Error())
+		}
+	}
+	if m.HttpsListener != nil {
+		err := m.HttpsListener.Stop()
 		if err != nil {
 			m.Logger.Error(err, err.Error())
 		}

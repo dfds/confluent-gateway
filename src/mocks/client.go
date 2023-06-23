@@ -3,6 +3,7 @@ package mocks
 import (
 	"context"
 	"fmt"
+
 	"github.com/dfds/confluent-gateway/internal/models"
 )
 
