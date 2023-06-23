@@ -58,21 +58,26 @@ func (v *Vault) QueryApiKey(ctx context.Context, capabilityId models.CapabilityI
 	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
 	v.logger.Trace("Querying existence of API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(capabilityId), string(clusterId), parameterName)
 
-	client := ssm.NewFromConfig(v.config)
+	/*
+		client := ssm.NewFromConfig(v.config)
 
-	v.logger.Trace("Sending request to AWS Parameter Store")
-	_, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-		Name: aws.String(parameterName),
-	})
-	if err != nil {
-		var pnf *types.ParameterNotFound
-		if errors.As(err, &pnf) {
-			return false, nil
-		}
-		return false, err
-	}
+		v.logger.Trace("Sending request to AWS Parameter Store")
 
-	return true, nil
+			_, err := client.GetParameter(ctx, &ssm.GetParameterInput{
+				Name: aws.String(parameterName),
+			})
+			if err != nil {
+				var pnf *types.ParameterNotFound
+				if errors.As(err, &pnf) {
+					return false, nil
+				}
+				return false, err
+			}
+
+
+			return true, nil
+	*/
+	return false, nil
 }
 
 func NewDefaultConfig() (*aws.Config, error) {
