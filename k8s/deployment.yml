@@ -52,6 +52,8 @@ spec:
               value: https://confluent.cloud/api/service_accounts
             - name: CG_KAFKA_GROUP_ID
               value: build.selfservice.confluentgateway
+            - name: CG_TOPIC_NAME_KAFKA_CLUSTER_ACCESS
+              value: cloudengineering.selfservice.kafkaclusteraccess
             - name: CG_TOPIC_NAME_SELF_SERVICE
               value: cloudengineering.selfservice.kafkatopic
             - name: CG_TOPIC_NAME_PROVISIONING
