@@ -129,8 +129,16 @@ func (h *accountService) CreateClusterApiKey(clusterAccess *models.ClusterAccess
 	return h.repo.UpdateClusterAccess(clusterAccess)
 }
 
-func (h *accountService) CountApiKeys(clusterAccess *models.ClusterAccess) (int, error) {
-	keyCount, err := h.confluent.CountApiKeys(h.context, clusterAccess.ServiceAccountId, clusterAccess.ClusterId)
+func (h *accountService) CountClusterApiKeys(clusterAccess *models.ClusterAccess) (int, error) {
+	keyCount, err := h.confluent.CountClusterApiKeys(h.context, clusterAccess.ServiceAccountId, clusterAccess.ClusterId)
+	if err != nil {
+		return 0, err
+	}
+	return keyCount, nil
+}
+
+func (h *accountService) CountSchemaRegistryApiKeys(clusterAccess *models.ClusterAccess) (int, error) {
+	keyCount, err := h.confluent.CountSchemaRegistryApiKeys(h.context, clusterAccess.ServiceAccountId, clusterAccess.ClusterId)
 	if err != nil {
 		return 0, err
 	}

@@ -193,7 +193,7 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 type EnsureServiceAccountHasSchemaRegistryAccess interface {
 	logger
 	GetServiceAccount() (*models.ServiceAccount, error)
-	EnsureSchemaRegistryApiKey(models.ServiceAccountId) error
+	EnsureHasSchemaRegistryApiKey(models.ServiceAccountId) error
 	CreateServiceAccountRoleBinding() error
 	StoreSchemaRegistryApiKey() error
 }
@@ -203,7 +203,7 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 		step.LogTrace("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
 
 		account, err := step.GetServiceAccount()
-		err = step.EnsureSchemaRegistryApiKey(account.Id)
+		err = step.EnsureHasSchemaRegistryApiKey(account.Id)
 		if err != nil {
 			if errors.Is(err, confluent.ErrSchemaRegistryIdIsEmpty) {
 				step.LogError(err, "unable to setup schema registry access")

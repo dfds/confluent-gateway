@@ -162,8 +162,20 @@ func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 	return err
 }
 
-func (c *Client) CountApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error) {
-	url := fmt.Sprintf("%s/iam/v2/api-keys?spec.owner=%s&spec.resource=%s", c.cloudApiAccess.ApiEndpoint, string(serviceAccountId), string(clusterId))
+func (c *Client) getSchemaRegistryId(clusterId models.ClusterId) (models.SchemaRegistryId, error) {
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return "", err
+	}
+
+	if cluster.SchemaRegistryId == "" {
+		return "", ErrSchemaRegistryIdIsEmpty
+	}
+	return cluster.SchemaRegistryId, nil
+}
+
+func (c *Client) countApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, resourceId string) (int, error) {
+	url := fmt.Sprintf("%s/iam/v2/api-keys?spec.owner=%s&spec.resource=%s", c.cloudApiAccess.ApiEndpoint, string(serviceAccountId), resourceId)
 	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
 	if err != nil {
 		return 0, err
@@ -179,17 +191,29 @@ func (c *Client) CountApiKeys(ctx context.Context, serviceAccountId models.Servi
 
 }
 
-func (c *Client) createApiKey(ctx context.Context, id string, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) CountClusterApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error) {
+	return c.countApiKeys(ctx, serviceAccountId, string(clusterId))
+}
+
+func (c *Client) CountSchemaRegistryApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error) {
+	schemaRegistryId, err := c.getSchemaRegistryId(clusterId)
+	if err != nil {
+		return 0, err
+	}
+	return c.countApiKeys(ctx, serviceAccountId, string(schemaRegistryId))
+}
+
+func (c *Client) createApiKey(ctx context.Context, resourceId string, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
 	payload := `{
 		"spec": {
-			"display_name": "` + fmt.Sprintf("%s-%s", id, serviceAccountId) + `",
+			"display_name": "` + fmt.Sprintf("%s-%s", resourceId, serviceAccountId) + `",
 			"description": "Created with Confluent Gateway",
 			"owner": {
 				"id": "` + string(serviceAccountId) + `"
 			},
 			"resource": {
-				"id": "` + id + `"
+				"id": "` + resourceId + `"
 			}
 		}
 	}`
@@ -219,16 +243,12 @@ func (c *Client) CreateClusterApiKey(ctx context.Context, clusterId models.Clust
 }
 
 func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
-	cluster, err := c.clusters.Get(clusterId)
+
+	schemaRegistryId, err := c.getSchemaRegistryId(clusterId)
 	if err != nil {
 		return nil, err
 	}
-
-	if cluster.SchemaRegistryId == "" {
-		return nil, ErrSchemaRegistryIdIsEmpty
-	}
-
-	return c.createApiKey(ctx, string(cluster.SchemaRegistryId), serviceAccountId)
+	return c.createApiKey(ctx, string(schemaRegistryId), serviceAccountId)
 }
 
 func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error {

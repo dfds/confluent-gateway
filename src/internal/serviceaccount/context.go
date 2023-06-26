@@ -31,7 +31,8 @@ type AccountService interface {
 	CreateClusterApiKey(*models.ClusterAccess) error
 	CreateSchemaRegistryApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error
 	CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error
-	CountApiKeys(clusterAccess *models.ClusterAccess) (int, error)
+	CountClusterApiKeys(clusterAccess *models.ClusterAccess) (int, error)
+	CountSchemaRegistryApiKeys(clusterAccess *models.ClusterAccess) (int, error)
 }
 
 type VaultService interface {
@@ -94,7 +95,7 @@ func (c *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
 }
 
 func (c *StepContext) HasApiKey(clusterAccess *models.ClusterAccess) bool {
-	count, err := c.account.CountApiKeys(clusterAccess)
+	count, err := c.account.CountClusterApiKeys(clusterAccess)
 	return count > 0 && err == nil
 }
 
@@ -114,7 +115,20 @@ func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
 	return c.account.GetServiceAccount(c.input.CapabilityId)
 }
 
-func (c *StepContext) EnsureSchemaRegistryApiKey(serviceAccountId models.ServiceAccountId) error {
+func (c *StepContext) EnsureHasSchemaRegistryApiKey(serviceAccountId models.ServiceAccountId) error {
+	access, err := c.account.GetClusterAccess(c.input.CapabilityId, c.input.ClusterId)
+	if err != nil {
+		return err
+	}
+
+	keyCount, err := c.account.CountSchemaRegistryApiKeys(access)
+	if err != nil {
+		return err
+	}
+	if keyCount > 0 {
+		return nil
+	}
+
 	return c.account.CreateSchemaRegistryApiKey(c.input.ClusterId, serviceAccountId)
 }
 
