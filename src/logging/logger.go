@@ -147,7 +147,8 @@ func NewLogger(options LoggerOptions) Logger {
 		l = l.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	}
 
-	l = l.With().
+	l = l.Level(zerolog.DebugLevel).
+		With().
 		Str("Application", options.AppName).
 		Caller().
 		Logger()
