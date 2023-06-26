@@ -39,8 +39,9 @@ func main() {
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic-deleted", &del.TopicDeleted{}),
 		messaging.RegisterMessage(config.TopicNameSchema, "schema-registered", &schema.SchemaRegistered{}),
 		messaging.RegisterMessage(config.TopicNameSchema, "schema-registration-failed", &schema.SchemaRegistrationFailed{}),
+		messaging.RegisterMessage(config.TopicNameKafkaClusterAccessGranted, "cluster-access-granted", &serviceaccount.ServiceAccountAccessGranted{}),
 	))
-	createTopicProcess := create.NewProcess(logger, db, confluentClient, awsClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
+	createTopicProcess := create.NewProcess(logger, db, confluentClient, func(repository create.OutboxRepository) create.Outbox { return outboxFactory(repository) })
 	createServiceAccountProcess := serviceaccount.NewProcess(logger, db, confluentClient, awsClient, func(repository serviceaccount.OutboxRepository) serviceaccount.Outbox {
 		return outboxFactory(repository)
 	})
@@ -53,7 +54,7 @@ func main() {
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic-deleted", del.NewTopicRequestedHandler(deleteTopicProcess), &del.TopicDeletionRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-requested", schema.NewSchemaAddedHandler(addSchemaProcess), &schema.MessageContractRequested{}),
 		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "message-contract-provisioned", messaging.NewNopHandler(logger), &messaging.Nop{}),
-		messaging.RegisterMessageHandler(config.TopicNameMessageContract, "cluster-access-requested", serviceaccount.NewAccessRequestedHandler(createServiceAccountProcess), &serviceaccount.ServiceAccountAccessRequested{}),
+		messaging.RegisterMessageHandler(config.TopicNameKafkaClusterAccess, "cluster-access-requested", serviceaccount.NewAccessRequestedHandler(createServiceAccountProcess), &serviceaccount.ServiceAccountAccessRequested{}),
 	))
 
 	m := NewMain(logger, config, consumer)

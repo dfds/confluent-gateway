@@ -73,6 +73,7 @@ func (v *Vault) queryApiKey(ctx context.Context, parameterName string, capabilit
 	client := ssm.NewFromConfig(v.config)
 
 	v.logger.Trace("Sending request to AWS Parameter Store")
+
 	_, err := client.GetParameter(ctx, &ssm.GetParameterInput{
 		Name: aws.String(parameterName),
 	})
@@ -85,6 +86,7 @@ func (v *Vault) queryApiKey(ctx context.Context, parameterName string, capabilit
 	}
 
 	return true, nil
+
 }
 
 func (v *Vault) QuerySchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {

@@ -133,3 +133,11 @@ func (c *StepContext) StoreSchemaRegistryApiKey() error {
 	}
 	return c.vault.StoreClusterApiKey(c.input.CapabilityId, access)
 }
+
+func (c *StepContext) RaiseServiceAccountAccessGranted() error {
+	event := &ServiceAccountAccessGranted{
+		CapabilityId:   string(c.input.CapabilityId),
+		KafkaClusterId: string(c.input.ClusterId),
+	}
+	return c.outbox.Produce(event)
+}

@@ -2,12 +2,15 @@ package create
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/mocks"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
+
+const someTopicId = "e72d7a14-b240-4ace-a8e0-27ee0b0ccb25"
 
 func TestTopicService_CreateTopic(t *testing.T) {
 	confluentSpy := &mocks.MockClient{}

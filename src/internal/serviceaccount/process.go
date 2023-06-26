@@ -76,22 +76,21 @@ type EnsureServiceAccountStepRequirement interface {
 	CreateServiceAccount() error
 }
 
-func ensureServiceAccountStepInner(sr EnsureServiceAccountStepRequirement) error {
-	sr.LogTrace("Running {Step}", "EnsureServiceAccount")
-	if sr.HasServiceAccount() {
+func ensureServiceAccountStep(step *StepContext) error {
+	inner := func(step EnsureServiceAccountStepRequirement) error {
+		step.LogTrace("Running {Step}", "EnsureServiceAccount")
+		if step.HasServiceAccount() {
+			return nil
+		}
+
+		err := step.CreateServiceAccount()
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
-
-	err := sr.CreateServiceAccount()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ensureServiceAccountStep(step *StepContext) error {
-	return ensureServiceAccountStepInner(step)
+	return inner(step)
 }
 
 type EnsureServiceAccountAclStep interface {
@@ -162,6 +161,7 @@ type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
 	HasApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
 	GetClusterAccess() (*models.ClusterAccess, error)
 	StoreApiKey(clusterAccess *models.ClusterAccess) error
+	RaiseServiceAccountAccessGranted() error
 }
 
 func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
@@ -185,7 +185,7 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 			return err
 		}
 
-		return nil
+		return step.RaiseServiceAccountAccessGranted()
 	}
 	return inner(step)
 }

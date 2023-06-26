@@ -66,6 +66,8 @@ services:
                       sleep 5 && \
                       cub kafka-ready -b kafka:29092 1 20 && \
                       kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.selfservice.kafkatopic && \
+                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.selfservice.kafkaclusteraccess && \
+                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.confluentgateway.access && \
                       kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.confluentgateway.provisioning'"
     environment:
       KAFKA_BROKER_ID: ignored

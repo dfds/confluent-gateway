@@ -1,6 +1,8 @@
 package create
 
 import (
+	"fmt"
+
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -10,25 +12,16 @@ type StepContext struct {
 	logger  logging.Logger
 	state   *models.CreateProcess
 	account AccountService
-	vault   VaultService
 	topic   TopicService
 	outbox  Outbox
 }
 
-func NewStepContext(logger logging.Logger, state *models.CreateProcess, account AccountService, vault VaultService, topic TopicService, outbox Outbox) *StepContext {
-	return &StepContext{logger: logger, state: state, account: account, vault: vault, topic: topic, outbox: outbox}
+func NewStepContext(logger logging.Logger, state *models.CreateProcess, account AccountService, topic TopicService, outbox Outbox) *StepContext {
+	return &StepContext{logger: logger, state: state, account: account, topic: topic, outbox: outbox}
 }
 
 type AccountService interface {
-	CreateServiceAccount(models.CapabilityId, models.ClusterId) error
-	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
-	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
-	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
-	CreateClusterApiKey(*models.ClusterAccess) error
-}
-
-type VaultService interface {
-	StoreApiKey(models.CapabilityId, *models.ClusterAccess) error
+	HasClusterAccess(capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error)
 }
 
 type TopicService interface {
@@ -45,60 +38,13 @@ type OutboxRepository interface {
 
 type OutboxFactory func(repository OutboxRepository) Outbox
 
-func (c *StepContext) MarkServiceAccountAsReady() {
-	c.state.HasServiceAccount = true
-}
-
-func (c *StepContext) CreateServiceAccount() error {
-	return c.account.CreateServiceAccount(c.state.CapabilityId, c.state.ClusterId)
-}
-
-func (c *StepContext) HasServiceAccount() bool {
-	return c.state.HasServiceAccount
-}
-
 func (c *StepContext) HasClusterAccess() bool {
-	return c.state.HasClusterAccess
-}
-
-func (c *StepContext) GetOrCreateClusterAccess() (*models.ClusterAccess, error) {
-	return c.account.GetOrCreateClusterAccess(c.state.CapabilityId, c.state.ClusterId)
-}
-
-func (c *StepContext) CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error {
-	return c.account.CreateAclEntry(c.state.ClusterId, clusterAccess.UserAccountId, &nextEntry)
-}
-
-func (c *StepContext) MarkClusterAccessAsReady() {
-	c.state.HasClusterAccess = true
-}
-
-func (c *StepContext) HasApiKey() bool {
-	return c.state.HasApiKey
-}
-
-func (c *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
-	return c.account.GetClusterAccess(c.state.CapabilityId, c.state.ClusterId)
-}
-
-func (c *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.account.CreateClusterApiKey(clusterAccess)
-}
-
-func (c *StepContext) MarkApiKeyAsReady() {
-	c.state.HasApiKey = true
-}
-
-func (c *StepContext) HasApiKeyInVault() bool {
-	return c.state.HasApiKeyInVault
-}
-
-func (c *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.vault.StoreApiKey(c.state.CapabilityId, clusterAccess)
-}
-
-func (c *StepContext) MarkApiKeyInVaultAsReady() {
-	c.state.HasApiKeyInVault = true
+	exists, err := c.account.HasClusterAccess(c.state.CapabilityId, c.state.ClusterId)
+	fmt.Printf("Service account for CapabilityId: %s\n\tFound: %t\n\tError: %t\n", c.state.CapabilityId, exists, err != nil)
+	if err != nil {
+		return false
+	}
+	return exists
 }
 
 func (c *StepContext) IsCompleted() bool {
