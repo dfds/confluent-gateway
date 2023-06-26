@@ -28,7 +28,7 @@ func getSchemaRegistryApiParameter(capabilityId models.CapabilityId, clusterId m
 }
 
 func (v *Vault) storeApiKey(ctx context.Context, capabilityId models.CapabilityId, parameterName string, apiKey models.ApiKey) error {
-	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
+	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
 

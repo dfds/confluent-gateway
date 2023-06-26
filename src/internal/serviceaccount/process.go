@@ -219,7 +219,6 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 				return nil // fallback: setup cluster without schema registry access
 			}
 		}
-		return err
 
 		if err = step.StoreSchemaRegistryApiKey(); err != nil {
 			return err
