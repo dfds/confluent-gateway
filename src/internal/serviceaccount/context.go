@@ -145,7 +145,7 @@ func (c *StepContext) StoreSchemaRegistryApiKey() error {
 	if err != nil {
 		return err
 	}
-	return c.vault.StoreClusterApiKey(c.input.CapabilityId, access)
+	return c.vault.StoreSchemaRegistryApiKey(c.input.CapabilityId, access)
 }
 
 func (c *StepContext) RaiseServiceAccountAccessGranted() error {
