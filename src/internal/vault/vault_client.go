@@ -19,10 +19,16 @@ type Vault struct {
 	config aws.Config
 }
 
-func (v *Vault) StoreApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+func getClusterApiParameter(capabilityId models.CapabilityId, clusterId models.ClusterId) string {
+	return fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
+}
 
-	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
-	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", apiKey.Username, string(capabilityId), string(clusterId), parameterName)
+func getSchemaRegistryApiParameter(capabilityId models.CapabilityId, clusterId models.ClusterId) string {
+	return fmt.Sprintf("/capabilities/%s/kafka/%s/schemaregistry-credentials", capabilityId, clusterId)
+}
+
+func (v *Vault) storeApiKey(ctx context.Context, capabilityId models.CapabilityId, parameterName string, apiKey models.ApiKey) error {
+	v.logger.Trace("Storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
 
@@ -45,7 +51,7 @@ func (v *Vault) StoreApiKey(ctx context.Context, capabilityId models.CapabilityI
 	})
 
 	if err != nil {
-		v.logger.Error(err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityId} i cluster {ClusterId}", apiKey.Username, string(capabilityId), string(clusterId))
+		v.logger.Error(err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
 		return err
 	}
 
@@ -54,8 +60,14 @@ func (v *Vault) StoreApiKey(ctx context.Context, capabilityId models.CapabilityI
 	return nil
 }
 
-func (v *Vault) QueryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
-	parameterName := fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
+func (v *Vault) StoreClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+	return v.storeApiKey(ctx, capabilityId, getClusterApiParameter(capabilityId, clusterId), apiKey)
+}
+func (v *Vault) StoreSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+	return v.storeApiKey(ctx, capabilityId, getSchemaRegistryApiParameter(capabilityId, clusterId), apiKey)
+}
+
+func (v *Vault) queryApiKey(ctx context.Context, parameterName string, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
 	v.logger.Trace("Querying existence of API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(capabilityId), string(clusterId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
@@ -75,6 +87,14 @@ func (v *Vault) QueryApiKey(ctx context.Context, capabilityId models.CapabilityI
 
 	return true, nil
 
+}
+
+func (v *Vault) QuerySchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
+	return v.queryApiKey(ctx, getSchemaRegistryApiParameter(capabilityId, clusterId), capabilityId, clusterId)
+}
+
+func (v *Vault) QueryClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
+	return v.queryApiKey(ctx, getClusterApiParameter(capabilityId, clusterId), capabilityId, clusterId)
 }
 
 func NewDefaultConfig() (*aws.Config, error) {

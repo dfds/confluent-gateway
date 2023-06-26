@@ -304,7 +304,7 @@ func TestCreateApiKeyCallsExpectedEndpoint(t *testing.T) {
 	}
 
 	// act
-	stubClient.CreateApiKey(context.TODO(), "dummy", "dummy")
+	stubClient.CreateClusterApiKey(context.TODO(), "dummy", "dummy")
 
 	// assert
 	assert.Equal(t, expectedRelativeUrl, usedEndpointUrl)
@@ -331,7 +331,7 @@ func TestCreateApiKeySendsExpectedPayload(t *testing.T) {
 	}
 
 	// act
-	stubClient.CreateApiKey(context.TODO(), "foo", "bar")
+	stubClient.CreateClusterApiKey(context.TODO(), "foo", "bar")
 
 	// assert
 	assert.JSONEq(
@@ -374,7 +374,7 @@ func TestCreateApiKeyUsesExpectedApiKey(t *testing.T) {
 	}
 
 	// act
-	stubClient.CreateApiKey(context.TODO(), "dummy", "dummy")
+	stubClient.CreateClusterApiKey(context.TODO(), "dummy", "dummy")
 
 	// assert
 	assert.Equal(t, expected, usedApiKey)
@@ -409,7 +409,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 	}
 
 	// act
-	result, _ := stubClient.CreateApiKey(context.TODO(), "dummy", "dummy")
+	result, _ := stubClient.CreateClusterApiKey(context.TODO(), "dummy", "dummy")
 
 	// assert
 	assert.Equal(t, expected, *result)

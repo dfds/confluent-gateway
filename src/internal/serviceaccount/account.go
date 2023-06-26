@@ -118,8 +118,8 @@ func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountI
 	return h.repo.UpdateAclEntry(entry)
 }
 
-func (h *accountService) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	key, err := h.confluent.CreateApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+func (h *accountService) CreateClusterApiKey(clusterAccess *models.ClusterAccess) error {
+	key, err := h.confluent.CreateClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
 	}
@@ -135,4 +135,20 @@ func (h *accountService) CountApiKeys(clusterAccess *models.ClusterAccess) (int,
 		return 0, err
 	}
 	return keyCount, nil
+}
+
+func (h *accountService) CreateSchemaRegistryApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
+	_, err := h.confluent.CreateSchemaRegistryApiKey(h.context, clusterId, serviceAccountId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *accountService) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {
+	err := h.confluent.CreateServiceAccountRoleBinding(h.context, clusterAccess.ServiceAccountId, clusterAccess.ClusterId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

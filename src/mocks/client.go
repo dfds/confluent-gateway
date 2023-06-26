@@ -33,8 +33,8 @@ func (m *MockClient) CreateACLEntry(_ context.Context, clusterId models.ClusterI
 	return m.OnCreateAclEntryError
 }
 
-func (m *MockClient) CreateApiKey(_ context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
-	fmt.Printf("Creating API key for %s on %s\n", clusterId, serviceAccountId)
+func (m *MockClient) CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+	fmt.Printf("Creating cluster API key for %s on %s\n", clusterId, serviceAccountId)
 	return &m.ReturnApiKey, m.OnCreateApiKeyError
 }
 

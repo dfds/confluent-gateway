@@ -39,7 +39,7 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 	}
 
 	// act
-	err := sut.StoreApiKey(ctx, stubCapabilityId, stubClusterId, stubApiKey)
+	err := sut.StoreClusterApiKey(ctx, stubCapabilityId, stubClusterId, stubApiKey)
 
 	// assert
 	assert.Nil(t, err)
@@ -82,7 +82,7 @@ func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
 	}
 
 	// act
-	err := sut.StoreApiKey(
+	err := sut.StoreClusterApiKey(
 		ctx,
 		models.CapabilityId("foo"),
 		models.ClusterId("bar"),

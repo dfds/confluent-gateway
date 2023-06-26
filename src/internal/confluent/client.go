@@ -22,6 +22,9 @@ type CloudApiAccess struct {
 	UserApiEndpoint string
 }
 
+var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
+var ErrMissingSchemaRegistryIds = errors.New("unable to create schema registry role binding: cluster table has any or all missing ids: organization_id, environment_id, schema_registry_id")
+
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
 }
@@ -63,6 +66,10 @@ type apiKeysResponse struct {
 	Metadata struct {
 		TotalSize int `json:"total_size"`
 	} `json:"metadata"`
+}
+
+type createRoleBindingResponse struct {
+	Id string `json:"id"`
 }
 
 func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
@@ -172,17 +179,17 @@ func (c *Client) CountApiKeys(ctx context.Context, serviceAccountId models.Servi
 
 }
 
-func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) createApiKey(ctx context.Context, id string, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
 	payload := `{
 		"spec": {
-			"display_name": "` + fmt.Sprintf("%s-%s", clusterId, serviceAccountId) + `",
+			"display_name": "` + fmt.Sprintf("%s-%s", id, serviceAccountId) + `",
 			"description": "Created with Confluent Gateway",
 			"owner": {
 				"id": "` + string(serviceAccountId) + `"
 			},
 			"resource": {
-				"id": "` + string(clusterId) + `"
+				"id": "` + id + `"
 			}
 		}
 	}`
@@ -205,6 +212,59 @@ func (c *Client) CreateApiKey(ctx context.Context, clusterId models.ClusterId, s
 		Username: apiKeyResponse.Id,
 		Password: apiKeyResponse.Spec.Secret,
 	}, nil
+}
+
+func (c *Client) CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+	return c.createApiKey(ctx, string(clusterId), serviceAccountId)
+}
+
+func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	if cluster.SchemaRegistryId == "" {
+		return nil, ErrSchemaRegistryIdIsEmpty
+	}
+
+	return c.createApiKey(ctx, string(cluster.SchemaRegistryId), serviceAccountId)
+}
+
+func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error {
+
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return err
+	}
+
+	if cluster.OrganizationId == "" ||
+		cluster.EnvironmentId == "" ||
+		cluster.SchemaRegistryId == "" {
+		return ErrMissingSchemaRegistryIds
+	}
+
+	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/role-bindings"
+	payload := fmt.Sprintf(`{
+		"principal": "User:%s",
+		"role_name": "DeveloperRead",
+		"crn_pattern": "crn://confluent.cloud/organization=%s/environment=%s/schema-registry=%s/subject=*"
+	}`, serviceAccount, cluster.OrganizationId, cluster.EnvironmentId, cluster.SchemaRegistryId)
+
+	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
+	defer response.Body.Close()
+
+	if err != nil {
+		return err
+	}
+
+	roleBindingResponse := &createRoleBindingResponse{}
+	derr := json.NewDecoder(response.Body).Decode(roleBindingResponse)
+	if derr != nil {
+		return derr
+	}
+
+	return nil
 }
 
 func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error {

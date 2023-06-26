@@ -223,7 +223,7 @@ func TestAccountHelper_CreateApiKey_Ok(t *testing.T) {
 	stub := &mocks.MockClient{ReturnApiKey: apiKey}
 	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
 
-	err := sut.CreateApiKey(clusterAccess)
+	err := sut.CreateClusterApiKey(clusterAccess)
 
 	assert.NoError(t, err)
 	assert.Equal(t, apiKey, clusterAccess.ApiKey)
@@ -234,7 +234,7 @@ func TestAccountHelper_CreateApiKey_ConfluentError(t *testing.T) {
 	stub := &mocks.MockClient{OnCreateApiKeyError: errors.New(errorText)}
 	sut := NewAccountService(context.TODO(), stub, &mocks.AccountRepository{})
 
-	err := sut.CreateApiKey(&models.ClusterAccess{})
+	err := sut.CreateClusterApiKey(&models.ClusterAccess{})
 
 	assert.EqualError(t, err, errorText)
 }
@@ -244,7 +244,7 @@ func TestAccountHelper_CreateApiKey_DatabaseError(t *testing.T) {
 	stub := &mocks.AccountRepository{OnUpdateClusterAccessError: errors.New(errorText)}
 	sut := NewAccountService(context.TODO(), &mocks.MockClient{}, stub)
 
-	err := sut.CreateApiKey(&models.ClusterAccess{})
+	err := sut.CreateClusterApiKey(&models.ClusterAccess{})
 
 	assert.EqualError(t, err, errorText)
 }

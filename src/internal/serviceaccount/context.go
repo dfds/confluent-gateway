@@ -28,13 +28,17 @@ type AccountService interface {
 	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
-	CreateApiKey(*models.ClusterAccess) error
+	CreateClusterApiKey(*models.ClusterAccess) error
+	CreateSchemaRegistryApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error
+	CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error
 	CountApiKeys(clusterAccess *models.ClusterAccess) (int, error)
 }
 
 type VaultService interface {
-	StoreApiKey(models.CapabilityId, *models.ClusterAccess) error
-	QueryApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
+	StoreClusterApiKey(models.CapabilityId, *models.ClusterAccess) error
+	QueryClusterApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
+	StoreSchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess) error
+	QuerySchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
 }
 
 type Outbox interface {
@@ -49,6 +53,10 @@ type OutboxFactory func(repository OutboxRepository) Outbox
 
 func (c *StepContext) LogTrace(format string, args ...string) {
 	c.logger.Trace(format, args...)
+}
+
+func (c *StepContext) LogError(err error, format string, args ...string) {
+	c.logger.Error(err, format, args...)
 }
 
 func (c *StepContext) HasServiceAccount() bool {
@@ -91,15 +99,39 @@ func (c *StepContext) HasApiKey(clusterAccess *models.ClusterAccess) bool {
 }
 
 func (c *StepContext) HasApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {
-	return c.vault.QueryApiKey(c.input.CapabilityId, clusterAccess)
+	return c.vault.QueryClusterApiKey(c.input.CapabilityId, clusterAccess)
 }
 
-func (c *StepContext) CreateApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.account.CreateApiKey(clusterAccess)
+func (c *StepContext) CreateClusterApiKey(clusterAccess *models.ClusterAccess) error {
+	return c.account.CreateClusterApiKey(clusterAccess)
 }
 
 func (c *StepContext) StoreApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.vault.StoreApiKey(c.input.CapabilityId, clusterAccess)
+	return c.vault.StoreClusterApiKey(c.input.CapabilityId, clusterAccess)
+}
+
+func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
+	return c.account.GetServiceAccount(c.input.CapabilityId)
+}
+
+func (c *StepContext) EnsureSchemaRegistryApiKey(serviceAccountId models.ServiceAccountId) error {
+	return c.account.CreateSchemaRegistryApiKey(c.input.ClusterId, serviceAccountId)
+}
+
+func (c *StepContext) CreateServiceAccountRoleBinding() error {
+	access, err := c.GetClusterAccess()
+	if err != nil {
+		return err
+	}
+	return c.account.CreateServiceAccountRoleBinding(access)
+}
+
+func (c *StepContext) StoreSchemaRegistryApiKey() error {
+	access, err := c.GetClusterAccess()
+	if err != nil {
+		return err
+	}
+	return c.vault.StoreClusterApiKey(c.input.CapabilityId, access)
 }
 
 func (c *StepContext) RaiseServiceAccountAccessGranted() error {

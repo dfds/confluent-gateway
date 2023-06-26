@@ -12,7 +12,7 @@ type handler struct {
 	process Process
 }
 
-func ServiceAccountAccessRequestedHandler(process Process) messaging.MessageHandler {
+func NewAccessRequestedHandler(process Process) messaging.MessageHandler {
 	return &handler{process: process}
 }
 
