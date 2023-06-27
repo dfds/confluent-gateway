@@ -43,7 +43,7 @@ type ClusterAccess struct {
 	ServiceAccountId     ServiceAccountId
 	UserAccountId        UserAccountId
 	ApiKey               ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
-	SchemaRegistryApiKey ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
+	SchemaRegistryApiKey ApiKey `gorm:"embedded;embeddedPrefix:schema_registry_api_key_"`
 	Acl                  []AclEntry
 	CreatedAt            time.Time
 }

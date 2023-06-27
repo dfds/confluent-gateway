@@ -47,6 +47,12 @@ func main() {
 		})
 	})
 
+	r.POST("/iam/v2/role-bindings", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"id": "fake-role-binding-id",
+		})
+	})
+
 	r.GET("/iam/v2/api-keys", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"api_version": "iam/v2",

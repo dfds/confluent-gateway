@@ -115,11 +115,7 @@ func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
 	return c.account.GetServiceAccount(c.input.CapabilityId)
 }
 
-func (c *StepContext) EnsureHasSchemaRegistryApiKey(*models.ClusterAccess) error {
-	access, err := c.account.GetClusterAccess(c.input.CapabilityId, c.input.ClusterId)
-	if err != nil {
-		return err
-	}
+func (c *StepContext) EnsureHasSchemaRegistryApiKey(access *models.ClusterAccess) error {
 
 	keyCount, err := c.account.CountSchemaRegistryApiKeys(access)
 	if err != nil {
