@@ -31,7 +31,7 @@ func (v *vaultService) QueryClusterApiKey(capabilityId models.CapabilityId, clus
 }
 
 func (v *vaultService) StoreSchemaRegistryApiKey(capabilityId models.CapabilityId, clusterAccess *models.ClusterAccess) error {
-	return v.vault.StoreSchemaRegistryApiKey(v.context, capabilityId, clusterAccess.ClusterId, clusterAccess.ApiKey)
+	return v.vault.StoreSchemaRegistryApiKey(v.context, capabilityId, clusterAccess.ClusterId, clusterAccess.SchemaRegistryApiKey)
 }
 
 func (v *vaultService) QuerySchemaRegistryApiKey(capabilityId models.CapabilityId, clusterAccess *models.ClusterAccess) (bool, error) {
