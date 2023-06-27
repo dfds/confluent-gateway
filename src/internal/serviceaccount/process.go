@@ -218,6 +218,7 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 				step.LogError(err, "unable to setup schema registry access")
 				return nil // fallback: setup cluster without schema registry access
 			}
+			return err
 		}
 
 		if err = step.StoreSchemaRegistryApiKey(); err != nil {
