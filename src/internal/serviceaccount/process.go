@@ -192,10 +192,10 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 
 type EnsureServiceAccountHasSchemaRegistryAccess interface {
 	logger
-	GetServiceAccount() (*models.ServiceAccount, error)
 	GetClusterAccess() (*models.ClusterAccess, error)
-	EnsureHasSchemaRegistryApiKey() error
-	CreateServiceAccountRoleBinding() error
+	CreateServiceAccountRoleBinding(*models.ClusterAccess) error
+	EnsureHasSchemaRegistryApiKey(*models.ClusterAccess) error
+	HasSchemaRegistryApiKeyInVault(*models.ClusterAccess) (bool, error)
 	StoreSchemaRegistryApiKey(*models.ClusterAccess) error
 }
 
@@ -203,7 +203,12 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountHasSchemaRegistryAccess) error {
 		step.LogTrace("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
 
-		err := step.CreateServiceAccountRoleBinding()
+		clusterAccess, err := step.GetClusterAccess()
+		if err != nil {
+			return err
+		}
+
+		err = step.CreateServiceAccountRoleBinding(clusterAccess)
 		if err != nil {
 			if errors.Is(err, confluent.ErrMissingSchemaRegistryIds) {
 				step.LogError(err, "unable to setup schema registry access")
@@ -211,7 +216,7 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 			}
 			return err
 		}
-		err = step.EnsureHasSchemaRegistryApiKey()
+		err = step.EnsureHasSchemaRegistryApiKey(clusterAccess)
 		if err != nil {
 			if errors.Is(err, confluent.ErrSchemaRegistryIdIsEmpty) {
 				step.LogError(err, "unable to setup schema registry access")
@@ -220,9 +225,12 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 			return err
 		}
 
-		clusterAccess, err := step.GetClusterAccess()
+		hasKey, err := step.HasSchemaRegistryApiKeyInVault(clusterAccess)
 		if err != nil {
 			return err
+		}
+		if hasKey {
+			return nil
 		}
 
 		if err = step.StoreSchemaRegistryApiKey(clusterAccess); err != nil {

@@ -115,7 +115,7 @@ func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
 	return c.account.GetServiceAccount(c.input.CapabilityId)
 }
 
-func (c *StepContext) EnsureHasSchemaRegistryApiKey() error {
+func (c *StepContext) EnsureHasSchemaRegistryApiKey(*models.ClusterAccess) error {
 	access, err := c.account.GetClusterAccess(c.input.CapabilityId, c.input.ClusterId)
 	if err != nil {
 		return err
@@ -126,13 +126,18 @@ func (c *StepContext) EnsureHasSchemaRegistryApiKey() error {
 		return err
 	}
 	if keyCount > 0 {
+		c.logger.Information("found SchemaRegistry api key, skipping creation")
 		return nil
 	}
 
 	return c.account.CreateSchemaRegistryApiKey(access)
 }
 
-func (c *StepContext) CreateServiceAccountRoleBinding() error {
+func (c *StepContext) HasSchemaRegistryApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {
+	return c.vault.QuerySchemaRegistryApiKey(c.input.CapabilityId, clusterAccess)
+}
+
+func (c *StepContext) CreateServiceAccountRoleBinding(*models.ClusterAccess) error {
 	access, err := c.GetClusterAccess()
 	if err != nil {
 		return err

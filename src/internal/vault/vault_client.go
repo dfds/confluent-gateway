@@ -28,6 +28,10 @@ func getSchemaRegistryApiParameter(capabilityId models.CapabilityId, clusterId m
 }
 
 func (v *Vault) storeApiKey(ctx context.Context, capabilityId models.CapabilityId, parameterName string, apiKey models.ApiKey) error {
+
+	if apiKey.Username == "" && apiKey.Password == "" {
+		return fmt.Errorf("attempted to store api key with empty username and password for parameter at location %s", parameterName)
+	}
 	v.logger.Information("Storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
@@ -51,8 +55,7 @@ func (v *Vault) storeApiKey(ctx context.Context, capabilityId models.CapabilityI
 	})
 
 	if err != nil {
-		v.logger.Error(err, "Error when storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
-		return err
+		return fmt.Errorf("error when storing api key %s for capability %s at location %s", apiKey.Username, string(capabilityId), parameterName)
 	}
 
 	v.logger.Information("Successfully stored api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
