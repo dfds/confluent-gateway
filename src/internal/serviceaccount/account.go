@@ -145,12 +145,15 @@ func (h *accountService) CountSchemaRegistryApiKeys(clusterAccess *models.Cluste
 	return keyCount, nil
 }
 
-func (h *accountService) CreateSchemaRegistryApiKey(clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
-	_, err := h.confluent.CreateSchemaRegistryApiKey(h.context, clusterId, serviceAccountId)
+func (h *accountService) CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
+	key, err := h.confluent.CreateSchemaRegistryApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	clusterAccess.SchemaRegistryApiKey = *key
+
+	return h.repo.UpdateClusterAccess(clusterAccess)
 }
 
 func (h *accountService) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {

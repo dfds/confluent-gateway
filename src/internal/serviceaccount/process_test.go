@@ -96,8 +96,8 @@ func Test_createProcessState(t *testing.T) {
 				TopicName:         someTopicName,
 				HasServiceAccount: true,
 				HasClusterAccess:  true,
-				HasApiKey:         true,
-				HasApiKeyInVault:  true,
+				HasClusterApiKey:         true,
+				HasClusterApiKeyInVault:  true,
 				CompletedAt:       nil,
 			}},
 			input: ProcessInput{
@@ -148,8 +148,8 @@ func Test_createProcessState(t *testing.T) {
 			assert.Equal(t, int64(0), got.TopicRetention)
 			assert.Equal(t, tt.wantHasServiceAccount, got.HasServiceAccount)
 			assert.Equal(t, tt.wantHasClusterAccess, got.HasClusterAccess)
-			assert.Equal(t, tt.wantHasApiKey, got.HasApiKey)
-			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasApiKeyInVault)
+			assert.Equal(t, tt.wantHasApiKey, got.HasClusterApiKey)
+			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasClusterApiKeyInVault)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())
 			assert.Equal(t, tt.wantEvent, tt.mock.EventProduced)
 		})
