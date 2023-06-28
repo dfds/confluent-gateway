@@ -11,7 +11,7 @@ import (
 )
 
 type logger interface {
-	LogTrace(string, ...string)
+	LogDebug(string, ...string)
 	LogError(error, string, ...string)
 }
 
@@ -47,6 +47,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 		Step(ensureServiceAccountApiKeyStep).
 		Step(ensureServiceAccountApiKeyAreStoredInVaultStep).
 		Step(ensureServiceAccountHasSchemaRegistryAccessStep).
+		Step(raiseServiceAccountAccessGrantedStep).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
 				stepContext := p.getStepContext(ctx, tx, input)
@@ -78,7 +79,7 @@ type EnsureServiceAccountStepRequirement interface {
 
 func ensureServiceAccountStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountStepRequirement) error {
-		step.LogTrace("Running {Step}", "EnsureServiceAccount")
+		step.LogDebug("Running {Step}", "EnsureServiceAccount")
 		if step.HasServiceAccount() {
 			return nil
 		}
@@ -102,7 +103,7 @@ type EnsureServiceAccountAclStep interface {
 
 func ensureServiceAccountAclStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountAclStep) error {
-		step.LogTrace("Running {Step}", "EnsureServiceAccountAcl")
+		step.LogDebug("Running {Step}", "EnsureServiceAccountAcl")
 		if step.HasClusterAccess() {
 			return nil
 		}
@@ -135,7 +136,7 @@ type EnsureServiceAccountApiKeyStep interface {
 
 func ensureServiceAccountApiKeyStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountApiKeyStep) error {
-		step.LogTrace("Running {Step}", "EnsureServiceAccountApiKey")
+		step.LogDebug("Running {Step}", "EnsureServiceAccountApiKey")
 
 		clusterAccess, err := step.GetClusterAccess()
 		if err != nil {
@@ -161,12 +162,11 @@ type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
 	HasClusterApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
 	GetClusterAccess() (*models.ClusterAccess, error)
 	StoreClusterApiKey(clusterAccess *models.ClusterAccess) error
-	RaiseServiceAccountAccessGranted() error
 }
 
 func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountApiKeyAreStoredInVaultStep) error {
-		step.LogTrace("Running {Step}", "EnsureServiceAccountApiKeyAreStoredInVault")
+		step.LogDebug("Running {Step}", "EnsureServiceAccountApiKeyAreStoredInVault")
 
 		clusterAccess, err := step.GetClusterAccess()
 		if err != nil {
@@ -184,8 +184,7 @@ func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
 		if err = step.StoreClusterApiKey(clusterAccess); err != nil {
 			return err
 		}
-
-		return step.RaiseServiceAccountAccessGranted()
+		return nil
 	}
 	return inner(step)
 }
@@ -201,7 +200,7 @@ type EnsureServiceAccountHasSchemaRegistryAccess interface {
 
 func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountHasSchemaRegistryAccess) error {
-		step.LogTrace("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
+		step.LogDebug("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
 
 		clusterAccess, err := step.GetClusterAccess()
 		if err != nil {
@@ -240,4 +239,8 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 		return nil
 	}
 	return inner(step)
+}
+
+func raiseServiceAccountAccessGrantedStep(step *StepContext) error {
+	return step.RaiseServiceAccountAccessGranted()
 }

@@ -52,8 +52,8 @@ type OutboxRepository interface {
 
 type OutboxFactory func(repository OutboxRepository) Outbox
 
-func (c *StepContext) LogTrace(format string, args ...string) {
-	c.logger.Trace(format, args...)
+func (c *StepContext) LogDebug(format string, args ...string) {
+	c.logger.Debug(format, args...)
 }
 
 func (c *StepContext) LogError(err error, format string, args ...string) {
