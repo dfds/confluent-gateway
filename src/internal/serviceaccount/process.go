@@ -75,12 +75,14 @@ type EnsureServiceAccountStepRequirement interface {
 	logger
 	HasServiceAccount() bool
 	CreateServiceAccount() error
+	GetInputCapabilityId() models.CapabilityId
 }
 
 func ensureServiceAccountStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountStepRequirement) error {
 		step.LogDebug("Running {Step}", "EnsureServiceAccount")
 		if step.HasServiceAccount() {
+			step.LogDebug("found existing service account for CapabilityId {CapabilityId}", string(step.GetInputCapabilityId()))
 			return nil
 		}
 

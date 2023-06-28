@@ -39,33 +39,26 @@ func (l *databaseLogger) Error(_ context.Context, s string, i ...interface{}) {
 	}
 }
 
+func formatMessage(rows int64, sql string, elapsed time.Duration) string {
+
+	rowsString := "-"
+	if rows != -1 {
+		rowsString = fmt.Sprintf("%v", rows)
+	}
+	return fmt.Sprintf("[DB_LOGGER]: [%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rowsString, sql)
+}
+
 func (l *databaseLogger) Trace(_ context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	if l.level <= logger.Silent {
 		return
 	}
 
-	elapsed := time.Since(begin)
-
+	sql, rows := fc()
+	msg := formatMessage(rows, sql, time.Since(begin))
 	switch {
 	case err != nil && l.level >= logger.Error && (!errors.Is(err, gorm.ErrRecordNotFound) || !l.ignoreRecordNotFoundError):
-		sql, rows := fc()
-
-		if rows == -1 {
-			s := fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, "-", sql)
-			l.logger.Error(err, s)
-
-		} else {
-			s := fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
-			l.logger.Error(err, s)
-		}
+		l.logger.Error(err, msg)
 	case l.level == logger.Info:
-		sql, rows := fc()
-		if rows == -1 {
-			s := fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, "-", sql)
-			l.logger.Trace(s)
-		} else {
-			s := fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
-			l.logger.Trace(s)
-		}
+		l.logger.Trace(msg)
 	}
 }

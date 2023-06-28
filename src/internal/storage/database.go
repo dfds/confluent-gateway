@@ -17,7 +17,7 @@ type Database struct {
 
 func NewDatabase(dsn string, logger logging.Logger) (*Database, error) {
 	config := gorm.Config{
-		Logger: &databaseLogger{logger: logger},
+		Logger: &databaseLogger{logger: logger, ignoreRecordNotFoundError: true},
 	}
 	if db, err := gorm.Open(postgres.Open(dsn), &config); err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (d *Database) GetServiceAccount(capabilityId models.CapabilityId) (*models.
 		Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) { // TODO: do not suppress error, but instead return custom error
 			return nil, nil
 		}
 

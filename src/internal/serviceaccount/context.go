@@ -2,7 +2,6 @@ package serviceaccount
 
 import (
 	"fmt"
-
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -62,8 +61,8 @@ func (c *StepContext) LogError(err error, format string, args ...string) {
 
 func (c *StepContext) HasServiceAccount() bool {
 	account, err := c.account.GetServiceAccount(c.input.CapabilityId)
-	fmt.Printf("Service account for CapabilityId: %s\n\tFound: %t\n\tError: %t\n", c.input.CapabilityId, account != nil, err != nil)
 	if err != nil {
+		c.LogError(err, fmt.Sprintf("encountered error when checking if ServiceAccount exists for CapabilityId %s", c.input.CapabilityId))
 		return false
 	}
 	return account != nil
@@ -71,6 +70,10 @@ func (c *StepContext) HasServiceAccount() bool {
 
 func (c *StepContext) CreateServiceAccount() error {
 	return c.account.CreateServiceAccount(c.input.CapabilityId, c.input.ClusterId)
+}
+
+func (c *StepContext) GetInputCapabilityId() models.CapabilityId {
+	return c.input.CapabilityId
 }
 
 func (c *StepContext) HasClusterAccess() bool {
