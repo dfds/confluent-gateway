@@ -99,14 +99,17 @@ func ensureServiceAccountStep(step *StepContext) error {
 type EnsureServiceAccountAclStep interface {
 	logger
 	HasClusterAccess() bool
+	GetInputCapabilityId() models.CapabilityId
 	GetOrCreateClusterAccess() (*models.ClusterAccess, error)
 	CreateAclEntry(clusterAccess *models.ClusterAccess, nextEntry models.AclEntry) error
 }
 
+// TODO: Step looks incorrect!
 func ensureServiceAccountAclStep(step *StepContext) error {
 	inner := func(step EnsureServiceAccountAclStep) error {
 		step.LogDebug("Running {Step}", "EnsureServiceAccountAcl")
 		if step.HasClusterAccess() {
+			step.LogDebug("skipping step: ServiceAccount {ServiceAccount} already has ClusterAccess", string(step.GetInputCapabilityId()))
 			return nil
 		}
 
@@ -117,6 +120,7 @@ func ensureServiceAccountAclStep(step *StepContext) error {
 
 		entries := clusterAccess.GetAclPendingCreation()
 		if len(entries) == 0 {
+			step.LogDebug("found no ACL pending creation")
 			// no acl entries left => continue
 			return nil
 
