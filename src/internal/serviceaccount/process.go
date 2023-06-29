@@ -248,5 +248,6 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 }
 
 func raiseServiceAccountAccessGrantedStep(step *StepContext) error {
+	step.LogDebug("Running {Step}", "raiseServiceAccountAccessGrantedStep")
 	return step.RaiseServiceAccountAccessGranted()
 }
