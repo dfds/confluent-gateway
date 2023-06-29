@@ -24,6 +24,7 @@ type CloudApiAccess struct {
 
 var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
 var ErrMissingSchemaRegistryIds = errors.New("unable to create schema registry role binding: cluster table has any or all missing ids: organization_id, environment_id, schema_registry_id")
+var ErrSchemaRegistryApiKeyNotFoundForDeletion = errors.New("unable to delete schema registry api key: key not found in confluent")
 
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
@@ -62,10 +63,48 @@ type usersResponse struct {
 	} `json:"page_info"`
 }
 
-type apiKeysResponse struct {
-	Metadata struct {
-		TotalSize int `json:"total_size"`
+type listApiKeysResponse struct {
+	APIVersion string `json:"api_version"`
+	Kind       string `json:"kind"`
+	Metadata   struct {
+		First     string `json:"first"`
+		Last      string `json:"last"`
+		Prev      string `json:"prev"`
+		Next      string `json:"next"`
+		TotalSize int    `json:"total_size"`
 	} `json:"metadata"`
+	Data []struct {
+		APIVersion string `json:"api_version"`
+		Kind       string `json:"kind"`
+		ID         string `json:"id"`
+		Metadata   struct {
+			Self         string `json:"self"`
+			ResourceName string `json:"resource_name"`
+			CreatedAt    string `json:"created_at"`
+			UpdatedAt    string `json:"updated_at"`
+			DeletedAt    string `json:"deleted_at"`
+		} `json:"metadata"`
+		Spec struct {
+			Secret      string `json:"secret"`
+			DisplayName string `json:"display_name"`
+			Description string `json:"description"`
+			Owner       struct {
+				ID           string `json:"id"`
+				Related      string `json:"related"`
+				ResourceName string `json:"resource_name"`
+				APIVersion   string `json:"api_version"`
+				Kind         string `json:"kind"`
+			} `json:"owner"`
+			Resource struct {
+				ID           string `json:"id"`
+				Environment  string `json:"environment"`
+				Related      string `json:"related"`
+				ResourceName string `json:"resource_name"`
+				APIVersion   string `json:"api_version"`
+				Kind         string `json:"kind"`
+			} `json:"resource"`
+		} `json:"spec"`
+	} `json:"data"`
 }
 
 type createRoleBindingResponse struct {
@@ -174,25 +213,39 @@ func (c *Client) getSchemaRegistryId(clusterId models.ClusterId) (models.SchemaR
 	return cluster.SchemaRegistryId, nil
 }
 
-func (c *Client) countApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, resourceId string) (int, error) {
+func (c *Client) listApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, resourceId string) (listApiKeysResponse, error) {
 	url := fmt.Sprintf("%s/iam/v2/api-keys?spec.owner=%s&spec.resource=%s", c.cloudApiAccess.ApiEndpoint, string(serviceAccountId), resourceId)
 	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
 	if err != nil {
-		return 0, err
+		return listApiKeysResponse{}, err
 	}
 	defer response.Body.Close()
 
-	var apiKeys apiKeysResponse
-	if err := json.NewDecoder(response.Body).Decode(&apiKeys); err != nil {
-		return 0, err
+	var resp listApiKeysResponse
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return listApiKeysResponse{}, err
 	}
 
-	return apiKeys.Metadata.TotalSize, nil
+	return resp, nil
+
+}
+func (c *Client) deleteApiKey(ctx context.Context, apiKeyId string) error {
+	url := fmt.Sprintf("%s/iam/v2/api-keys/%s", c.cloudApiAccess.ApiEndpoint, apiKeyId)
+	_, err := c.delete(ctx, url, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
 func (c *Client) CountClusterApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error) {
-	return c.countApiKeys(ctx, serviceAccountId, string(clusterId))
+	keysResponse, err := c.listApiKeys(ctx, serviceAccountId, string(clusterId))
+	if err != nil {
+		return 0, err
+	}
+	return keysResponse.Metadata.TotalSize, nil
 }
 
 func (c *Client) CountSchemaRegistryApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error) {
@@ -200,7 +253,11 @@ func (c *Client) CountSchemaRegistryApiKeys(ctx context.Context, serviceAccountI
 	if err != nil {
 		return 0, err
 	}
-	return c.countApiKeys(ctx, serviceAccountId, string(schemaRegistryId))
+	keysResponse, err := c.listApiKeys(ctx, serviceAccountId, string(schemaRegistryId))
+	if err != nil {
+		return 0, err
+	}
+	return keysResponse.Metadata.TotalSize, nil
 }
 
 func (c *Client) createApiKey(ctx context.Context, resourceId string, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
@@ -249,6 +306,31 @@ func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, clusterId model
 		return nil, err
 	}
 	return c.createApiKey(ctx, string(schemaRegistryId), serviceAccountId)
+}
+
+func (c *Client) DeleteSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
+
+	schemaRegistryId, err := c.getSchemaRegistryId(clusterId)
+	if err != nil {
+		return err
+	}
+	resourceId := string(schemaRegistryId)
+	listApiKeys, err := c.listApiKeys(ctx, serviceAccountId, resourceId)
+	if err != nil {
+		return err
+	}
+	for _, datum := range listApiKeys.Data {
+		if datum.Spec.Resource.ID != resourceId {
+			continue
+		}
+
+		err := c.deleteApiKey(ctx, datum.ID)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return ErrSchemaRegistryApiKeyNotFoundForDeletion
 }
 
 func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error {

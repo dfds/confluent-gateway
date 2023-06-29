@@ -32,6 +32,7 @@ type AccountService interface {
 	CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error
 	CountClusterApiKeys(clusterAccess *models.ClusterAccess) (int, error)
 	CountSchemaRegistryApiKeys(clusterAccess *models.ClusterAccess) (int, error)
+	RecreateSchemaRegistryApiKeyAndStoreInDb(clusterAccess *models.ClusterAccess) error
 }
 
 type VaultService interface {
@@ -132,7 +133,19 @@ func (c *StepContext) EnsureHasSchemaRegistryApiKey(access *models.ClusterAccess
 	if err != nil {
 		return err
 	}
+
 	if keyCount > 0 {
+		clusterAccess, err := c.account.GetClusterAccess(c.input.CapabilityId, c.input.ClusterId)
+		if err != nil {
+			return err
+		}
+		if clusterAccess.SchemaRegistryApiKey.Username == "" ||
+			clusterAccess.SchemaRegistryApiKey.Password == "" {
+
+			c.logger.Error(fmt.Errorf("db and confluent schema registry api key are out of sync"), "recreating SchemaRegistryApiKey and then store in DB")
+			return c.account.RecreateSchemaRegistryApiKeyAndStoreInDb(access)
+		}
+
 		c.logger.Information("found SchemaRegistry api key, skipping creation")
 		return nil
 	}

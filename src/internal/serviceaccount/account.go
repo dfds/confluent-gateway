@@ -2,7 +2,9 @@ package serviceaccount
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/dfds/confluent-gateway/internal/confluent"
 	"time"
 
 	"github.com/dfds/confluent-gateway/internal/models"
@@ -143,6 +145,20 @@ func (h *accountService) CountSchemaRegistryApiKeys(clusterAccess *models.Cluste
 		return 0, err
 	}
 	return keyCount, nil
+}
+
+func (h *accountService) RecreateSchemaRegistryApiKeyAndStoreInDb(clusterAccess *models.ClusterAccess) error {
+
+	err := h.confluent.DeleteSchemaRegistryApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+	if err != nil && !errors.Is(err, confluent.ErrSchemaRegistryApiKeyNotFoundForDeletion) {
+		return err
+	}
+
+	if errors.Is(err, confluent.ErrSchemaRegistryApiKeyNotFoundForDeletion) {
+		// TODO: log?
+	}
+
+	return h.CreateSchemaRegistryApiKey(clusterAccess)
 }
 
 func (h *accountService) CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
