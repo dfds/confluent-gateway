@@ -62,13 +62,35 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-    command: "bash -c 'echo Waiting for Kafka to be ready... && \
-                      sleep 5 && \
-                      cub kafka-ready -b kafka:29092 1 20 && \
-                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.selfservice.kafkatopic && \
-                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.selfservice.kafkaclusteraccess && \
-                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.confluentgateway.access && \
-                      kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic cloudengineering.confluentgateway.provisioning'"
+    command: >
+      sh -c '
+      # Blocks until kafka is reachable
+      echo -e "Waiting for kafka to be reachable"
+      kafka-topics --bootstrap-server kafka:29092 --list > /dev/null
+
+      declare -a topics=(
+        "cloudengineering.selfservice.kafkatopic"
+        "cloudengineering.selfservice.kafkaclusteraccess"
+        "cloudengineering.confluentgateway.access"
+        "cloudengineering.confluentgateway.provisioning"
+      )
+
+      total_topics=$${#topics[@]}
+      completed_topics=0
+
+      for topic in $${topics[@]}; do
+        ((completed_topics++))
+        echo -e "Creating topic: $$topic ($$completed_topics/$$total_topics)"
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic $$topic
+        if [ $$? -eq 0 ]; then
+          echo -e "Successfully created topic: $$topic"
+        else
+          echo -e "Failed to create topic: $$topic"
+        fi
+      done
+
+      echo -e "Success!"
+      '
     environment:
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored
