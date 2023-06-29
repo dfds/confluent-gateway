@@ -43,7 +43,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 
 	return proc.PrepareSteps[*StepContext]().
 		Step(ensureServiceAccountStep).
-		Step(ensureServiceAccountAclStep).Until(func(c *StepContext) bool { return c.HasClusterAccess() }).
+		Step(ensureServiceAccountAclStep).
 		Step(ensureServiceAccountApiKeyStep).
 		Step(ensureServiceAccountApiKeyAreStoredInVaultStep).
 		Step(ensureServiceAccountHasSchemaRegistryAccessStep).
