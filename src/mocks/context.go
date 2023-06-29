@@ -38,7 +38,7 @@ func (m *StepContextMock) MarkServiceAccountAsReady() {
 	m.MarkServiceAccountAsReadyWasCalled = true
 }
 
-func (m *StepContextMock) HasClusterAccess() bool {
+func (m *StepContextMock) HasClusterAccessWithValidAcls() bool {
 	return false
 }
 

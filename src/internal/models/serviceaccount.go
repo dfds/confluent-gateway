@@ -105,7 +105,11 @@ func (*AclEntry) TableName() string {
 	return "acl"
 }
 
-func (entry *AclEntry) Created() {
+func (e *AclEntry) Created() {
 	now := time.Now()
-	entry.CreatedAt = &now
+	e.CreatedAt = &now
+}
+
+func (e *AclEntry) IsValid() bool {
+	return e.CreatedAt != nil
 }

@@ -76,11 +76,19 @@ func (c *StepContext) GetInputCapabilityId() models.CapabilityId {
 	return c.input.CapabilityId
 }
 
-func (c *StepContext) HasClusterAccess() bool {
+func (c *StepContext) HasClusterAccessWithValidAcls() bool {
 	serviceAccount, _ := c.account.GetServiceAccount(c.input.CapabilityId)
 	if serviceAccount != nil {
-		_, HasClusterAccess := serviceAccount.TryGetClusterAccess(c.input.ClusterId)
-		return HasClusterAccess
+		clusterAccess, hasClusterAccess := serviceAccount.TryGetClusterAccess(c.input.ClusterId)
+		if !hasClusterAccess {
+			return false
+		}
+		for _, entry := range clusterAccess.Acl {
+			if !entry.IsValid() {
+				return false
+			}
+		}
+		return true
 	}
 	return false
 }

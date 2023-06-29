@@ -95,7 +95,7 @@ func Test_createProcessState(t *testing.T) {
 				ClusterId:         someClusterId,
 				TopicName:         someTopicName,
 				HasServiceAccount: true,
-				HasClusterAccess:  true,
+				HasClusterAccessWithValidAcls:  true,
 				HasClusterApiKey:         true,
 				HasClusterApiKeyInVault:  true,
 				CompletedAt:       nil,
@@ -147,7 +147,7 @@ func Test_createProcessState(t *testing.T) {
 			assert.Equal(t, 0, got.TopicPartitions)
 			assert.Equal(t, int64(0), got.TopicRetention)
 			assert.Equal(t, tt.wantHasServiceAccount, got.HasServiceAccount)
-			assert.Equal(t, tt.wantHasClusterAccess, got.HasClusterAccess)
+			assert.Equal(t, tt.wantHasClusterAccess, got.HasClusterAccessWithValidAcls)
 			assert.Equal(t, tt.wantHasApiKey, got.HasClusterApiKey)
 			assert.Equal(t, tt.wantHasApiKeyInVault, got.HasClusterApiKeyInVault)
 			assert.Equal(t, tt.wantIsCompleted, got.IsCompleted())

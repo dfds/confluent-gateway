@@ -47,7 +47,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 	}
 
 	return PrepareSteps[*StepContext]().
-		Step(ensureServiceAccount).
+		Step(ensureHasValidServiceAccount).
 		Step(ensureTopicIsCreated).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
@@ -152,17 +152,17 @@ func (p *process) getStepContext(ctx context.Context, tx models.Transaction, sta
 
 // region Steps
 
-func ensureServiceAccount(stepContext *StepContext) error {
+func ensureHasValidServiceAccount(stepContext *StepContext) error {
 	stepContext.logger.Trace("Running {Step}", "EnsureServiceAccount")
-	return ensureServiceAccountStep(stepContext)
+	return ensureHasValidServiceAccountStep(stepContext)
 }
 
 type EnsureServiceAccountStep interface {
-	HasClusterAccess() bool
+	HasClusterAccessWithValidAcls() bool
 }
 
-func ensureServiceAccountStep(step EnsureServiceAccountStep) error {
-	if step.HasClusterAccess() {
+func ensureHasValidServiceAccountStep(step EnsureServiceAccountStep) error {
+	if step.HasClusterAccessWithValidAcls() {
 		return nil
 	}
 
