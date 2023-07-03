@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
@@ -10,6 +11,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+var ErrTopicNotFound = errors.New("requested topic not found")
 
 type Database struct {
 	db *gorm.DB
@@ -22,6 +25,15 @@ func NewDatabase(dsn string, logger logging.Logger) (*Database, error) {
 	if db, err := gorm.Open(postgres.Open(dsn), &config); err != nil {
 		return nil, err
 	} else {
+		sqlDb, err := db.DB()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get sql.db from gorm db: %s", err)
+		}
+		err = MigrateUp(sqlDb)
+		if err != nil {
+			return nil, fmt.Errorf("failed to migrate database: %s", err)
+		}
+
 		return &Database{db}, nil
 	}
 }
@@ -84,7 +96,7 @@ func (d *Database) GetDeleteProcessState(topicId string) (*models.DeleteProcess,
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, ErrTopicNotFound
 		}
 
 		return nil, err
@@ -153,7 +165,7 @@ func (d *Database) GetTopic(topicId string) (*models.Topic, error) {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, ErrTopicNotFound
 		}
 
 		return nil, err
@@ -175,7 +187,7 @@ func (d *Database) GetSchemaProcessState(messageContractId string) (*models.Sche
 		Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) { //TODO: Don't suppress error, make custom error
 			return nil, nil
 		}
 
