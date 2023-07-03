@@ -3,8 +3,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"fmt"
-
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -25,15 +23,6 @@ func NewDatabase(dsn string, logger logging.Logger) (*Database, error) {
 	if db, err := gorm.Open(postgres.Open(dsn), &config); err != nil {
 		return nil, err
 	} else {
-		sqlDb, err := db.DB()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get sql.db from gorm db: %s", err)
-		}
-		err = MigrateUp(sqlDb)
-		if err != nil {
-			return nil, fmt.Errorf("failed to migrate database: %s", err)
-		}
-
 		return &Database{db}, nil
 	}
 }
