@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/dfds/confluent-gateway/internal/create"
 	"github.com/dfds/confluent-gateway/internal/models"
+	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -23,6 +24,9 @@ func TestCreateTopic(t *testing.T) {
 		return outboxFactory(repository)
 	})
 
+	topic, err := tester.db.GetTopic(testTopicId)
+	require.ErrorIs(t, err, storage.ErrTopicNotFound)
+
 	topicDescription := models.TopicDescription{
 		Name:       "topic-name-1234",
 		Partitions: 1,
@@ -39,7 +43,7 @@ func TestCreateTopic(t *testing.T) {
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 
-	topic, err := tester.db.GetTopic(testTopicId)
+	topic, err = tester.db.GetTopic(testTopicId)
 	require.NoError(t, err)
 
 	require.Equal(t, topic.Id, testTopicId)

@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 }
 
 func setupTester(logger logging.Logger) error {
-	config := configuration.LoadInto(&configuration.Configuration{})
+	config := configuration.LoadIntoWithEnvPath(&configuration.Configuration{}, "./../.env")
 
 	db, err := storage.NewDatabase(config.DbConnectionString, logger)
 	if err != nil {

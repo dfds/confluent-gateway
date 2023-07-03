@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const defaultEnvPath = "./.env"
+
 type fieldDescriptor struct {
 	realField   reflect.Value
 	typeOfField reflect.StructField
@@ -129,17 +131,22 @@ func newValueSourceFrom(lines []string) ValueSource {
 	return &inMemoryValueSource{values: envVars}
 }
 
-func NewConfigurationReader() Reader {
+func NewConfigurationReader(envPath string) Reader {
 	return &reader{
 		sources: []ValueSource{
-			newValueSourceFrom(readLinesFromFile("./.env")),
+			newValueSourceFrom(readLinesFromFile(envPath)),
 			&osValueSource{},
 		},
 	}
 }
 
 func LoadInto[T any](cfg T) T {
-	NewConfigurationReader().LoadConfigurationInto(cfg)
+	NewConfigurationReader(defaultEnvPath).LoadConfigurationInto(cfg)
+	return cfg
+}
+
+func LoadIntoWithEnvPath[T any](cfg T, envPath string) T {
+	NewConfigurationReader(envPath).LoadConfigurationInto(cfg)
 	return cfg
 }
 
