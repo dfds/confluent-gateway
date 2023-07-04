@@ -6,18 +6,22 @@ stages:
   - stage: Tests
     displayName: 'Tests'
     jobs:
-      - task: GoTool@0
-        displayName: 'Unit tests'
-        inputs:
-          version: '1.19.2'
-          command: 'test'
-          arguments: 'go test $(go list ./... | grep -v /functional_tests/)'
-      - task: GoTool@0
-        displayName: 'Functional tests'
-        inputs:
-          version: '1.19.2'
-          command: 'test'
-          arguments: 'go test github.com/dfds/confluent-gateway/functional_tests'
+      - job: Tests
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: GoTool@0
+            displayName: 'Unit tests'
+            inputs:
+              version: '1.19.2'
+              command: 'test'
+              arguments: 'go test $(go list ./... | grep -v /functional_tests/)'
+          - task: GoTool@0
+            displayName: 'Functional tests'
+            inputs:
+              version: '1.19.2'
+              command: 'test'
+              arguments: 'go test github.com/dfds/confluent-gateway/functional_tests'
   - stage: CD
     displayName: 'Build, test, deliver deployment artifacts'
     jobs:
