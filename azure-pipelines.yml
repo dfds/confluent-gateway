@@ -8,7 +8,7 @@ stages:
   - stage: Tests
     displayName: 'Tests'
     jobs:
-      - job: Unit Tests
+      - job: Tests
         pool:
           vmImage: 'ubuntu-latest'
         steps:
