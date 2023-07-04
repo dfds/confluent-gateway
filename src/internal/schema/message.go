@@ -1,4 +1,4 @@
-package create
+package schema
 
 type MessageContractRequested struct {
 	MessageContractId string `json:"messageContractId"`
