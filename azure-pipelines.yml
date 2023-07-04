@@ -3,6 +3,8 @@ variables:
   isPrimary: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
 
 stages:
+  - stage: Tests
+    displayName: 'Tests'
   - stage: CD
     displayName: 'Build, test, deliver deployment artifacts'
     jobs:
@@ -10,6 +12,12 @@ stages:
         pool: 
           vmImage: 'ubuntu-latest'
         steps:
+          - task: GoTool@0
+            displayName:
+            inputs:
+              version: '1.19.2'
+              command: 'test'
+              arguments: './...'
           - task: GoTool@0
             inputs:
               version: '1.19.2'
