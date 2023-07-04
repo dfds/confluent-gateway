@@ -11,15 +11,19 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - task: GoTool@0
+            inputs:
+              version: '1.19.2'
+          - task: Go@0
+            displayName: 'Build'
+            command: 'build'
+          - task: Go@0
             displayName: 'Unit tests'
             inputs:
-              version: '1.19.2'
               command: 'test'
               arguments: '$(go list ./... | grep -v /functional_tests/)'
-          - task: GoTool@0
+          - task: Go@0
             displayName: 'Functional tests'
             inputs:
-              version: '1.19.2'
               command: 'test'
               arguments: 'github.com/dfds/confluent-gateway/functional_tests'
   - stage: CD
