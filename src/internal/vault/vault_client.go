@@ -56,7 +56,7 @@ func (v *vault) storeApiKey(ctx context.Context, capabilityId models.CapabilityI
 	client := ssm.NewFromConfig(v.config)
 
 	v.logger.Trace("Sending request to AWS Parameter Store")
-	_, err := client.PutParameter(ctx, CreateApiKeyInput(parameterName, string(capabilityId), apiKey))
+	_, err := client.PutParameter(ctx, CreateApiKeyInput(string(capabilityId), parameterName, apiKey))
 
 	if err != nil {
 		return fmt.Errorf("error when storing api key %s for capability %s at location %s", apiKey.Username, string(capabilityId), parameterName)

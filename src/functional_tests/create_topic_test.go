@@ -13,18 +13,18 @@ import (
 
 func TestCreateTopic(t *testing.T) {
 
-	outboxFactory, err := messaging.ConfigureOutbox(tester.logger,
-		messaging.RegisterMessage(tester.config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
-		messaging.RegisterMessage(tester.config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}),
+	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
+		messaging.RegisterMessage(testerApp.config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
+		messaging.RegisterMessage(testerApp.config.TopicNameProvisioning, "topic_provisioning_begun", &create.TopicProvisioningBegun{}),
 	)
 	if err != nil {
 		return
 	}
-	process := create.NewProcess(tester.logger, tester.db, tester.confluentClient, func(repository create.OutboxRepository) create.Outbox {
+	process := create.NewProcess(testerApp.logger, testerApp.db, testerApp.confluentClient, func(repository create.OutboxRepository) create.Outbox {
 		return outboxFactory(repository)
 	})
 
-	topic, err := tester.db.GetTopic(testTopicId)
+	topic, err := testerApp.db.GetTopic(testTopicId)
 	require.ErrorIs(t, err, storage.ErrTopicNotFound)
 
 	topicDescription := models.TopicDescription{
@@ -43,7 +43,7 @@ func TestCreateTopic(t *testing.T) {
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 
-	topic, err = tester.db.GetTopic(testTopicId)
+	topic, err = testerApp.db.GetTopic(testTopicId)
 	require.NoError(t, err)
 
 	require.Equal(t, topic.Id, testTopicId)
