@@ -16,8 +16,10 @@ stages:
           - task: Go@0
             displayName: 'Unit tests'
             inputs:
-              command: 'test'
-              arguments: '$(go list ./... | grep -v /functional_tests/)'
+              command: 'custom'
+              customCommand: |
+                echo "##vso[task.setvariable variable=test_packages]$(go list ./... | grep -v '/functional_tests/')"
+                go test $test_packages
           - task: Go@0
             displayName: 'Functional tests'
             inputs:
@@ -27,7 +29,7 @@ stages:
     displayName: 'Build, test, deliver deployment artifacts'
     jobs:
       - job: CD
-        pool: 
+        pool:
           vmImage: 'ubuntu-latest'
         steps:
           - task: GoTool@0
@@ -36,7 +38,7 @@ stages:
           - bash: |
               chmod +x ./tools/push-container.sh
               make cd BUILD_NUMBER="$(Build.BuildNumber)"              
-            env: 
+            env:
               AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
               AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
               ALLOW_PUSH_CONTAINER: $(ALLOW_PUSH_CONTAINER)
@@ -54,7 +56,7 @@ stages:
     displayName: 'Deployments'
     jobs:
       - job: Production
-        pool: 
+        pool:
           vmImage: 'ubuntu-latest'
         steps:
           - checkout: none
