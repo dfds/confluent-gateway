@@ -50,7 +50,7 @@ stages:
             displayName: 'Build'
           - bash: |
               chmod +x ./tools/push-container.sh
-              make docker-build-push
+              make docker-build-push: BUILD_NUMBER="$(Build.BuildNumber)"
             env:
               AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
               AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
