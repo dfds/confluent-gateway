@@ -1,6 +1,7 @@
 variables:
   agent-pool: 'Docker-pool'
   isPrimary: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  GO111MODULE: 'auto'
 
 stages:
   - stage: Tests
@@ -17,16 +18,17 @@ stages:
               cd src/
               echo "##vso[task.setvariable variable=test_packages;]$(go list ./... | grep -v '/functional_tests/')"
               cd ..
-          - task: Go@0
-            displayName: 'Unit tests'
-            inputs:
-              command: 'test'
-              arguments: '$(test_packages)'
+            displayName: 'Set unit test packages'
           - task: Go@0
             displayName: 'Functional tests'
             inputs:
               command: 'test'
               arguments: 'github.com/dfds/confluent-gateway/functional_tests'
+          - task: Go@0
+            displayName: 'Unit tests'
+            inputs:
+              command: 'test'
+              arguments: '$(test_packages)'
   - stage: CD
     displayName: 'Build, test, deliver deployment artifacts'
     jobs:
