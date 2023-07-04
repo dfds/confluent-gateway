@@ -13,30 +13,28 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - task: GoTool@0
-            displayName: 'Set unit test packages'
             inputs:
               version: '1.19.2'
+            displayName: 'Set unit test packages'
           - bash: |
               cd src/
               echo "##vso[task.setvariable variable=test_packages;]$(go list ./... | grep -v '/functional_tests/')"
+            displayName: 'Set unit test go modules'
           - task: Go@0
-            displayName: 'Run tests'
             inputs:
               command: 'test'
               arguments: '$(test_packages)'
               workingDirectory: '$(srcDir)'
-      - job: Unit Tests
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
+            displayName: 'Run tests'
           - bash: |
               docker-compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
+            displayName: 'Setup Postgres for testing'
           - task: Go@0
-            displayName: 'Functional tests'
             inputs:
               command: 'test'
               arguments: 'github.com/dfds/confluent-gateway/functional_tests'
               workingDirectory: '$(srcDir)'
+            displayName: 'Functional tests'
 
   - stage: CD
     displayName: 'Build, test, deliver deployment artifacts'
