@@ -29,14 +29,14 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
-        - bash: |
-            docker-compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
-        - task: Go@0
-          displayName: 'Functional tests'
-          inputs:
-            command: 'test'
-            arguments: 'github.com/dfds/confluent-gateway/functional_tests'
-            workingDirectory: '$(srcDir)'
+          - bash: |
+              docker-compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
+          - task: Go@0
+            displayName: 'Functional tests'
+            inputs:
+              command: 'test'
+              arguments: 'github.com/dfds/confluent-gateway/functional_tests'
+              workingDirectory: '$(srcDir)'
 
   - stage: CD
     displayName: 'Build, test, deliver deployment artifacts'
