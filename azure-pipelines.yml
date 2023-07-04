@@ -23,16 +23,19 @@ stages:
             displayName: 'All tests'
             inputs:
               command: 'test'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/src'
           - task: Go@0
             displayName: 'Functional tests'
             inputs:
               command: 'test'
               arguments: 'github.com/dfds/confluent-gateway/functional_tests'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/src'
           - task: Go@0
             displayName: 'Unit tests'
             inputs:
               command: 'test'
               arguments: '$(test_packages)'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/src'
   - stage: CD
     displayName: 'Build, test, deliver deployment artifacts'
     jobs:
