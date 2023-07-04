@@ -20,11 +20,6 @@ stages:
               cd ..
             displayName: 'Set unit test packages'
           - task: Go@0
-            displayName: 'All tests'
-            inputs:
-              command: 'test'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/src'
-          - task: Go@0
             displayName: 'Functional tests'
             inputs:
               command: 'test'
