@@ -61,5 +61,12 @@ deliver:
 ci: clean restore build tests container manifests
 cd: ci deliver
 
+
+
+clean-restore-build: clean restore build
+docker-build-push: container deliver
+
+
+
 run:
 	@cd src && go run ./cmd/main
