@@ -13,13 +13,13 @@ stages:
           - task: GoTool@0
             inputs:
               version: '1.19.2'
-          - script: |
-              echo "##vso[task.setvariable variable=test_packages]$(go list ./... | grep -v '/functional_tests/')"
+          - bash: |
+              echo "##vso[task.setvariable variable=test_packages;]$(go list ./... | grep -v '/functional_tests/')"
           - task: Go@0
             displayName: 'Unit tests'
             inputs:
               command: 'test'
-              arguments: '$test_packages'
+              arguments: '$(test_packages)'
           - task: Go@0
             displayName: 'Functional tests'
             inputs:
