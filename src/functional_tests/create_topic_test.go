@@ -18,7 +18,6 @@ import (
 
 func setupCreateTopicHttpMock(input create.ProcessInput) {
 
-	//http://localhost:5051/kafka/v3/clusters/abc-1234/topics
 	payload := `{
 		"topic_name": "` + input.Topic.Name + `",
 		"partitions_count": ` + strconv.Itoa(input.Topic.Partitions) + `,

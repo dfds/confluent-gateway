@@ -43,6 +43,7 @@ func (d *Database) RemoveAllOutboxEntries() error {
 	return nil
 }
 
+// RemoveServiceAccount removes service account, attached ACLs and cluster accesses
 func (d *Database) RemoveServiceAccount(serviceAccount *models.ServiceAccount) error {
 	if serviceAccount == nil {
 		return nil

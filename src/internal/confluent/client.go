@@ -423,6 +423,9 @@ func (c *Client) DeleteTopic(ctx context.Context, clusterId models.ClusterId, to
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics/%s", cluster.AdminApiEndpoint, clusterId, topicName)
 
 	response, err := c.delete(ctx, url, cluster.AdminApiKey)
+	if err != nil {
+		return err
+	}
 	defer response.Body.Close()
 
 	return err

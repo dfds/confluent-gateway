@@ -123,7 +123,7 @@ func (t *TesterApp) RemoveMockServiceAccount() error {
 	return nil
 }
 
-func (t *TesterApp) TearDown() {
+func (t *TesterApp) FullTearDown() {
 
 	var errors []error
 
@@ -138,6 +138,9 @@ func (t *TesterApp) TearDown() {
 	errors = appendIfErr(errors, t.db.DeleteTopic(testTopicId))
 	errors = appendIfErr(errors, t.db.RemoveAllOutboxEntries())
 	errors = appendIfErr(errors, t.db.RemoveServiceAccount(t.blackboard.serviceAccount))
+	//TODO:
+	// remove all topics
+	// remove create/delete/schema processes
 
 	if len(errors) != 0 {
 		errorList := ""
