@@ -106,7 +106,7 @@ type stateRepository interface {
 
 func getOrCreateProcessState(repo stateRepository, input ProcessInput) (*models.DeleteProcess, error) {
 	state, err := repo.GetDeleteProcessState(input.TopicId)
-	if err != nil {
+	if !errors.Is(err, storage.ErrTopicNotFound) && err != nil {
 		return nil, err
 	}
 

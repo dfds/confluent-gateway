@@ -3,17 +3,45 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/dfds/confluent-gateway/internal/create"
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/messaging"
+	"github.com/h2non/gock"
 	"github.com/stretchr/testify/require"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 )
 
+func setupCreateTopicHttpMock(input create.ProcessInput) {
+
+	//http://localhost:5051/kafka/v3/clusters/abc-1234/topics
+	payload := `{
+		"topic_name": "` + input.Topic.Name + `",
+		"partitions_count": ` + strconv.Itoa(input.Topic.Partitions) + `,
+		"replication_factor": 3,
+		"configs": [{
+			"name": "retention.ms",
+			"value": "` + strconv.FormatInt(input.Topic.Retention.Milliseconds(), 10) + `"
+		}]
+	}`
+	gock.
+		New(dbSeedAdminApiEndpoint).
+		Post(fmt.Sprintf("/kafka/v3/clusters/%s/topics", input.ClusterId)).
+		BasicAuth(dbSeedAdminUser, dbSeedAdminPassword).
+		BodyString(payload).
+		Reply(200).
+		BodyString("") // our code panics on empty responses
+}
+
 func TestCreateTopicProcess(t *testing.T) {
+
+	// sanity check
+	topic, err := testerApp.db.GetTopic(testTopicId)
+	require.ErrorIs(t, err, storage.ErrTopicNotFound)
 
 	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
 		messaging.RegisterMessage(testerApp.config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
@@ -24,10 +52,6 @@ func TestCreateTopicProcess(t *testing.T) {
 	process := create.NewProcess(testerApp.logger, testerApp.db, testerApp.confluentClient, func(repository create.OutboxRepository) create.Outbox {
 		return outboxFactory(repository)
 	})
-
-	topic, err := testerApp.db.GetTopic(testTopicId)
-	require.ErrorIs(t, err, storage.ErrTopicNotFound)
-
 	topicDescription := models.TopicDescription{
 		Name:       "topic-name-1234",
 		Partitions: 1,
@@ -41,6 +65,8 @@ func TestCreateTopicProcess(t *testing.T) {
 		Topic:        topicDescription,
 	}
 
+	setupCreateTopicHttpMock(input)
+
 	// first we try without having a valid service account
 	err = process.Process(context.Background(), input)
 	require.ErrorIs(t, err, create.ErrMissingServiceAccount)
@@ -48,6 +74,7 @@ func TestCreateTopicProcess(t *testing.T) {
 	// let's try again after getting a service account
 	testerApp.AddMockServiceAccountWithClusterAccess()
 	defer testerApp.RemoveMockServiceAccount()
+
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 

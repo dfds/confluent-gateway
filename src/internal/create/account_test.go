@@ -17,7 +17,7 @@ func TestAccountHelper_CreateServiceAccount_Ok(t *testing.T) {
 	spy := &mocks.AccountRepository{ReturnServiceAccount: &models.ServiceAccount{
 		Id: someServiceAccountId,
 		ClusterAccesses: []models.ClusterAccess{
-			models.ClusterAccess{
+			{
 				ClusterId: someClusterId,
 			},
 		},

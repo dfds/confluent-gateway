@@ -15,6 +15,13 @@ import (
 	"time"
 )
 
+// from db/seed/cluster.csv TODO: figure out how to set it up in a better way
+var (
+	dbSeedAdminUser        = "admin_user"
+	dbSeedAdminPassword    = "admin_pass"
+	dbSeedAdminApiEndpoint = "http://localhost:5051"
+)
+
 var (
 	testServiceAccountId = models.ServiceAccountId("test-service-account-id")
 	testTopicId          = "test-topic-id"
