@@ -3,12 +3,14 @@ package create
 import (
 	"context"
 	"errors"
-	"fmt"
+	"github.com/dfds/confluent-gateway/internal/storage"
 
 	"github.com/dfds/confluent-gateway/internal/models"
 	. "github.com/dfds/confluent-gateway/internal/process"
 	"github.com/dfds/confluent-gateway/logging"
 )
+
+var ErrMissingServiceAccount = errors.New("no service account for capability to provision topic")
 
 type process struct {
 	logger    logging.Logger
@@ -91,7 +93,7 @@ var ErrTopicAlreadyExists = errors.New("topic already exists")
 
 func ensureNewTopic(tx models.Transaction, input ProcessInput) error {
 	topic, err := tx.GetTopic(input.TopicId)
-	if err != nil {
+	if !errors.Is(err, storage.ErrTopicNotFound) && err != nil {
 		return err
 	}
 
@@ -166,7 +168,7 @@ func ensureHasValidServiceAccountStep(step EnsureServiceAccountStep) error {
 		return nil
 	}
 
-	return fmt.Errorf("no service account for capability to provision topic")
+	return ErrMissingServiceAccount
 }
 
 func ensureTopicIsCreated(stepContext *StepContext) error {

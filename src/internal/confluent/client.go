@@ -444,7 +444,7 @@ type schemaPayload struct {
 func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
 	cluster, _ := c.clusters.Get(clusterId)
 
-	if len(cluster.SchemaRegistryApiEndpoint) == 0 {
+	if cluster == nil || len(cluster.SchemaRegistryApiEndpoint) == 0 {
 		return ErrNoSchemaRegistry
 	}
 

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/dfds/confluent-gateway/logging"
-	"os"
 	"testing"
 )
 
@@ -22,11 +21,11 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(fmt.Errorf("TesterApp setup error: %s", err))
 	}
+	defer func() {
+		testerApp.TearDown()
+	}()
 
 	logger.Information("Starting tests")
 	testRunCode := m.Run()
-
 	logger.Information(fmt.Sprintf("Finished tests with code %d", testRunCode))
-	os.Exit(testRunCode)
-
 }

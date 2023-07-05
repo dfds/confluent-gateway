@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/dfds/confluent-gateway/internal/models"
 	. "github.com/dfds/confluent-gateway/internal/process"
+	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/logging"
 )
 
@@ -33,7 +34,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 
 	state, err := p.prepareProcessState(session, input)
 	if err != nil {
-		if errors.Is(err, ErrTopicNotFound) {
+		if errors.Is(err, storage.ErrTopicNotFound) {
 			// topic already exists => skip
 			p.logger.Warning("Topic with id {TopicId} not found", input.TopicId)
 			return nil
@@ -85,8 +86,6 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 	return s, err
 }
 
-var ErrTopicNotFound = errors.New("topic not found")
-
 func ensureTopicExists(tx models.Transaction, input ProcessInput) error {
 	topic, err := tx.GetTopic(input.TopicId)
 	if err != nil {
@@ -94,7 +93,7 @@ func ensureTopicExists(tx models.Transaction, input ProcessInput) error {
 	}
 
 	if topic == nil {
-		return ErrTopicNotFound
+		return storage.ErrTopicNotFound
 	}
 
 	return nil
