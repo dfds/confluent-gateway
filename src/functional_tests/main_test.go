@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	nukePrevDataOnErr = true
+	nukePrevDataOnErr = false
 	prevRunFileName   = "test.run"
 )
 
