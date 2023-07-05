@@ -34,12 +34,12 @@ func TestMain(m *testing.M) {
 
 	_, err = os.Stat(prevRunFileName)
 	if os.IsNotExist(err) {
-		_, err = os.Create(prevRunFileName)
+		err = os.WriteFile(prevRunFileName, []byte("(=^-ω-^=)"), 0644)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		logger.Warning("found file %, which indicates that previous test run did not end successfully.")
+		logger.Warning(fmt.Sprintf("found file %s, which indicates that previous test run did not end successfully.", prevRunFileName))
 		if !nukePrevDataOnErr {
 			return
 		}
