@@ -29,6 +29,11 @@ func setupDeleteTopicHttpMock() {
 
 func TestDeleteTopicProcess(t *testing.T) {
 
+	defer func() {
+		testerApp.db.DeleteTopic(testTopicId)
+		// TODO: outbox messages tied to this test instead of all
+		testerApp.db.RemoveAllOutboxEntries()
+	}()
 	err := testerApp.db.CreateTopic(&models.Topic{
 		Id:           testTopicId,
 		CapabilityId: testCapabilityId,
