@@ -134,12 +134,11 @@ func (t *TesterApp) FullTearDown() {
 	}
 
 	t.logger.Information("Tearing down test environment")
-	//errors = appendIfErr(errors, t.db.DeleteTopic(testTopicId)) // TODO: Delete all topics
 	errors = appendIfErr(errors, t.db.RemoveAllOutboxEntries())
 	errors = appendIfErr(errors, t.db.RemoveServiceAccount(t.blackboard.serviceAccount))
-	//TODO:
-	// remove all topics
-	// remove create/delete/schema processes
+	errors = appendIfErr(errors, t.db.RemoveAllCreateProcesses())
+	errors = appendIfErr(errors, t.db.RemoveAllDeleteProcesses())
+	errors = appendIfErr(errors, t.db.RemoveAllTopics())
 
 	if len(errors) != 0 {
 		errorList := ""

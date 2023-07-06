@@ -27,22 +27,6 @@ func (d *Database) GetAllOutboxEntries() ([]*messaging.OutboxEntry, error) {
 	return outboxEntries, nil
 }
 
-func (d *Database) RemoveAllOutboxEntries() error {
-
-	outboxEntries, err := d.GetAllOutboxEntries()
-	if err != nil {
-		return err
-	}
-	if len(outboxEntries) > 0 {
-		err = d.rawDb.Delete(outboxEntries).Error
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // RemoveServiceAccount removes service account, attached ACLs and cluster accesses
 func (d *Database) RemoveServiceAccount(serviceAccount *models.ServiceAccount) error {
 	if serviceAccount == nil {
@@ -65,4 +49,22 @@ func (d *Database) RemoveCreateProcessesWithTopicId(topicId string) error {
 
 func (d *Database) RemoveDeleteProcessesWithTopicId(topicId string) error {
 	return d.rawDb.Delete(&models.DeleteProcess{}, "topic_id = ?", topicId).Error
+}
+
+// Full teardown functions
+
+func (d *Database) RemoveAllCreateProcesses() error {
+	return d.rawDb.Exec("DELETE FROM create_process").Error
+}
+
+func (d *Database) RemoveAllDeleteProcesses() error {
+	return d.rawDb.Exec("DELETE FROM delete_process").Error
+}
+
+func (d *Database) RemoveAllTopics() error {
+	return d.rawDb.Exec("DELETE FROM topic").Error
+}
+
+func (d *Database) RemoveAllOutboxEntries() error {
+	return d.rawDb.Exec("DELETE FROM _outbox").Error
 }

@@ -38,7 +38,6 @@ type OutboxFactory func(repository OutboxRepository) Outbox
 
 func (c *StepContext) HasClusterAccessWithValidAcls() bool {
 	exists, err := c.account.HasClusterAccess(c.state.CapabilityId, c.state.ClusterId)
-	//fmt.Printf("Service account for CapabilityId: %s\n\tFound: %t\n\tError: %t\n", c.state.CapabilityId, exists, err != nil)
 	if err != nil {
 		return false
 	}

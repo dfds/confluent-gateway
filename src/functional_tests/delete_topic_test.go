@@ -18,7 +18,6 @@ const nameOfDeletedTopic = "my-cool-topic-name"
 
 func setupDeleteTopicHttpMock() {
 
-	// we refer to topics in confluent by name for some reason
 	gock.
 		New(dbSeedAdminApiEndpoint).
 		Delete(fmt.Sprintf("/kafka/v3/clusters/%s/topics/%s", testClusterId, nameOfDeletedTopic)).
@@ -30,11 +29,14 @@ func setupDeleteTopicHttpMock() {
 func TestDeleteTopicProcess(t *testing.T) {
 
 	deleteTopicId := "delete-topic-id-1234"
+	// cleanup function
 	defer func() {
 		testerApp.db.DeleteTopic(deleteTopicId)
 		// TODO: outbox messages tied to this test instead of all
 		testerApp.db.RemoveAllOutboxEntries()
+		testerApp.db.RemoveDeleteProcessesWithTopicId(deleteTopicId)
 	}()
+
 	err := testerApp.db.CreateTopic(&models.Topic{
 		Id:           deleteTopicId,
 		CapabilityId: testCapabilityId,
