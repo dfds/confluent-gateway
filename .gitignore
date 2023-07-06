@@ -52,3 +52,4 @@ fabric.properties
 
 .idea/
 .output/
+src/functional_tests/test.run

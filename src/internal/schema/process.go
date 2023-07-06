@@ -1,4 +1,4 @@
-package create
+package schema
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/models"
 	. "github.com/dfds/confluent-gateway/internal/process"
+	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/logging"
 )
 
@@ -39,7 +40,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 
 	state, err := p.prepareProcessState(session, input)
 	if err != nil {
-		if errors.Is(err, ErrTopicNotFound) {
+		if errors.Is(err, storage.ErrTopicNotFound) { //TODO: What? Why do we just ignore this?
 			// topic doesn't exists => skip
 			p.logger.Warning("Topic with id {TopicId} not found", input.TopicId)
 			return nil
@@ -79,7 +80,7 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 		}
 
 		if topic == nil {
-			return ErrTopicNotFound
+			return storage.ErrTopicNotFound
 		}
 
 		state, err := getOrCreateProcessState(tx, input, topic)
@@ -94,8 +95,6 @@ func (p *process) prepareProcessState(session models.Session, input ProcessInput
 
 	return s, err
 }
-
-var ErrTopicNotFound = errors.New("topic not found")
 
 type schemaRepository interface {
 	GetSchemaProcessState(messageContractId string) (*models.SchemaProcess, error)

@@ -423,6 +423,9 @@ func (c *Client) DeleteTopic(ctx context.Context, clusterId models.ClusterId, to
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics/%s", cluster.AdminApiEndpoint, clusterId, topicName)
 
 	response, err := c.delete(ctx, url, cluster.AdminApiKey)
+	if err != nil {
+		return err
+	}
 	defer response.Body.Close()
 
 	return err
@@ -444,7 +447,7 @@ type schemaPayload struct {
 func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
 	cluster, _ := c.clusters.Get(clusterId)
 
-	if len(cluster.SchemaRegistryApiEndpoint) == 0 {
+	if cluster == nil || len(cluster.SchemaRegistryApiEndpoint) == 0 {
 		return ErrNoSchemaRegistry
 	}
 

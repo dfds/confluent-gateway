@@ -26,7 +26,7 @@ func main() {
 	defer stop()
 
 	// load configuration from .env and/or environment files
-	config := configuration.LoadInto(&Configuration{})
+	config := configuration.LoadInto(&configuration.Configuration{})
 	logger := logging.NewLogger(logging.LoggerOptions{IsProduction: config.IsProduction(), AppName: config.ApplicationName})
 	db := Must(storage.NewDatabase(config.DbConnectionString, logger))
 	clusters := Must(db.GetClusters(ctx))
@@ -82,7 +82,7 @@ type Main struct {
 	MetricsServer *metrics.Server
 }
 
-func NewMain(logger logging.Logger, config *Configuration, consumer messaging.Consumer) *Main {
+func NewMain(logger logging.Logger, config *configuration.Configuration, consumer messaging.Consumer) *Main {
 	return &Main{
 		Logger:        logger,
 		Consumer:      consumer,
