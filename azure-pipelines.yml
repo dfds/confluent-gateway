@@ -36,7 +36,7 @@ stages:
             displayName: 'Functional tests'
 
   - stage: CD
-    displayName: 'Build, test, deliver deployment artifacts'
+    displayName: 'Build, deliver deployment artifacts'
     jobs:
       - job: CD
         pool:
