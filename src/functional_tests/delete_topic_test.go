@@ -29,13 +29,14 @@ func setupDeleteTopicHttpMock() {
 
 func TestDeleteTopicProcess(t *testing.T) {
 
+	deleteTopicId := "delete-topic-id-1234"
 	defer func() {
-		testerApp.db.DeleteTopic(testTopicId)
+		testerApp.db.DeleteTopic(deleteTopicId)
 		// TODO: outbox messages tied to this test instead of all
 		testerApp.db.RemoveAllOutboxEntries()
 	}()
 	err := testerApp.db.CreateTopic(&models.Topic{
-		Id:           testTopicId,
+		Id:           deleteTopicId,
 		CapabilityId: testCapabilityId,
 		ClusterId:    testClusterId,
 		Name:         nameOfDeletedTopic,
@@ -43,9 +44,9 @@ func TestDeleteTopicProcess(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	topic, err := testerApp.db.GetTopic(testTopicId)
+	topic, err := testerApp.db.GetTopic(deleteTopicId)
 	require.NoError(t, err)
-	require.Equal(t, topic.Id, testTopicId)
+	require.Equal(t, topic.Id, deleteTopicId)
 
 	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
 		messaging.RegisterMessage(testerApp.config.TopicNameProvisioning, "topic-deleted", &delete.TopicDeleted{}),
@@ -55,13 +56,13 @@ func TestDeleteTopicProcess(t *testing.T) {
 		return outboxFactory(repository)
 	})
 	input := delete.ProcessInput{
-		TopicId: testTopicId,
+		TopicId: deleteTopicId,
 	}
 	setupDeleteTopicHttpMock()
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 
-	topic, err = testerApp.db.GetTopic(testTopicId)
+	topic, err = testerApp.db.GetTopic(deleteTopicId)
 	require.ErrorIs(t, err, storage.ErrTopicNotFound)
 
 	entries, err := testerApp.db.GetAllOutboxEntries()

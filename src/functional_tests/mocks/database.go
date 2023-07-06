@@ -58,3 +58,11 @@ func (d *Database) RemoveServiceAccount(serviceAccount *models.ServiceAccount) e
 
 	return d.rawDb.Delete(serviceAccount).Error
 }
+
+func (d *Database) RemoveCreateProcessesWithTopicId(topicId string) error {
+	return d.rawDb.Delete(&models.CreateProcess{}, "topic_id = ?", topicId).Error
+}
+
+func (d *Database) RemoveDeleteProcessesWithTopicId(topicId string) error {
+	return d.rawDb.Delete(&models.DeleteProcess{}, "topic_id = ?", topicId).Error
+}

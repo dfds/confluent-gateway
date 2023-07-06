@@ -24,7 +24,6 @@ var (
 
 var (
 	testServiceAccountId = models.ServiceAccountId("test-service-account-id")
-	testTopicId          = "test-topic-id"
 	testUserAccountId    = models.UserAccountId("test-user")
 	testCapabilityId     = models.CapabilityId("test-capability-id")
 	testClusterId        = models.ClusterId("abc-1234")
@@ -135,7 +134,7 @@ func (t *TesterApp) FullTearDown() {
 	}
 
 	t.logger.Information("Tearing down test environment")
-	errors = appendIfErr(errors, t.db.DeleteTopic(testTopicId))
+	//errors = appendIfErr(errors, t.db.DeleteTopic(testTopicId)) // TODO: Delete all topics
 	errors = appendIfErr(errors, t.db.RemoveAllOutboxEntries())
 	errors = appendIfErr(errors, t.db.RemoveServiceAccount(t.blackboard.serviceAccount))
 	//TODO:

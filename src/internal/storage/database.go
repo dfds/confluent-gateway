@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -141,7 +140,6 @@ func (d *Database) UpdateClusterAccess(clusterAccess *models.ClusterAccess) erro
 }
 
 func (d *Database) AddToOutbox(entry *messaging.OutboxEntry) error {
-	fmt.Printf("ADDING TO OUTBOX: %v\n", entry)
 	return d.db.Create(entry).Error
 }
 

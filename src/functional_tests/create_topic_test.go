@@ -37,16 +37,19 @@ func setupCreateTopicHttpMock(input create.ProcessInput) {
 
 func TestCreateTopicProcess(t *testing.T) {
 
+	createTopicId := "create-topic-id-1234"
 	// cleanup function
 	defer func() {
-		testerApp.db.DeleteTopic(testTopicId)
+		testerApp.db.DeleteTopic(createTopicId)
+		testerApp.db.RemoveCreateProcessesWithTopicId(createTopicId)
+
 		// TODO: outbox messages tied to this test instead of all
 		testerApp.db.RemoveAllOutboxEntries()
 		testerApp.RemoveMockServiceAccount()
 	}()
 
 	// sanity check
-	topic, err := testerApp.db.GetTopic(testTopicId)
+	topic, err := testerApp.db.GetTopic(createTopicId)
 	require.ErrorIs(t, err, storage.ErrTopicNotFound)
 
 	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
@@ -65,7 +68,7 @@ func TestCreateTopicProcess(t *testing.T) {
 	}
 
 	input := create.ProcessInput{
-		TopicId:      testTopicId,
+		TopicId:      createTopicId,
 		CapabilityId: testCapabilityId,
 		ClusterId:    testClusterId,
 		Topic:        topicDescription,
@@ -83,10 +86,10 @@ func TestCreateTopicProcess(t *testing.T) {
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 
-	topic, err = testerApp.db.GetTopic(testTopicId)
+	topic, err = testerApp.db.GetTopic(createTopicId)
 	require.NoError(t, err)
 
-	require.Equal(t, topic.Id, testTopicId)
+	require.Equal(t, topic.Id, createTopicId)
 	require.Equal(t, topic.Name, topicDescription.Name)
 	require.Equal(t, topic.Partitions, topicDescription.Partitions)
 	require.Equal(t, topic.Retention, topicDescription.Retention.Milliseconds())
@@ -98,19 +101,14 @@ func TestCreateTopicProcess(t *testing.T) {
 	entries, err := testerApp.db.GetAllOutboxEntries()
 	require.NoError(t, err)
 
-	//I get 3 entries locally but 2 when run on azure pipelines....
-
-	//3 messages: 1 from unsuccessful run  and 2 from a successful run
-	require.Equal(t, 3, len(entries))
+	require.Equal(t, 2, len(entries))
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].OccurredUtc.Before(entries[j].OccurredUtc)
 	})
 	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[0].Topic)
 	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[1].Topic)
-	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[2].Topic)
 
 	requireOutboxPayloadIsEqual(t, entries[0], "topic_provisioning_begun")
-	requireOutboxPayloadIsEqual(t, entries[1], "topic_provisioning_begun")
-	requireOutboxPayloadIsEqual(t, entries[2], "topic_provisioned")
+	requireOutboxPayloadIsEqual(t, entries[1], "topic_provisioned")
 
 }
