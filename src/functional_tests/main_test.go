@@ -41,6 +41,7 @@ func TestMain(m *testing.M) {
 	} else {
 		logger.Warning(fmt.Sprintf("found file %s, which indicates that previous test run did not end successfully.", prevRunFileName))
 		if !nukePrevDataOnErr {
+			logger.Warning("exiting without running tests, set nukePrevDataOnErr=true to nuke previous test data")
 			return
 		}
 		logger.Information("nuking test data in DB")

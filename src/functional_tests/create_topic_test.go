@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/dfds/confluent-gateway/internal/create"
 	"github.com/dfds/confluent-gateway/internal/models"
@@ -10,6 +9,7 @@ import (
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/require"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -37,10 +37,12 @@ func setupCreateTopicHttpMock(input create.ProcessInput) {
 
 func TestCreateTopicProcess(t *testing.T) {
 
+	// cleanup function
 	defer func() {
 		testerApp.db.DeleteTopic(testTopicId)
 		// TODO: outbox messages tied to this test instead of all
 		testerApp.db.RemoveAllOutboxEntries()
+		testerApp.RemoveMockServiceAccount()
 	}()
 
 	// sanity check
@@ -77,7 +79,6 @@ func TestCreateTopicProcess(t *testing.T) {
 
 	// let's try again after getting a service account
 	testerApp.AddMockServiceAccountWithClusterAccess()
-	defer testerApp.RemoveMockServiceAccount()
 
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
@@ -90,34 +91,26 @@ func TestCreateTopicProcess(t *testing.T) {
 	require.Equal(t, topic.Partitions, topicDescription.Partitions)
 	require.Equal(t, topic.Retention, topicDescription.Retention.Milliseconds())
 
-	_, err = testerApp.db.GetAllOutboxEntries()
+	createProcess, err := testerApp.db.GetCreateProcessState(testCapabilityId, testClusterId, topic.Name)
+	require.NoError(t, err)
+	require.NotNil(t, createProcess.CompletedAt)
+
+	entries, err := testerApp.db.GetAllOutboxEntries()
 	require.NoError(t, err)
 
-	// I get 3 entries locally but 2 when run on azure pipelines....
-	//
-	// 3 messages: 1 from unsuccessful run  and 2 from a successful run
-	//require.Equal(t, 3, len(entries))
-	//sort.Slice(entries, func(i, j int) bool {
-	//	return entries[i].OccurredUtc.Before(entries[j].OccurredUtc)
-	//})
-	//require.Equal(t, testerApp.config.TopicNameProvisioning, entries[0].Topic)
-	//require.Equal(t, testerApp.config.TopicNameProvisioning, entries[1].Topic)
-	//require.Equal(t, testerApp.config.TopicNameProvisioning, entries[2].Topic)
-	//
-	//requirePayloadIsEqual(t, entries[0], "topic_provisioning_begun")
-	//requirePayloadIsEqual(t, entries[1], "topic_provisioning_begun")
-	//requirePayloadIsEqual(t, entries[2], "topic_provisioned")
+	//I get 3 entries locally but 2 when run on azure pipelines....
 
-}
+	//3 messages: 1 from unsuccessful run  and 2 from a successful run
+	require.Equal(t, 3, len(entries))
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].OccurredUtc.Before(entries[j].OccurredUtc)
+	})
+	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[0].Topic)
+	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[1].Topic)
+	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[2].Topic)
 
-func requirePayloadIsEqual(t *testing.T, outboxEntry *messaging.OutboxEntry, expectedType string) {
+	requireOutboxPayloadIsEqual(t, entries[0], "topic_provisioning_begun")
+	requireOutboxPayloadIsEqual(t, entries[1], "topic_provisioning_begun")
+	requireOutboxPayloadIsEqual(t, entries[2], "topic_provisioned")
 
-	type payload struct {
-		Type string `json:"type"`
-	}
-	var data payload
-	err := json.Unmarshal([]byte(outboxEntry.Payload), &data)
-	require.NoError(t, err)
-
-	require.Equal(t, expectedType, data.Type)
 }

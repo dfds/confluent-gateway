@@ -69,5 +69,5 @@ func TestDeleteTopicProcess(t *testing.T) {
 	require.Len(t, entries, 1)
 	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[0].Topic)
 
-	requirePayloadIsEqual(t, entries[0], "topic-deleted")
+	requireOutboxPayloadIsEqual(t, entries[0], "topic-deleted")
 }
