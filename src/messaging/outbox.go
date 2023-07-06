@@ -89,7 +89,7 @@ func (p *Outbox) Produce(msg OutgoingMessage) error {
 		return err
 	}
 
-	p.logger.Trace("Producing outgoing message {OutgoingMessage} ({EventType}) to {Topic}", fmt.Sprintf("%v", msg), registration.eventType, registration.topic)
+	p.logger.Warning("Producing outgoing message {OutgoingMessage} ({EventType}) to {Topic}", fmt.Sprintf("%v", msg), registration.eventType, registration.topic)
 
 	data, err := json.Marshal(msg)
 	if err != nil {
