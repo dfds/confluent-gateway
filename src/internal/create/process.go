@@ -3,6 +3,7 @@ package create
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/dfds/confluent-gateway/internal/storage"
 
 	"github.com/dfds/confluent-gateway/internal/models"
@@ -120,6 +121,7 @@ func getOrCreateProcessState(repo stateRepository, outbox Outbox, input ProcessI
 
 	if state != nil && !state.IsCompleted() {
 		// is process is unfinished => continue
+		fmt.Println("Process is unfinished, continuing")
 		return state, nil
 	}
 
