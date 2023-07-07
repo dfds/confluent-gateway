@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/dfds/confluent-gateway/functional_tests/helpers"
 	"github.com/dfds/confluent-gateway/internal/create"
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/internal/storage"
@@ -15,7 +16,7 @@ import (
 	"time"
 )
 
-func setupCreateTopicHttpMock(input create.ProcessInput) {
+func setupCreateTopicHttpMock(input create.ProcessInput, seedVariables *SeedVariables) {
 
 	payload := `{
 		"topic_name": "` + input.Topic.Name + `",
@@ -27,9 +28,9 @@ func setupCreateTopicHttpMock(input create.ProcessInput) {
 		}]
 	}`
 	gock.
-		New(dbSeedAdminApiEndpoint).
+		New(seedVariables.AdminApiEndpoint).
 		Post(fmt.Sprintf("/kafka/v3/clusters/%s/topics", input.ClusterId)).
-		BasicAuth(dbSeedAdminUser, dbSeedAdminPassword).
+		BasicAuth(seedVariables.AdminUser, seedVariables.AdminPassword).
 		BodyString(payload).
 		Reply(200).
 		BodyString("") // our code panics on empty responses
@@ -37,19 +38,19 @@ func setupCreateTopicHttpMock(input create.ProcessInput) {
 
 func TestCreateTopicProcess(t *testing.T) {
 
-	createTopicId := "create-topic-id-1234"
+	createTopicVariables := helpers.NewTestVariables("create_topic_test")
+
 	// cleanup function
 	defer func() {
-		testerApp.db.DeleteTopic(createTopicId)
-		testerApp.db.RemoveCreateProcessesWithTopicId(createTopicId)
+		testerApp.db.DeleteTopic(createTopicVariables.TopicId)
+		testerApp.db.RemoveCreateProcessesWithTopicId(createTopicVariables.TopicId)
 
 		// TODO: outbox messages tied to this test instead of all
 		testerApp.db.RemoveAllOutboxEntries()
-		testerApp.RemoveMockServiceAccount()
 	}()
 
 	// sanity check
-	topic, err := testerApp.db.GetTopic(createTopicId)
+	topic, err := testerApp.db.GetTopic(createTopicVariables.TopicId)
 	require.ErrorIs(t, err, storage.ErrTopicNotFound)
 
 	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
@@ -68,33 +69,41 @@ func TestCreateTopicProcess(t *testing.T) {
 	}
 
 	input := create.ProcessInput{
-		TopicId:      createTopicId,
-		CapabilityId: testCapabilityId,
-		ClusterId:    testClusterId,
+		TopicId:      createTopicVariables.TopicId,
+		CapabilityId: createTopicVariables.CapabilityId,
+		ClusterId:    testerApp.dbSeedVariables.DevelopmentClusterId,
 		Topic:        topicDescription,
 	}
 
-	setupCreateTopicHttpMock(input)
+	setupCreateTopicHttpMock(input, testerApp.dbSeedVariables)
 
 	// first we try without having a valid service account
 	err = process.Process(context.Background(), input)
 	require.ErrorIs(t, err, create.ErrMissingServiceAccount)
 
 	// let's try again after getting a service account
-	testerApp.AddMockServiceAccountWithClusterAccess()
+	access, err := testerApp.db.AddMockServiceAccountWithClusterAccess(createTopicVariables.ServiceAccountId,
+		createTopicVariables.UserAccountId,
+		testerApp.dbSeedVariables.DevelopmentClusterId,
+		createTopicVariables.CapabilityId)
+	require.NoError(t, err)
+	defer func() {
+		err := testerApp.db.RemoveServiceAccount(access)
+		require.NoError(t, err)
+	}()
 
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 
-	topic, err = testerApp.db.GetTopic(createTopicId)
+	topic, err = testerApp.db.GetTopic(createTopicVariables.TopicId)
 	require.NoError(t, err)
 
-	require.Equal(t, topic.Id, createTopicId)
+	require.Equal(t, topic.Id, createTopicVariables.TopicId)
 	require.Equal(t, topic.Name, topicDescription.Name)
 	require.Equal(t, topic.Partitions, topicDescription.Partitions)
 	require.Equal(t, topic.Retention, topicDescription.Retention.Milliseconds())
 
-	createProcess, err := testerApp.db.GetCreateProcessState(testCapabilityId, testClusterId, topic.Name)
+	createProcess, err := testerApp.db.GetCreateProcessState(createTopicVariables.CapabilityId, testerApp.dbSeedVariables.DevelopmentClusterId, topic.Name)
 	require.NoError(t, err)
 	require.NotNil(t, createProcess.CompletedAt)
 
@@ -108,7 +117,7 @@ func TestCreateTopicProcess(t *testing.T) {
 	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[0].Topic)
 	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[1].Topic)
 
-	requireOutboxPayloadIsEqual(t, entries[0], "topic_provisioning_begun")
-	requireOutboxPayloadIsEqual(t, entries[1], "topic_provisioned")
+	helpers.RequireOutboxPayloadIsEqual(t, entries[0], "topic_provisioning_begun")
+	helpers.RequireOutboxPayloadIsEqual(t, entries[1], "topic_provisioned")
 
 }

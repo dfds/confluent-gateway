@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func requireOutboxPayloadIsEqual(t *testing.T, outboxEntry *messaging.OutboxEntry, expectedType string) {
+func RequireOutboxPayloadIsEqual(t *testing.T, outboxEntry *messaging.OutboxEntry, expectedType string) {
 
 	type payload struct {
 		Type string `json:"type"`

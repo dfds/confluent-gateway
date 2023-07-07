@@ -119,6 +119,9 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	}`
 
 	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return "", err
+	}
 	defer response.Body.Close()
 
 	if err != nil {
@@ -370,7 +373,10 @@ func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAcc
 }
 
 func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error {
-	cluster, _ := c.clusters.Get(clusterId)
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return err
+	}
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
 	payload := `{

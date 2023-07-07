@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dfds/confluent-gateway/configuration"
+	"github.com/dfds/confluent-gateway/functional_tests/helpers"
 	"github.com/dfds/confluent-gateway/functional_tests/mocks"
 	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/models"
@@ -12,28 +13,18 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"time"
 )
 
-// from db/seed/cluster.csv TODO: figure out how to set it up in a better way
-var (
-	dbSeedAdminUser                   = "admin_user"
-	dbSeedAdminPassword               = "admin_pass"
-	dbSeedSchemaRegistryAdminUser     = "admin_user"
-	dbSeedSchemaRegistryAdminPassword = "admin_pass"
-	dbSeedAdminApiEndpoint            = "http://localhost:5051"
-	dbSeedSchemaRegistryApiEndpoint   = "http://localhost:5051"
-)
-
-var (
-	testServiceAccountId = models.ServiceAccountId("test-service-account-id")
-	testUserAccountId    = models.UserAccountId("test-user")
-	testCapabilityId     = models.CapabilityId("test-capability-id")
-	testClusterId        = models.ClusterId("abc-1234")
-)
-
-type TesterBlackboard struct {
-	serviceAccount *models.ServiceAccount
+// SeedVariables from db/seed/cluster.csv TODO: figure out how to set it up in a better way
+type SeedVariables struct {
+	AdminUser                   string
+	AdminPassword               string
+	SchemaRegistryAdminUser     string
+	SchemaRegistryAdminPassword string
+	AdminApiEndpoint            string
+	SchemaRegistryApiEndpoint   string
+	ProductionClusterId         models.ClusterId
+	DevelopmentClusterId        models.ClusterId
 }
 
 type TesterApp struct {
@@ -42,16 +33,17 @@ type TesterApp struct {
 	db              *mocks.Database
 	confluentClient *confluent.Client
 	vaultClient     *vault.Vault
-	blackboard      *TesterBlackboard
+	dbSeedVariables *SeedVariables
 }
 
-func newTesterApp(logger logging.Logger, config *configuration.Configuration, db *mocks.Database, confluentClient *confluent.Client, vaultClient *vault.Vault) *TesterApp {
+func newTesterApp(logger logging.Logger, config *configuration.Configuration, db *mocks.Database, confluentClient *confluent.Client, vaultClient *vault.Vault, seedVariables *SeedVariables) *TesterApp {
 	return &TesterApp{logger: logger,
 		config:          config,
 		db:              db,
 		confluentClient: confluentClient,
 		vaultClient:     vaultClient,
-		blackboard:      &TesterBlackboard{}}
+		dbSeedVariables: seedVariables,
+	}
 }
 
 func CreateAndSetupTester(logger logging.Logger) (*TesterApp, error) {
@@ -77,77 +69,33 @@ func CreateAndSetupTester(logger logging.Logger) (*TesterApp, error) {
 
 	mockVault := mocks.NewVaultMock()
 
-	return newTesterApp(logger, config, mockDb, confluentClient, &mockVault), nil
-}
-
-func (t *TesterApp) AddMockServiceAccountWithClusterAccess() {
-
-	clusterAccess := []models.ClusterAccess{
-		*models.NewClusterAccess(testServiceAccountId, testUserAccountId, testClusterId, testCapabilityId),
-	}
-
-	newServiceAccount := &models.ServiceAccount{
-		Id:              testServiceAccountId,
-		UserAccountId:   testUserAccountId,
-		CapabilityId:    testCapabilityId,
-		ClusterAccesses: clusterAccess,
-		CreatedAt:       time.Now(),
-	}
-	t.blackboard.serviceAccount = newServiceAccount
-
-	err := t.db.CreateServiceAccount(newServiceAccount)
-	if err != nil {
-		panic(err)
-	}
-	account, err := t.db.GetServiceAccount(newServiceAccount.CapabilityId)
-	if err != nil {
-		return
-	}
-	for _, access := range account.ClusterAccesses {
-		for _, entry := range access.Acl {
-			err := t.db.UpdateAclEntry(&entry)
-			if err != nil {
-				return
-			}
+	seedVariables :=
+		&SeedVariables{
+			AdminUser:                   "admin_user",
+			AdminPassword:               "admin_pass",
+			SchemaRegistryAdminUser:     "admin_user",
+			SchemaRegistryAdminPassword: "admin_pass",
+			AdminApiEndpoint:            "http://localhost:5051",
+			SchemaRegistryApiEndpoint:   "http://localhost:5051",
+			ProductionClusterId:         "abc-1234",
+			DevelopmentClusterId:        "def-5678",
 		}
-	}
 
-}
-
-func (t *TesterApp) RemoveMockServiceAccount() error {
-	if t.blackboard.serviceAccount == nil {
-		return fmt.Errorf("attempted to remove mock service account that hasn't been noted on the blackboard")
-	}
-	err := t.db.RemoveServiceAccount(t.blackboard.serviceAccount)
-	if err != nil {
-		return err
-	}
-	return nil
+	return newTesterApp(logger, config, mockDb, confluentClient, &mockVault, seedVariables), nil
 }
 
 func (t *TesterApp) FullTearDown() {
 
-	var errors []error
+	var errors helpers.ErrorList
 
-	appendIfErr := func(slice []error, err error) []error {
-		if err != nil {
-			slice = append(slice, err)
-		}
-		return slice
-	}
+	t.logger.Information("Performing full tear down of test environment (db wipe minus cluster table)")
+	errors.AppendIfErr(t.db.RemoveAllOutboxEntries())
+	errors.AppendErrors(t.db.RemoveAllServiceAccounts())
+	errors.AppendIfErr(t.db.RemoveAllCreateProcesses())
+	errors.AppendIfErr(t.db.RemoveAllDeleteProcesses())
+	errors.AppendIfErr(t.db.RemoveAllTopics())
 
-	t.logger.Information("Tearing down test environment")
-	errors = appendIfErr(errors, t.db.RemoveAllOutboxEntries())
-	errors = appendIfErr(errors, t.db.RemoveServiceAccount(t.blackboard.serviceAccount))
-	errors = appendIfErr(errors, t.db.RemoveAllCreateProcesses())
-	errors = appendIfErr(errors, t.db.RemoveAllDeleteProcesses())
-	errors = appendIfErr(errors, t.db.RemoveAllTopics())
-
-	if len(errors) != 0 {
-		errorList := ""
-		for _, err := range errors {
-			errorList += fmt.Sprintf("%s\n", err)
-		}
-		t.logger.Warning(fmt.Sprintf("Tearing down produced errors:\n%s", errorList))
+	if errors.HasErrors() {
+		t.logger.Warning(fmt.Sprintf("Tearing down produced errors:\n%s", errors.String()))
 	}
 }

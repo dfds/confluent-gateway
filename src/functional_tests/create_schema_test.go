@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/dfds/confluent-gateway/functional_tests/helpers"
 	"github.com/dfds/confluent-gateway/internal/models"
 	schema "github.com/dfds/confluent-gateway/internal/schema"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -13,7 +14,7 @@ import (
 	"time"
 )
 
-func setupCreateSchemaHttpMock(processInput schema.ProcessInput, topicName string) {
+func setupCreateSchemaHttpMock(processInput schema.ProcessInput, topicName string, seedVariables *SeedVariables) {
 
 	type schemaPayload struct {
 		SchemaType string `json:"schemaType"`
@@ -29,9 +30,9 @@ func setupCreateSchemaHttpMock(processInput schema.ProcessInput, topicName strin
 
 	subjectName := fmt.Sprintf("%s-%s", topicName, processInput.MessageType)
 	gock.
-		New(dbSeedSchemaRegistryApiEndpoint).
+		New(seedVariables.SchemaRegistryApiEndpoint).
 		Post(fmt.Sprintf("/subjects/%s/versions", subjectName)).
-		BasicAuth(dbSeedAdminUser, dbSeedAdminPassword).
+		BasicAuth(seedVariables.SchemaRegistryAdminUser, seedVariables.SchemaRegistryAdminPassword).
 		JSON(payload).
 		Reply(200).
 		BodyString("") // our code panics on empty responses
@@ -39,11 +40,11 @@ func setupCreateSchemaHttpMock(processInput schema.ProcessInput, topicName strin
 
 func TestCreateSchemaProcess(t *testing.T) {
 
-	createSchemaTopicId := "create-schema-topic-id-1234"
-	createSchemaTopicName := "name-of-schema-topic"
+	createSchemaVariables := helpers.NewTestVariables("create_schema_test")
 	defer func() {
-		testerApp.db.DeleteTopic(createSchemaTopicId)
-		testerApp.db.RemoveSchemaProcessWithTopicId(createSchemaTopicId)
+		testerApp.db.DeleteTopic(createSchemaVariables.TopicId)
+		testerApp.db.RemoveSchemaProcessWithTopicId(createSchemaVariables.TopicId)
+		testerApp.db.RemoveAllOutboxEntries()
 	}()
 
 	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
@@ -58,7 +59,7 @@ func TestCreateSchemaProcess(t *testing.T) {
 
 	input := schema.ProcessInput{
 		MessageContractId: "schema-process-contract-id",
-		TopicId:           createSchemaTopicId,
+		TopicId:           createSchemaVariables.TopicId,
 		MessageType:       "message-type-for-schema-registry",
 		Description:       "schema-description",
 		Schema:            "test-schema",
@@ -70,15 +71,15 @@ func TestCreateSchemaProcess(t *testing.T) {
 	require.NoError(t, err)
 
 	err = testerApp.db.CreateTopic(&models.Topic{
-		Id:           createSchemaTopicId,
-		CapabilityId: testCapabilityId,
-		ClusterId:    testClusterId,
-		Name:         createSchemaTopicName,
+		Id:           createSchemaVariables.TopicId,
+		CapabilityId: createSchemaVariables.CapabilityId,
+		ClusterId:    testerApp.dbSeedVariables.DevelopmentClusterId,
+		Name:         createSchemaVariables.TopicName,
 		CreatedAt:    time.Now(),
 	})
 	require.NoError(t, err)
 
-	setupCreateSchemaHttpMock(input, createSchemaTopicName)
+	setupCreateSchemaHttpMock(input, createSchemaVariables.TopicName, testerApp.dbSeedVariables)
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 }
