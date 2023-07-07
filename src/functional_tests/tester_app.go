@@ -17,9 +17,12 @@ import (
 
 // from db/seed/cluster.csv TODO: figure out how to set it up in a better way
 var (
-	dbSeedAdminUser        = "admin_user"
-	dbSeedAdminPassword    = "admin_pass"
-	dbSeedAdminApiEndpoint = "http://localhost:5051"
+	dbSeedAdminUser                   = "admin_user"
+	dbSeedAdminPassword               = "admin_pass"
+	dbSeedSchemaRegistryAdminUser     = "admin_user"
+	dbSeedSchemaRegistryAdminPassword = "admin_pass"
+	dbSeedAdminApiEndpoint            = "http://localhost:5051"
+	dbSeedSchemaRegistryApiEndpoint   = "http://localhost:5051"
 )
 
 var (

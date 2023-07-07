@@ -49,6 +49,11 @@ func (d *Database) RemoveCreateProcessesWithTopicId(topicId string) error {
 
 func (d *Database) RemoveDeleteProcessesWithTopicId(topicId string) error {
 	return d.rawDb.Delete(&models.DeleteProcess{}, "topic_id = ?", topicId).Error
+
+}
+
+func (d *Database) RemoveSchemaProcessWithTopicId(topicId string) error {
+	return d.rawDb.Delete(&models.SchemaProcess{}, "topic_id = ?", topicId).Error
 }
 
 // Full teardown functions

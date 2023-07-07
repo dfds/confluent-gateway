@@ -445,7 +445,11 @@ type schemaPayload struct {
 }
 
 func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
-	cluster, _ := c.clusters.Get(clusterId)
+	cluster, err := c.clusters.Get(clusterId)
+
+	if err != nil {
+		return err
+	}
 
 	if cluster == nil || len(cluster.SchemaRegistryApiEndpoint) == 0 {
 		return ErrNoSchemaRegistry
@@ -464,6 +468,9 @@ func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId,
 	// "Content-Type: application/vnd.schemaregistry.v1+json"
 
 	response, err := c.post(ctx, url, string(payload), cluster.SchemaRegistryApiKey)
+	if err != nil {
+		return err
+	}
 	defer response.Body.Close()
 
 	if err != nil {
