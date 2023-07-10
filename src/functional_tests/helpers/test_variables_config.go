@@ -9,7 +9,6 @@ type TestVariablesConfig struct {
 	TopicId          string
 	TopicName        string
 	ServiceAccountId models.ServiceAccountId
-	UserAccountId    models.UserAccountId
 	CapabilityId     models.CapabilityId
 }
 
@@ -18,7 +17,6 @@ func NewTestVariables(prefix string) *TestVariablesConfig {
 		TopicId:          fmt.Sprintf("%s-topic-id", prefix),
 		TopicName:        fmt.Sprintf("%s-topic-name", prefix),
 		ServiceAccountId: models.ServiceAccountId(fmt.Sprintf("%s-service-account-id", prefix)),
-		UserAccountId:    models.UserAccountId(fmt.Sprintf("%s-user-account-id", prefix)),
 		CapabilityId:     models.CapabilityId(fmt.Sprintf("%s-capability-id", prefix)),
 	}
 }

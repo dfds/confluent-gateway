@@ -417,7 +417,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 
 // ---------------------------------------------------------------------------------------------------------
 
-const someUserAccountId = models.UserAccountId("User:1234")
+var someUserAccountId = models.MakeUserAccountId(1234)
 
 func TestCreateCreateACLEntryCallsExpectedClusterAdminEndpoint(t *testing.T) {
 	tests := []string{"foo", "bar", "baz", "qux"}
@@ -587,11 +587,11 @@ func TestGetUsers(t *testing.T) {
 	}
 
 	// act
-	users, err := stubClient.GetUsers(context.TODO())
+	users, err := stubClient.GetConfluentInternalUsers(context.TODO())
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, []models.User{
+	assert.Equal(t, []models.ConfluentInternalUser{
 		{
 			Id:                 expectedId,
 			Deactivated:        false,

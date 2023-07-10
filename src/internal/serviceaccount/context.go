@@ -106,9 +106,9 @@ func (c *StepContext) GetClusterAccess() (*models.ClusterAccess, error) {
 	return c.account.GetClusterAccess(c.input.CapabilityId, c.input.ClusterId)
 }
 
-func (c *StepContext) HasClusterApiKey(clusterAccess *models.ClusterAccess) bool {
+func (c *StepContext) HasClusterApiKey(clusterAccess *models.ClusterAccess) (bool, error) {
 	count, err := c.account.CountClusterApiKeys(clusterAccess)
-	return count > 0 && err == nil
+	return count > 0, err
 }
 
 func (c *StepContext) HasClusterApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {

@@ -83,7 +83,7 @@ func TestCreateTopicProcess(t *testing.T) {
 
 	// let's try again after getting a service account
 	access, err := testerApp.db.AddMockServiceAccountWithClusterAccess(createTopicVariables.ServiceAccountId,
-		createTopicVariables.UserAccountId,
+		models.MakeUserAccountId(0),
 		testerApp.dbSeedVariables.DevelopmentClusterId,
 		createTopicVariables.CapabilityId)
 	require.NoError(t, err)

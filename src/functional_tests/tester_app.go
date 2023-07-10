@@ -25,6 +25,33 @@ type SeedVariables struct {
 	SchemaRegistryApiEndpoint   string
 	ProductionClusterId         models.ClusterId
 	DevelopmentClusterId        models.ClusterId
+	OrganizationId              string
+	DevelopmentEnvironmentId    string
+	DevelopmentSchemaRegistryId models.SchemaRegistryId
+	ProductionEnvironmentId     string
+	ProductionSchemaRegistryId  string
+	BootstrapApiEndpoint        string
+}
+
+func (s *SeedVariables) GetDevelopmentClusterValues() models.Cluster {
+	return models.Cluster{
+		ClusterId:        models.ClusterId(s.DevelopmentClusterId),
+		Name:             "Development",
+		AdminApiEndpoint: s.AdminApiEndpoint,
+		AdminApiKey: models.ApiKey{
+			Username: s.AdminUser,
+			Password: s.AdminPassword,
+		},
+		BootstrapEndpoint:         s.BootstrapApiEndpoint,
+		SchemaRegistryApiEndpoint: s.SchemaRegistryApiEndpoint,
+		SchemaRegistryApiKey: models.ApiKey{
+			Username: s.SchemaRegistryAdminUser,
+			Password: s.SchemaRegistryAdminPassword,
+		},
+		OrganizationId:   s.OrganizationId,
+		EnvironmentId:    s.DevelopmentEnvironmentId,
+		SchemaRegistryId: models.SchemaRegistryId(s.DevelopmentSchemaRegistryId),
+	}
 }
 
 type TesterApp struct {
@@ -79,6 +106,12 @@ func CreateAndSetupTester(logger logging.Logger) (*TesterApp, error) {
 			SchemaRegistryApiEndpoint:   "http://localhost:5051",
 			ProductionClusterId:         "abc-1234",
 			DevelopmentClusterId:        "def-5678",
+			OrganizationId:              "dfds_org",
+			DevelopmentEnvironmentId:    "test_env",
+			ProductionEnvironmentId:     "prod_env",
+			DevelopmentSchemaRegistryId: "lsrc-test12",
+			ProductionSchemaRegistryId:  "lsrc-prod12",
+			BootstrapApiEndpoint:        "http://localhost:9092",
 		}
 
 	return newTesterApp(logger, config, mockDb, confluentClient, &mockVault, seedVariables), nil
