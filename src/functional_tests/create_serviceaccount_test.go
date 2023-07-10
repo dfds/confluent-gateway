@@ -138,7 +138,7 @@ func setupListKeysHTTPMock(resourceId string, serviceAccountId models.ServiceAcc
 			TotalSize: totalSize,
 		},
 	}
-	//http://localhost:5051/iam/v2/api-keys?spec.owner=create_serviceaccount_test-service-account-id&spec.resource=def-5678
+
 	gock.New(testerApp.config.ConfluentCloudApiUrl).
 		MatchParam("spec.owner", string(serviceAccountId)).
 		MatchParam("spec.resource", resourceId).
