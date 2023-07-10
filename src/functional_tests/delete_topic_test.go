@@ -74,4 +74,6 @@ func TestDeleteTopicProcess(t *testing.T) {
 	require.Equal(t, testerApp.config.TopicNameProvisioning, entries[0].Topic)
 
 	helpers.RequireOutboxPayloadIsEqual(t, entries[0], "topic-deleted")
+
+	helpers.RequireNoUnmatchedGockMocks(t)
 }

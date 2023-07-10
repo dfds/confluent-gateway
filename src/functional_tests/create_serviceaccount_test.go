@@ -210,4 +210,6 @@ func TestCreateServiceAccountProcess(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, outboxEntries, 1)
 	require.Equal(t, outboxEntries[0].Topic, testerApp.config.TopicNameKafkaClusterAccessGranted)
+
+	helpers.RequireNoUnmatchedGockMocks(t)
 }

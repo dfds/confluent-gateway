@@ -82,4 +82,6 @@ func TestCreateSchemaProcess(t *testing.T) {
 	setupCreateSchemaHttpMock(input, createSchemaVariables.TopicName, testerApp.dbSeedVariables)
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
+
+	helpers.RequireNoUnmatchedGockMocks(t)
 }

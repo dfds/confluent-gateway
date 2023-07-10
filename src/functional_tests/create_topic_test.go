@@ -120,4 +120,5 @@ func TestCreateTopicProcess(t *testing.T) {
 	helpers.RequireOutboxPayloadIsEqual(t, entries[0], "topic_provisioning_begun")
 	helpers.RequireOutboxPayloadIsEqual(t, entries[1], "topic_provisioned")
 
+	helpers.RequireNoUnmatchedGockMocks(t)
 }
