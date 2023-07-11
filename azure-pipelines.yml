@@ -25,7 +25,7 @@ stages:
           - task: Go@0
             inputs:
               command: 'test'
-              arguments: 'github.com/dfds/confluent-gateway/functional_tests'
+              arguments: 'github.com/dfds/confluent-gateway/functional_tests github.com/dfds/confluent-gateway/internal/http/listener'
               workingDirectory: '$(srcDir)'
             displayName: 'Functional tests'
 
