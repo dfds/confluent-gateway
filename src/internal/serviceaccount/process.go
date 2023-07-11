@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/dfds/confluent-gateway/internal/confluent"
+	"time"
 
 	"github.com/dfds/confluent-gateway/internal/models"
 	proc "github.com/dfds/confluent-gateway/internal/process"
@@ -12,6 +13,7 @@ import (
 
 type logger interface {
 	LogDebug(string, ...string)
+	LogWarning(string, ...string)
 	LogError(error, string, ...string)
 }
 
@@ -44,9 +46,8 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 	return proc.PrepareSteps[*StepContext]().
 		Step(ensureServiceAccountStep).
 		Step(ensureServiceAccountAclStep).Until(func(c *StepContext) bool { return c.HasClusterAccessWithValidAcls() }).
-		Step(ensureServiceAccountApiKeyStep).
-		Step(ensureServiceAccountApiKeyAreStoredInVaultStep).
-		Step(ensureServiceAccountHasSchemaRegistryAccessStep).
+		Step(ensureServiceAccountClusterAccessStep).
+		Step(ensureServiceAccountSchemaRegistryAccessStep).
 		Step(raiseServiceAccountAccessGrantedStep).
 		Run(func(step func(*StepContext) error) error {
 			return session.Transaction(func(tx models.Transaction) error {
@@ -133,80 +134,72 @@ func ensureServiceAccountAclStep(step *StepContext) error {
 	return inner(step)
 }
 
-type EnsureServiceAccountApiKeyStep interface {
+type EnsureServiceAccountClusterAccessStep interface {
 	logger
-	HasClusterApiKey(clusterAccess *models.ClusterAccess) bool
 	GetClusterAccess() (*models.ClusterAccess, error)
-	CreateClusterApiKey(clusterAccess *models.ClusterAccess) error
-}
-
-func ensureServiceAccountApiKeyStep(step *StepContext) error {
-	inner := func(step EnsureServiceAccountApiKeyStep) error {
-		step.LogDebug("Running {Step}", "EnsureServiceAccountApiKey")
-
-		clusterAccess, err := step.GetClusterAccess()
-		if err != nil {
-			return err
-		}
-
-		if step.HasClusterApiKey(clusterAccess) {
-			return nil
-		}
-
-		err = step.CreateClusterApiKey(clusterAccess)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-	return inner(step)
-}
-
-type EnsureServiceAccountApiKeyAreStoredInVaultStep interface {
-	logger
+	HasClusterApiKey(clusterAccess *models.ClusterAccess) (bool, error)
 	HasClusterApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
-	GetClusterAccess() (*models.ClusterAccess, error)
-	StoreClusterApiKey(clusterAccess *models.ClusterAccess) error
+	DeleteClusterApiKey(clusterAccess *models.ClusterAccess) error
+	DeleteClusterApiKeyInVault(access *models.ClusterAccess) error
+	CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error
 }
 
-func ensureServiceAccountApiKeyAreStoredInVaultStep(step *StepContext) error {
-	inner := func(step EnsureServiceAccountApiKeyAreStoredInVaultStep) error {
-		step.LogDebug("Running {Step}", "EnsureServiceAccountApiKeyAreStoredInVault")
-
+func ensureServiceAccountClusterAccessStep(step *StepContext) error {
+	inner := func(step EnsureServiceAccountClusterAccessStep) error {
+		step.LogDebug("Running {Step}", "EnsureServiceAccountClusterAccessStep")
 		clusterAccess, err := step.GetClusterAccess()
 		if err != nil {
 			return err
 		}
 
-		hasKey, err := step.HasClusterApiKeyInVault(clusterAccess)
+		hasKeyInConfluent, err := step.HasClusterApiKey(clusterAccess)
 		if err != nil {
 			return err
 		}
-		if hasKey {
+		hasKeyInVault, err := step.HasClusterApiKeyInVault(clusterAccess)
+		if err != nil {
+			return err
+		}
+		if hasKeyInVault && hasKeyInConfluent {
 			return nil
 		}
 
-		if err = step.StoreClusterApiKey(clusterAccess); err != nil {
-			return err
+		if hasKeyInConfluent && !hasKeyInVault {
+			step.LogWarning("found existing api key in Confluent, but not in AWS Parameter Store. Deleting key and creating again.")
+			err = step.DeleteClusterApiKey(clusterAccess)
+			if err != nil {
+				return err
+			}
+		} else if !hasKeyInConfluent && hasKeyInVault { // not sure if this can happen
+			step.LogWarning("found existing key in AWS Parameter Store, but not in Confluent. Deleting key and creating again.")
+			err = step.DeleteClusterApiKeyInVault(clusterAccess)
+			if err != nil {
+				return err
+			}
+			// TODO: Seems like a bad idea, figure out if it is in fact a bad idea
+			sleepDuration := 31 * time.Second
+			step.LogWarning("requirement to wait at least 30 seconds before recreating key with same parameter name.")
+			step.LogWarning("sleeping for {SleepDuration}", sleepDuration.String())
+			time.Sleep(sleepDuration)
 		}
-		return nil
+
+		return step.CreateClusterApiKeyAndStoreInVault(clusterAccess)
 	}
 	return inner(step)
 }
 
-type EnsureServiceAccountHasSchemaRegistryAccess interface {
+type EnsureServiceAccountSchemaRegistryAccessStep interface {
 	logger
 	GetClusterAccess() (*models.ClusterAccess, error)
+	HasSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) (bool, error)
+	HasSchemaRegistryApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
 	CreateServiceAccountRoleBinding(*models.ClusterAccess) error
-	EnsureHasSchemaRegistryApiKey(*models.ClusterAccess) error
-	HasSchemaRegistryApiKeyInVault(*models.ClusterAccess) (bool, error)
-	StoreSchemaRegistryApiKey(*models.ClusterAccess) error
+	CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error
 }
 
-func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
-	inner := func(step EnsureServiceAccountHasSchemaRegistryAccess) error {
-		step.LogDebug("Running {Step}", "EnsureServiceAccountHasSchemaRegistryAccess")
+func ensureServiceAccountSchemaRegistryAccessStep(step *StepContext) error {
+	inner := func(step EnsureServiceAccountSchemaRegistryAccessStep) error {
+		step.LogDebug("Running {Step}", "EnsureServiceAccountSchemaRegistryAccessStep")
 
 		clusterAccess, err := step.GetClusterAccess()
 		if err != nil {
@@ -221,24 +214,8 @@ func ensureServiceAccountHasSchemaRegistryAccessStep(step *StepContext) error {
 			}
 			return err
 		}
-		err = step.EnsureHasSchemaRegistryApiKey(clusterAccess)
+		err = step.CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess)
 		if err != nil {
-			if errors.Is(err, confluent.ErrSchemaRegistryIdIsEmpty) {
-				step.LogError(err, "unable to setup schema registry access")
-				return nil // fallback: setup cluster without schema registry access
-			}
-			return err
-		}
-
-		hasKey, err := step.HasSchemaRegistryApiKeyInVault(clusterAccess)
-		if err != nil {
-			return err
-		}
-		if hasKey {
-			return nil
-		}
-
-		if err = step.StoreSchemaRegistryApiKey(clusterAccess); err != nil {
 			return err
 		}
 

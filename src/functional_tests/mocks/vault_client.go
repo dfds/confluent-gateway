@@ -40,3 +40,13 @@ func (v *vaultMock) QuerySchemaRegistryApiKey(ctx context.Context, capabilityId 
 	_, ok := v.keys[parameter]
 	return ok, nil
 }
+
+func (v *vaultMock) DeleteClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	delete(v.keys, vault.GetClusterApiParameter(capabilityId, clusterId))
+	return nil
+}
+
+func (v *vaultMock) DeleteSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	delete(v.keys, vault.GetSchemaRegistryApiParameter(capabilityId, clusterId))
+	return nil
+}

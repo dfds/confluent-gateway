@@ -2,9 +2,7 @@ package serviceaccount
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/dfds/confluent-gateway/internal/confluent"
 	"time"
 
 	"github.com/dfds/confluent-gateway/internal/models"
@@ -71,6 +69,14 @@ func (h *accountService) CreateServiceAccount(capabilityId models.CapabilityId, 
 	return h.repo.CreateServiceAccount(newServiceAccount)
 }
 
+func (h *accountService) DeleteClusterApiKey(clusterAccess *models.ClusterAccess) error {
+	return h.confluent.DeleteClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+}
+
+func (h *accountService) DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
+	return h.confluent.DeleteSchemaRegistryApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+}
+
 func (h *accountService) GetOrCreateClusterAccess(capabilityId models.CapabilityId, clusterId models.ClusterId) (*models.ClusterAccess, error) {
 	serviceAccount, err := h.repo.GetServiceAccount(capabilityId)
 	if err != nil {
@@ -121,14 +127,15 @@ func (h *accountService) CreateAclEntry(clusterId models.ClusterId, userAccountI
 }
 
 func (h *accountService) CreateClusterApiKey(clusterAccess *models.ClusterAccess) error {
-	key, err := h.confluent.CreateClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
+	_, err := h.confluent.CreateClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 	if err != nil {
 		return err
 	}
 
-	clusterAccess.ApiKey = *key
-
 	return h.repo.UpdateClusterAccess(clusterAccess)
+}
+func (h *accountService) CreateClusterApiKeyAndReturn(clusterAccess *models.ClusterAccess) (models.ApiKey, error) {
+	return h.confluent.CreateClusterApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 }
 
 func (h *accountService) CountClusterApiKeys(clusterAccess *models.ClusterAccess) (int, error) {
@@ -147,29 +154,9 @@ func (h *accountService) CountSchemaRegistryApiKeys(clusterAccess *models.Cluste
 	return keyCount, nil
 }
 
-func (h *accountService) RecreateSchemaRegistryApiKeyAndStoreInDb(clusterAccess *models.ClusterAccess) error {
+func (h *accountService) CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) (models.ApiKey, error) {
+	return h.confluent.CreateSchemaRegistryApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
 
-	err := h.confluent.DeleteSchemaRegistryApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
-	if err != nil && !errors.Is(err, confluent.ErrSchemaRegistryApiKeyNotFoundForDeletion) {
-		return err
-	}
-
-	if errors.Is(err, confluent.ErrSchemaRegistryApiKeyNotFoundForDeletion) {
-		// TODO: log?
-	}
-
-	return h.CreateSchemaRegistryApiKey(clusterAccess)
-}
-
-func (h *accountService) CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
-	key, err := h.confluent.CreateSchemaRegistryApiKey(h.context, clusterAccess.ClusterId, clusterAccess.ServiceAccountId)
-	if err != nil {
-		return err
-	}
-
-	clusterAccess.SchemaRegistryApiKey = *key
-
-	return h.repo.UpdateClusterAccess(clusterAccess)
 }
 
 func (h *accountService) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {

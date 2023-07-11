@@ -24,7 +24,7 @@ type CloudApiAccess struct {
 
 var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
 var ErrMissingSchemaRegistryIds = errors.New("unable to create schema registry role binding: cluster table has any or all missing ids: organization_id, environment_id, schema_registry_id")
-var ErrSchemaRegistryApiKeyNotFoundForDeletion = errors.New("unable to delete schema registry api key: key not found in confluent")
+var ErrApiKeyNotFoundForDeletion = errors.New("unable to delete api key: key not found in confluent")
 
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
@@ -260,7 +260,7 @@ func (c *Client) CountSchemaRegistryApiKeys(ctx context.Context, serviceAccountI
 	return keysResponse.Metadata.TotalSize, nil
 }
 
-func (c *Client) createApiKey(ctx context.Context, resourceId string, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) createApiKey(ctx context.Context, resourceId string, serviceAccountId models.ServiceAccountId) (models.ApiKey, error) {
 	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/api-keys"
 	payload := `{
 		"spec": {
@@ -280,41 +280,35 @@ func (c *Client) createApiKey(ctx context.Context, resourceId string, serviceAcc
 
 	if err != nil {
 		//log -> response.Status
-		return nil, err
+		return models.ApiKey{}, err
 	}
 
 	apiKeyResponse := &createApiKeyResponse{}
 	derr := json.NewDecoder(response.Body).Decode(apiKeyResponse)
 	if derr != nil {
-		return nil, derr
+		return models.ApiKey{}, derr
 	}
 
-	return &models.ApiKey{
+	return models.ApiKey{
 		Username: apiKeyResponse.Id,
 		Password: apiKeyResponse.Spec.Secret,
 	}, nil
 }
 
-func (c *Client) CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (models.ApiKey, error) {
 	return c.createApiKey(ctx, string(clusterId), serviceAccountId)
 }
 
-func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (*models.ApiKey, error) {
+func (c *Client) CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (models.ApiKey, error) {
 
 	schemaRegistryId, err := c.getSchemaRegistryId(clusterId)
 	if err != nil {
-		return nil, err
+		return models.ApiKey{}, err
 	}
 	return c.createApiKey(ctx, string(schemaRegistryId), serviceAccountId)
 }
 
-func (c *Client) DeleteSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
-
-	schemaRegistryId, err := c.getSchemaRegistryId(clusterId)
-	if err != nil {
-		return err
-	}
-	resourceId := string(schemaRegistryId)
+func (c *Client) findResourceAndDeleteApiKey(ctx context.Context, serviceAccountId models.ServiceAccountId, resourceId string) error {
 	listApiKeys, err := c.listApiKeys(ctx, serviceAccountId, resourceId)
 	if err != nil {
 		return err
@@ -330,7 +324,22 @@ func (c *Client) DeleteSchemaRegistryApiKey(ctx context.Context, clusterId model
 		}
 		return nil
 	}
-	return ErrSchemaRegistryApiKeyNotFoundForDeletion
+	return ErrApiKeyNotFoundForDeletion
+
+}
+
+func (c *Client) DeleteClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
+	return c.findResourceAndDeleteApiKey(ctx, serviceAccountId, string(clusterId))
+}
+
+func (c *Client) DeleteSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
+
+	schemaRegistryId, err := c.getSchemaRegistryId(clusterId)
+	if err != nil {
+		return err
+	}
+	resourceId := string(schemaRegistryId)
+	return c.findResourceAndDeleteApiKey(ctx, serviceAccountId, resourceId)
 }
 
 func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error {

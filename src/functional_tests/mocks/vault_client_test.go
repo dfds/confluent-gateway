@@ -24,6 +24,11 @@ func TestVaultMock_PutAndGet(t *testing.T) {
 	hasApiKey, err := mock.QueryClusterApiKey(ctx, capabilityId, clusterId)
 	require.NoError(t, err)
 	require.True(t, hasApiKey)
+	err = mock.DeleteClusterApiKey(ctx, capabilityId, clusterId)
+	require.NoError(t, err)
+	hasApiKey, err = mock.QueryClusterApiKey(ctx, capabilityId, clusterId)
+	require.NoError(t, err)
+	require.False(t, hasApiKey)
 
 	// Schema registry api key
 	err = mock.StoreSchemaRegistryApiKey(ctx, capabilityId, clusterId, key)
@@ -31,5 +36,8 @@ func TestVaultMock_PutAndGet(t *testing.T) {
 	hasApiKey, err = mock.QuerySchemaRegistryApiKey(ctx, capabilityId, clusterId)
 	require.NoError(t, err)
 	require.True(t, hasApiKey)
-
+	err = mock.DeleteSchemaRegistryApiKey(ctx, capabilityId, clusterId)
+	require.NoError(t, err)
+	hasApiKey, err = mock.QuerySchemaRegistryApiKey(ctx, capabilityId, clusterId)
+	require.NoError(t, err)
 }

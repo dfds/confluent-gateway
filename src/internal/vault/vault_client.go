@@ -104,6 +104,35 @@ func (v *vault) QueryClusterApiKey(ctx context.Context, capabilityId models.Capa
 	return v.queryApiKey(ctx, GetClusterApiParameter(capabilityId, clusterId), capabilityId, clusterId)
 }
 
+func (v *vault) deleteApiKey(ctx context.Context, parameterName string, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	v.logger.Trace("Deleting API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(capabilityId), string(clusterId), parameterName)
+
+	client := ssm.NewFromConfig(v.config)
+
+	v.logger.Trace("Sending request to AWS Parameter Store")
+
+	_, err := client.DeleteParameter(ctx, &ssm.DeleteParameterInput{
+		Name: aws.String(parameterName),
+	})
+	if err != nil {
+		var pnf *types.ParameterNotFound
+		if errors.As(err, &pnf) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (v *vault) DeleteClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	return v.deleteApiKey(ctx, GetClusterApiParameter(capabilityId, clusterId), capabilityId, clusterId)
+}
+
+func (v *vault) DeleteSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	return v.deleteApiKey(ctx, GetSchemaRegistryApiParameter(capabilityId, clusterId), capabilityId, clusterId)
+}
+
 func NewDefaultConfig() (*aws.Config, error) {
 	awsConfig, err := config.LoadDefaultConfig(context.Background())
 	return &awsConfig, err
