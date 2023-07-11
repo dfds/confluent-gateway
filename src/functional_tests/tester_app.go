@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/functional_tests/helpers"
 	"github.com/dfds/confluent-gateway/functional_tests/mocks"
