@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/functional_tests/helpers"
 	"github.com/dfds/confluent-gateway/functional_tests/mocks"
@@ -74,7 +76,7 @@ func newTesterApp(logger logging.Logger, config *configuration.Configuration, db
 }
 
 func CreateAndSetupTester(logger logging.Logger) (*TesterApp, error) {
-	config := configuration.LoadInto(&configuration.Configuration{})
+	config := configuration.LoadInto("../", &configuration.Configuration{})
 
 	db, err := storage.NewDatabase(config.DbConnectionString, logger)
 	if err != nil {
