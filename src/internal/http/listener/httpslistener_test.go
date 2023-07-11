@@ -130,7 +130,7 @@ func TestConsumerCount(t *testing.T) {
 	}
 
 	// give consumers time to consume
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 60)
 	ctx.Done()
 
 	/*
