@@ -1,18 +1,19 @@
 package configuration
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type Configuration struct {
+type configuration struct {
 	Foo string `env:"TEST_FOO"`
 	Bar string
 	Baz bool `env:"TEST_BAZ"`
 }
 
 func TestReturnsExpectedWhenReadingTagsFromStruct(t *testing.T) {
-	var cfg = Configuration{}
+	var cfg = configuration{}
 	descriptor := getFieldDescriptorsOf(&cfg)
 
 	assert.Equal(t, "TEST_FOO", descriptor[0].envVarName)
@@ -24,7 +25,7 @@ func TestReader_LoadConfigurationInto_InsertsExpectedValuesFromValueSource(t *te
 		&inMemoryValueSource{map[string]string{"TEST_FOO": "REAL_FOO_VALUE", "TEST_BAZ": "1"}},
 	}}
 
-	var cfg = Configuration{}
+	var cfg = configuration{}
 	reader.LoadConfigurationInto(&cfg)
 
 	assert.Equal(t, "REAL_FOO_VALUE", cfg.Foo)
