@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/functional_tests/mocks"
 	"github.com/dfds/confluent-gateway/internal/confluent"
@@ -12,7 +14,6 @@ import (
 	"github.com/dfds/confluent-gateway/logging"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"time"
 )
 
 // from db/seed/cluster.csv TODO: figure out how to set it up in a better way
@@ -52,7 +53,7 @@ func newTesterApp(logger logging.Logger, config *configuration.Configuration, db
 }
 
 func CreateAndSetupTester(logger logging.Logger) (*TesterApp, error) {
-	config := configuration.LoadInto(&configuration.Configuration{})
+	config := configuration.LoadInto("../", &configuration.Configuration{})
 
 	db, err := storage.NewDatabase(config.DbConnectionString, logger)
 	if err != nil {
