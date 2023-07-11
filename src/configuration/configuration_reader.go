@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 )
@@ -129,17 +130,22 @@ func newValueSourceFrom(lines []string) ValueSource {
 	return &inMemoryValueSource{values: envVars}
 }
 
-func NewConfigurationReader() Reader {
+func NewConfigurationReader(relativepath string) Reader {
+	dir, err := os.Getwd()
+	if err != nil {
+		dir = "."
+	}
+	path := filepath.Join(dir, relativepath, "./.env")
 	return &reader{
 		sources: []ValueSource{
-			newValueSourceFrom(readLinesFromFile("./.env")),
+			newValueSourceFrom(readLinesFromFile(path)),
 			&osValueSource{},
 		},
 	}
 }
 
-func LoadInto[T any](cfg T) T {
-	NewConfigurationReader().LoadConfigurationInto(cfg)
+func LoadInto[T any](relativepath string, cfg T) T {
+	NewConfigurationReader(relativepath).LoadConfigurationInto(cfg)
 	return cfg
 }
 

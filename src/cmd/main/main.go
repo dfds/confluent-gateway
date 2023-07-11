@@ -26,7 +26,7 @@ func main() {
 	defer stop()
 
 	// load configuration from .env and/or environment files
-	config := configuration.LoadInto(&configuration.Configuration{})
+	config := configuration.LoadInto("", &configuration.Configuration{})
 	logger := logging.NewLogger(logging.LoggerOptions{IsProduction: config.IsProduction(), AppName: config.ApplicationName})
 	db := Must(storage.NewDatabase(config.DbConnectionString, logger))
 	clusters := Must(db.GetClusters(ctx))
