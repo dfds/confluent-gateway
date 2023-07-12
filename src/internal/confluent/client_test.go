@@ -412,7 +412,7 @@ func TestCreateApiKeyReturnsExpectedServiceAccountId(t *testing.T) {
 	result, _ := stubClient.CreateClusterApiKey(context.TODO(), "dummy", "dummy")
 
 	// assert
-	assert.Equal(t, expected, *result)
+	assert.Equal(t, expected, result)
 }
 
 // ---------------------------------------------------------------------------------------------------------
