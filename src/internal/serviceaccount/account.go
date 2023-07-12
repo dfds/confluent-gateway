@@ -40,23 +40,26 @@ func (h *accountService) CreateServiceAccount(capabilityId models.CapabilityId, 
 		return err
 	}
 
-	users, err := h.confluent.GetUsers(h.context)
+	users, err := h.confluent.GetConfluentInternalUsers(h.context)
 	if err != nil {
 		return err
 	}
 
-	userMap := make(map[string]models.User)
+	userMap := make(map[string]models.ConfluentInternalUser)
 
 	for _, user := range users {
 		userMap[user.ResourceID] = user
 	}
 
 	user, found := userMap[string(serviceAccountId)]
-	if !found || user.Deactivated {
+	if !found {
 		return fmt.Errorf("unable to find matching user account for %q", serviceAccountId)
 	}
+	if user.Deactivated {
+		return fmt.Errorf("found matching user account for %q, but user is deactivated", serviceAccountId)
+	}
 
-	userAccountId := models.UserAccountId(fmt.Sprintf("User:%d", user.Id))
+	userAccountId := models.MakeUserAccountId(user.Id)
 
 	newServiceAccount := &models.ServiceAccount{
 		Id:              serviceAccountId,

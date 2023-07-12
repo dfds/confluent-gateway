@@ -27,10 +27,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(fmt.Errorf("TesterApp setup error: %s", err))
 	}
-	defer func() {
-		//TODO: make more graceful teardown removing only test data from functional tests
-		testerApp.FullTearDown()
-	}()
 
 	_, err = os.Stat(prevRunFileName)
 	if os.IsNotExist(err) {

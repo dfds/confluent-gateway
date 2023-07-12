@@ -56,7 +56,7 @@ type createApiKeyResponse struct {
 }
 
 type usersResponse struct {
-	Users    []models.User `json:"users"`
+	Users    []models.ConfluentInternalUser `json:"users"`
 	PageInfo struct {
 		PageSize  int    `json:"page_size"`
 		PageToken string `json:"page_token"`
@@ -119,6 +119,9 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	}`
 
 	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return "", err
+	}
 	defer response.Body.Close()
 
 	if err != nil {
@@ -192,13 +195,12 @@ func (c *Client) CreateACLEntry(ctx context.Context, clusterId models.ClusterId,
 	}`
 
 	response, err := c.post(ctx, url, payload, cluster.AdminApiKey)
+	if err != nil {
+		return err
+	}
 	defer response.Body.Close()
 
-	if err != nil {
-		// log
-	}
-
-	return err
+	return nil
 }
 
 func (c *Client) getSchemaRegistryId(clusterId models.ClusterId) (models.SchemaRegistryId, error) {
@@ -363,6 +365,9 @@ func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAcc
 	}`, serviceAccount, cluster.OrganizationId, cluster.EnvironmentId, cluster.SchemaRegistryId)
 
 	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return err
+	}
 	defer response.Body.Close()
 
 	if err != nil {
@@ -379,7 +384,10 @@ func (c *Client) CreateServiceAccountRoleBinding(ctx context.Context, serviceAcc
 }
 
 func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error {
-	cluster, _ := c.clusters.Get(clusterId)
+	cluster, err := c.clusters.Get(clusterId)
+	if err != nil {
+		return err
+	}
 	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", cluster.AdminApiEndpoint, clusterId)
 
 	payload := `{
@@ -402,7 +410,8 @@ func (c *Client) CreateTopic(ctx context.Context, clusterId models.ClusterId, na
 	return err
 }
 
-func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
+func (c *Client) GetConfluentInternalUsers(ctx context.Context) ([]models.ConfluentInternalUser, error) {
+	// Note: this endpoint is not documented in the Confluent Cloud API docs
 	url := c.cloudApiAccess.UserApiEndpoint
 
 	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
@@ -420,7 +429,10 @@ func (c *Client) GetUsers(ctx context.Context) ([]models.User, error) {
 }
 
 func (c *Client) get(ctx context.Context, url string, apiKey models.ApiKey) (*http.Response, error) {
-	request, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
 	request.Header.Set("Accept", "application/json")
 	request.SetBasicAuth(apiKey.Username, apiKey.Password)
 
@@ -454,7 +466,11 @@ type schemaPayload struct {
 }
 
 func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
-	cluster, _ := c.clusters.Get(clusterId)
+	cluster, err := c.clusters.Get(clusterId)
+
+	if err != nil {
+		return err
+	}
 
 	if cluster == nil || len(cluster.SchemaRegistryApiEndpoint) == 0 {
 		return ErrNoSchemaRegistry
@@ -473,6 +489,9 @@ func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId,
 	// "Content-Type: application/vnd.schemaregistry.v1+json"
 
 	response, err := c.post(ctx, url, string(payload), cluster.SchemaRegistryApiKey)
+	if err != nil {
+		return err
+	}
 	defer response.Body.Close()
 
 	if err != nil {
