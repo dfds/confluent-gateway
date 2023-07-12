@@ -17,7 +17,7 @@ stages:
               version: '1.19.2'
           - bash: |
               cd src/
-              go test $(go list ./... | grep -v '/functional_tests/')
+              go test $(go list ./... | grep -v '/functional_tests')
             displayName: 'Run unit tests'
           - bash: |
               docker-compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
