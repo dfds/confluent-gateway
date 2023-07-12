@@ -2,51 +2,46 @@ package mocks
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/dfds/confluent-gateway/internal/models"
+	"fmt"
 	"github.com/dfds/confluent-gateway/internal/vault"
 )
 
 type vaultMock struct {
-	keys map[string]*ssm.PutParameterInput
+	keys map[string]string
 }
 
 func NewVaultMock() vault.Vault {
 	return &vaultMock{
-		keys: map[string]*ssm.PutParameterInput{},
+		keys: map[string]string{},
 	}
 }
 
-func (v *vaultMock) StoreClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
-	parameter := vault.GetClusterApiParameter(capabilityId, clusterId)
-	v.keys[parameter] = vault.CreateApiKeyInput(string(capabilityId), parameter, apiKey)
+// only for testing purposes
+func getTestApiParameter(input vault.Input) string {
+	switch input.OperationDestination {
+	case vault.OperationDestinationCluster:
+		return fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", input.CapabilityId, input.ClusterId)
+	case vault.OperationDestinationSchemaRegistry:
+		return fmt.Sprintf("/capabilities/%s/kafka/%s/schemaregistry-credentials", input.CapabilityId, input.ClusterId)
+	}
+	return ""
+}
+
+func getTestVaultInput(input vault.Input) string {
+	return fmt.Sprintf("%s-%s-%s", input.CapabilityId, input.ClusterId, input.OperationDestination)
+}
+
+func (v *vaultMock) StoreApiKey(ctx context.Context, input vault.Input) error {
+	v.keys[getTestApiParameter(input)] = getTestVaultInput(input)
 	return nil
 }
 
-func (v *vaultMock) QueryClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
-	parameter := vault.GetClusterApiParameter(capabilityId, clusterId)
-	_, ok := v.keys[parameter]
+func (v *vaultMock) QueryApiKey(ctx context.Context, input vault.Input) (bool, error) {
+	_, ok := v.keys[getTestApiParameter(input)]
 	return ok, nil
 }
 
-func (v *vaultMock) StoreSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
-	parameter := vault.GetSchemaRegistryApiParameter(capabilityId, clusterId)
-	v.keys[parameter] = vault.CreateApiKeyInput(string(capabilityId), parameter, apiKey)
-	return nil
-}
-
-func (v *vaultMock) QuerySchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
-	parameter := vault.GetSchemaRegistryApiParameter(capabilityId, clusterId)
-	_, ok := v.keys[parameter]
-	return ok, nil
-}
-
-func (v *vaultMock) DeleteClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
-	delete(v.keys, vault.GetClusterApiParameter(capabilityId, clusterId))
-	return nil
-}
-
-func (v *vaultMock) DeleteSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
-	delete(v.keys, vault.GetSchemaRegistryApiParameter(capabilityId, clusterId))
+func (v *vaultMock) DeleteApiKey(ctx context.Context, input vault.Input) error {
+	delete(v.keys, getTestApiParameter(input))
 	return nil
 }

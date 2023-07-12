@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/dfds/confluent-gateway/internal/confluent"
+	"github.com/dfds/confluent-gateway/internal/vault"
 	"time"
 
 	"github.com/dfds/confluent-gateway/internal/models"
@@ -21,11 +22,11 @@ type process struct {
 	logger    logging.Logger
 	database  models.Database
 	confluent Confluent
-	vault     Vault
+	vault     vault.Vault
 	factory   OutboxFactory
 }
 
-func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, vault Vault, factory OutboxFactory) Process {
+func NewProcess(logger logging.Logger, database models.Database, confluent Confluent, vault vault.Vault, factory OutboxFactory) Process {
 	return &process{
 		logger:    logger,
 		database:  database,
@@ -64,10 +65,10 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 func (p *process) getStepContext(ctx context.Context, tx models.Transaction, input ProcessInput) *StepContext {
 	logger := p.logger
 	newAccountService := NewAccountService(ctx, p.confluent, tx)
-	vault := NewVaultService(ctx, p.vault)
+	vaultService := NewVaultService(ctx, p.vault)
 	outbox := p.factory(tx)
 
-	return NewStepContext(logger, newAccountService, vault, outbox, input)
+	return NewStepContext(logger, newAccountService, vaultService, outbox, input)
 }
 
 // region Steps

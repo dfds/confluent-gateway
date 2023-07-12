@@ -36,15 +36,6 @@ type AccountService interface {
 	DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error
 }
 
-type VaultService interface {
-	StoreClusterApiKey(models.CapabilityId, *models.ClusterAccess, models.ApiKey) error
-	QueryClusterApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
-	StoreSchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess, models.ApiKey) error
-	QuerySchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
-	DeleteClusterApiKey(models.CapabilityId, *models.ClusterAccess) error
-	DeleteSchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess) error
-}
-
 type Outbox interface {
 	Produce(msg messaging.OutgoingMessage) error
 }
@@ -124,21 +115,23 @@ func (c *StepContext) HasSchemaRegistryApiKey(clusterAccess *models.ClusterAcces
 }
 
 func (c *StepContext) HasClusterApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {
-	return c.vault.QueryClusterApiKey(c.input.CapabilityId, clusterAccess)
+	return c.vault.QueryClusterApiKey(c.input.CapabilityId, clusterAccess.ClusterId)
 }
 
 func (c *StepContext) HasSchemaRegistryApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {
-	return c.vault.QuerySchemaRegistryApiKey(c.input.CapabilityId, clusterAccess)
+	return c.vault.QuerySchemaRegistryApiKey(c.input.CapabilityId, clusterAccess.ClusterId)
 }
 
-func createApiKeyAndStoreInVault(capabilityId models.CapabilityId, clusterAccess *models.ClusterAccess, creationFunc func(access *models.ClusterAccess) (models.ApiKey, error), storeFunc func(capabilityId models.CapabilityId, access *models.ClusterAccess, key models.ApiKey) error) error {
+func createApiKeyAndStoreInVault(capabilityId models.CapabilityId, clusterAccess *models.ClusterAccess,
+	creationFunc func(access *models.ClusterAccess) (models.ApiKey, error),
+	storeFunc func(capabilityId models.CapabilityId, clusterId models.ClusterId, key models.ApiKey) error) error {
 	key, err := creationFunc(clusterAccess)
 
 	if err != nil {
 		return err
 	}
 
-	err = storeFunc(capabilityId, clusterAccess, key)
+	err = storeFunc(capabilityId, clusterAccess.ClusterId, key)
 	if err != nil {
 		return err
 	}
@@ -157,7 +150,7 @@ func (c *StepContext) DeleteClusterApiKey(clusterAccess *models.ClusterAccess) e
 	return c.account.DeleteClusterApiKey(clusterAccess)
 }
 func (c *StepContext) DeleteClusterApiKeyInVault(access *models.ClusterAccess) error {
-	return c.vault.DeleteClusterApiKey(c.input.CapabilityId, access)
+	return c.vault.DeleteClusterApiKey(c.input.CapabilityId, access.ClusterId)
 }
 
 func (c *StepContext) DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {

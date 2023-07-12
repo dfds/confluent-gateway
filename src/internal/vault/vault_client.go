@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
-	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 )
 
@@ -19,69 +18,102 @@ type vault struct {
 	config aws.Config
 }
 
-func GetClusterApiParameter(capabilityId models.CapabilityId, clusterId models.ClusterId) string {
-	return fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", capabilityId, clusterId)
+func getApiParameter(input Input) string {
+	switch input.OperationDestination {
+	case OperationDestinationCluster:
+		return fmt.Sprintf("/capabilities/%s/kafka/%s/credentials", input.CapabilityId, input.ClusterId)
+	case OperationDestinationSchemaRegistry:
+		return fmt.Sprintf("/capabilities/%s/kafka/%s/schemaregistry-credentials", input.CapabilityId, input.ClusterId)
+	default:
+		return ""
+	}
 }
 
-func GetSchemaRegistryApiParameter(capabilityId models.CapabilityId, clusterId models.ClusterId) string {
-	return fmt.Sprintf("/capabilities/%s/kafka/%s/schemaregistry-credentials", capabilityId, clusterId)
+func validateInput(input Input, isStoring bool) error {
+
+	switch input.OperationDestination {
+	case OperationDestinationCluster:
+	case OperationDestinationSchemaRegistry:
+	default:
+		return errors.New(fmt.Sprintf("invalid operationDestination: %s", input.OperationDestination))
+	}
+	if input.CapabilityId == "" {
+		return errors.New("capabilityId is required")
+	}
+	if input.ClusterId == "" {
+		return errors.New("clusterId is required")
+	}
+
+	if !isStoring {
+		return nil
+	}
+
+	if input.StoringInput == nil {
+		return errors.New("storingInput is required")
+	}
+	if input.StoringInput.ApiKey.Username == "" {
+		return errors.New("username is required")
+	}
+	if input.StoringInput.ApiKey.Password == "" {
+		return errors.New("password is required")
+	}
+	return nil
 }
 
-func CreateApiKeyInput(capabilityId string, parameterName string, apiKey models.ApiKey) *ssm.PutParameterInput {
-	return &ssm.PutParameterInput{
+func (v *vault) StoreApiKey(ctx context.Context, input Input) error {
+	err := validateInput(input, false)
+	if err != nil {
+		return err
+	}
+
+	apiKey := input.StoringInput.ApiKey
+	parameterName := getApiParameter(input)
+	v.logger.Information("Storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(input.CapabilityId), parameterName)
+
+	client := ssm.NewFromConfig(v.config)
+
+	v.logger.Trace("Sending request to AWS Parameter Store")
+	_, err = client.PutParameter(ctx, &ssm.PutParameterInput{
 		Name:  aws.String(parameterName),
 		Value: aws.String(`{ "key": "` + apiKey.Username + `", "secret": "` + apiKey.Password + `" }`),
 		Tags: []types.Tag{
 			{
 				Key:   aws.String("capabilityId"),
-				Value: aws.String(string(capabilityId)),
+				Value: aws.String(string(input.CapabilityId)),
 			},
 			{
 				Key:   aws.String("createdBy"),
 				Value: aws.String("Kafka-Janitor"),
 			},
 		},
-		Tier: types.ParameterTierStandard,
-		Type: types.ParameterTypeSecureString,
-	}
-}
-
-func (v *vault) storeApiKey(ctx context.Context, capabilityId models.CapabilityId, parameterName string, apiKey models.ApiKey) error {
-
-	if apiKey.Username == "" && apiKey.Password == "" {
-		return fmt.Errorf("attempted to store api key with empty username and password for parameter at location %s", parameterName)
-	}
-	v.logger.Information("Storing api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
-
-	client := ssm.NewFromConfig(v.config)
-
-	v.logger.Trace("Sending request to AWS Parameter Store")
-	_, err := client.PutParameter(ctx, CreateApiKeyInput(string(capabilityId), parameterName, apiKey))
+		Tier:      types.ParameterTierStandard,
+		Type:      types.ParameterTypeSecureString,
+		Overwrite: &input.StoringInput.Overwrite,
+	})
 
 	if err != nil {
-		return fmt.Errorf("error when storing api key %s for capability %s at location %s", apiKey.Username, string(capabilityId), parameterName)
+		return fmt.Errorf("error when storing api key %s for capability %s at location %s", apiKey.Username, string(input.CapabilityId), parameterName)
 	}
 
-	v.logger.Information("Successfully stored api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(capabilityId), parameterName)
+	v.logger.Information("Successfully stored api key {ApiKeyUserName} for capability {CapabilityId} at location {ParameterName}", apiKey.Username, string(input.CapabilityId), parameterName)
 
 	return nil
 }
 
-func (v *vault) StoreClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
-	return v.storeApiKey(ctx, capabilityId, GetClusterApiParameter(capabilityId, clusterId), apiKey)
-}
-func (v *vault) StoreSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
-	return v.storeApiKey(ctx, capabilityId, GetSchemaRegistryApiParameter(capabilityId, clusterId), apiKey)
-}
+func (v *vault) QueryApiKey(ctx context.Context, input Input) (bool, error) {
+	err := validateInput(input, false)
+	if err != nil {
+		return false, err
+	}
 
-func (v *vault) queryApiKey(ctx context.Context, parameterName string, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
-	v.logger.Trace("Querying existence of API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(capabilityId), string(clusterId), parameterName)
+	parameterName := getApiParameter(input)
+	v.logger.Trace("Querying existence of API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(input.CapabilityId), string(input.ClusterId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
 
 	v.logger.Trace("Sending request to AWS Parameter Store")
 
-	_, err := client.GetParameter(ctx, &ssm.GetParameterInput{
+	_, err = client.GetParameter(ctx, &ssm.GetParameterInput{
 		Name: aws.String(parameterName),
 	})
 	if err != nil {
@@ -93,25 +125,22 @@ func (v *vault) queryApiKey(ctx context.Context, parameterName string, capabilit
 	}
 
 	return true, nil
-
 }
 
-func (v *vault) QuerySchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
-	return v.queryApiKey(ctx, GetSchemaRegistryApiParameter(capabilityId, clusterId), capabilityId, clusterId)
-}
+func (v *vault) DeleteApiKey(ctx context.Context, input Input) error {
+	err := validateInput(input, false)
+	if err != nil {
+		return err
+	}
 
-func (v *vault) QueryClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error) {
-	return v.queryApiKey(ctx, GetClusterApiParameter(capabilityId, clusterId), capabilityId, clusterId)
-}
-
-func (v *vault) deleteApiKey(ctx context.Context, parameterName string, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
-	v.logger.Trace("Deleting API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(capabilityId), string(clusterId), parameterName)
+	parameterName := getApiParameter(input)
+	v.logger.Trace("Deleting API key for capability {CapabilityId} in cluster {ClusterId} at location {ParameterName}", string(input.CapabilityId), string(input.ClusterId), parameterName)
 
 	client := ssm.NewFromConfig(v.config)
 
 	v.logger.Trace("Sending request to AWS Parameter Store")
 
-	_, err := client.DeleteParameter(ctx, &ssm.DeleteParameterInput{
+	_, err = client.DeleteParameter(ctx, &ssm.DeleteParameterInput{
 		Name: aws.String(parameterName),
 	})
 	if err != nil {
@@ -123,14 +152,6 @@ func (v *vault) deleteApiKey(ctx context.Context, parameterName string, capabili
 	}
 
 	return nil
-}
-
-func (v *vault) DeleteClusterApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
-	return v.deleteApiKey(ctx, GetClusterApiParameter(capabilityId, clusterId), capabilityId, clusterId)
-}
-
-func (v *vault) DeleteSchemaRegistryApiKey(ctx context.Context, capabilityId models.CapabilityId, clusterId models.ClusterId) error {
-	return v.deleteApiKey(ctx, GetSchemaRegistryApiParameter(capabilityId, clusterId), capabilityId, clusterId)
 }
 
 func NewDefaultConfig() (*aws.Config, error) {

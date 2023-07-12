@@ -37,9 +37,18 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 		Username: "baz",
 		Password: "qux",
 	}
+	input := Input{
+		OperationDestination: OperationDestinationCluster,
+		CapabilityId:         stubCapabilityId,
+		ClusterId:            stubClusterId,
+		StoringInput: &StoringInput{
+			ApiKey:    stubApiKey,
+			Overwrite: false,
+		},
+	}
 
 	// act
-	err := sut.StoreClusterApiKey(ctx, stubCapabilityId, stubClusterId, stubApiKey)
+	err := sut.StoreApiKey(ctx, input)
 
 	// assert
 	assert.Nil(t, err)
@@ -80,17 +89,21 @@ func TestVault_StoreApiKey_ReturnsErrorWhenServerDoes(t *testing.T) {
 		logger: logging.NilLogger(),
 		config: *config,
 	}
+	input := Input{
+		OperationDestination: OperationDestinationCluster,
+		CapabilityId:         models.CapabilityId("foo"),
+		ClusterId:            models.ClusterId("bar"),
+		StoringInput: &StoringInput{
+			ApiKey: models.ApiKey{
+				Username: "baz",
+				Password: "qux",
+			},
+			Overwrite: false,
+		},
+	}
 
 	// act
-	err := sut.StoreClusterApiKey(
-		ctx,
-		models.CapabilityId("foo"),
-		models.ClusterId("bar"),
-		models.ApiKey{
-			Username: "baz",
-			Password: "qux",
-		},
-	)
+	err := sut.StoreApiKey(ctx, input)
 
 	// assert
 	assert.NotNil(t, err)
