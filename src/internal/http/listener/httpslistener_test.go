@@ -20,9 +20,10 @@ const (
 	topic1 = "i.exist.and.people.listen.to.me"
 	topic2 = "i.also.exist.and.a.thing.listens"
 
-	consumer1 = "consumer1"
-	consumer2 = "consumer2"
-	consumer3 = "consumer3"
+	consumer1 = "consumer1-prod"
+	consumer2 = "consumer2-prod"
+	consumer3 = "consumer3-prod"
+	consumer4 = "consumer4-dev"
 )
 
 type mockConsumerGroupHandler struct{}
@@ -32,6 +33,7 @@ func (m *mockConsumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error   
 func (m *mockConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for message := range claim.Messages() {
 		session.MarkMessage(message, "")
+		session.Commit()
 	}
 	return nil
 }
@@ -39,6 +41,21 @@ func (m *mockConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSess
 type responseData struct {
 	Topic     string   `json:"topic"`
 	Consumers []string `json:"consumers"`
+}
+
+func must[R interface{}](result R, err error) R {
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+func runConsumer(ctx context.Context, group sarama.ConsumerGroup, topic string) {
+	go func() {
+		if err := group.Consume(ctx, []string{topic}, &mockConsumerGroupHandler{}); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 func TestConsumerCount(t *testing.T) {
@@ -52,90 +69,77 @@ func TestConsumerCount(t *testing.T) {
 	kafkaConfig := sarama.NewConfig()
 	kafkaConfig.Producer.Return.Successes = true
 	kafkaConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
-	client, err := sarama.NewClient([]string{config.KafkaClusterProdBroker}, kafkaConfig)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	admin, err := sarama.NewClusterAdminFromClient(client)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer admin.Close()
+	prodclient := must(sarama.NewClient([]string{config.KafkaClusterProdBroker}, kafkaConfig))
+	prodadmin := must(sarama.NewClusterAdminFromClient(prodclient))
+	defer prodadmin.Close()
+	devclient := must(sarama.NewClient([]string{config.KafkaClusterDevBroker}, kafkaConfig))
+	devadmin := must(sarama.NewClusterAdminFromClient(devclient))
+	defer devadmin.Close()
 
 	// setup topics
-	admin.CreateTopic(topic1, &sarama.TopicDetail{
+	prodadmin.CreateTopic(topic1, &sarama.TopicDetail{
 		NumPartitions:     3,
 		ReplicationFactor: 1,
 	}, false)
-	admin.CreateTopic(topic2, &sarama.TopicDetail{
+	prodadmin.CreateTopic(topic2, &sarama.TopicDetail{
+		NumPartitions:     1,
+		ReplicationFactor: 1,
+	}, false)
+	devadmin.CreateTopic(topic2, &sarama.TopicDetail{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 	}, false)
 
 	// setup consumers groups and offsets
-	cg1, err := sarama.NewConsumerGroupFromClient(consumer1, client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cg1 := must(sarama.NewConsumerGroupFromClient(consumer1, prodclient))
 	defer cg1.Close()
-	go func(ctx context.Context) {
-		if err := cg1.Consume(ctx, []string{topic1}, &mockConsumerGroupHandler{}); err != nil {
-			panic(err)
-		}
-	}(ctx)
+	runConsumer(ctx, cg1, topic1)
 
-	cg2, err := sarama.NewConsumerGroupFromClient(consumer2, client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cg2 := must(sarama.NewConsumerGroupFromClient(consumer2, prodclient))
 	defer cg2.Close()
-	go func(ctx context.Context) {
-		if err := cg2.Consume(ctx, []string{topic1}, &mockConsumerGroupHandler{}); err != nil {
-			panic(err)
-		}
-	}(ctx)
+	runConsumer(ctx, cg2, topic1)
 
-	cg3, err := sarama.NewConsumerGroupFromClient(consumer3, client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cg3 := must(sarama.NewConsumerGroupFromClient(consumer3, prodclient))
 	defer cg3.Close()
-	go func(ctx context.Context) {
-		if err := cg3.Consume(ctx, []string{topic2}, &mockConsumerGroupHandler{}); err != nil {
-			panic(err)
-		}
-	}(ctx)
+	runConsumer(ctx, cg3, topic2)
+
+	cg4 := must(sarama.NewConsumerGroupFromClient(consumer4, devclient))
+	defer cg4.Close()
+	runConsumer(ctx, cg4, topic2)
 
 	// setup producers and generate events on topics
-	producer, err := sarama.NewSyncProducerFromClient(client)
-	if err != nil {
-		//t.Fatal(err)
-		panic(err)
-	}
-	defer producer.Close()
-	_, _, err = producer.SendMessage(&sarama.ProducerMessage{
+	prodproducer := must(sarama.NewSyncProducerFromClient(prodclient))
+	defer prodproducer.Close()
+	devproducer := must(sarama.NewSyncProducerFromClient(devclient))
+	defer devproducer.Close()
+	_, _, err := prodproducer.SendMessage(&sarama.ProducerMessage{
 		Topic: topic1,
 		Value: sarama.StringEncoder("hello world"),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, err = producer.SendMessage(&sarama.ProducerMessage{
+	_, _, err = prodproducer.SendMessage(&sarama.ProducerMessage{
 		Topic: topic2,
 		Value: sarama.StringEncoder("hello person"),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, _, err = devproducer.SendMessage(&sarama.ProducerMessage{
+		Topic: topic2,
+		Value: sarama.StringEncoder("hello development person"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// give consumers time to consume
-	time.Sleep(time.Second * 60)
+	time.Sleep(time.Second * 120)
 	ctx.Done()
 
 	/*
 	** VERIFICATION
-	** TODO: Test multiple clusters
 	 */
 
 	tests := []struct {
@@ -167,6 +171,12 @@ func TestConsumerCount(t *testing.T) {
 			topic:          topic2,
 			cluster:        "prod",
 			want_consumers: []string{consumer3},
+		},
+		{
+			name:           "A topic with consumers and duplicate name on another cluster returns non-empty consumers list",
+			topic:          topic2,
+			cluster:        "dev",
+			want_consumers: []string{consumer4},
 		},
 	}
 

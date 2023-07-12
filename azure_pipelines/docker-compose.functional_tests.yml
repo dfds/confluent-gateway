@@ -64,3 +64,68 @@ services:
     environment:
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored
+
+  zookeeper2:
+    image: confluentinc/cp-zookeeper:7.0.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.0.0
+    depends_on:
+      - zookeeper2
+    ports:
+      - 9093:9093
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper2:2182
+      KAFKA_LISTENERS: PLAINTEXT://kafka2:29093,PLAINTEXT_HOST://0.0.0.0:9093 
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:29093,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: "cub kafka-ready -b localhost:9093 1 2"
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kafka2-setup:
+    image: confluentinc/cp-kafka:7.0.0
+    depends_on:
+      kafka2:
+        condition: service_healthy
+    command: >
+      sh -c '
+      # Blocks until kafka is reachable
+      echo -e "Waiting for kafka to be reachable"
+      kafka-topics --bootstrap-server kafka2:29093 --list > /dev/null
+
+      declare -a topics=(
+        "cloudengineering.selfservice.kafkatopic"
+        "cloudengineering.selfservice.kafkaclusteraccess"
+        "cloudengineering.confluentgateway.access"
+        "cloudengineering.confluentgateway.provisioning"
+      )
+
+      total_topics=$${#topics[@]}
+      completed_topics=0
+
+      for topic in $${topics[@]}; do
+        ((completed_topics++))
+        echo -e "Creating topic: $$topic ($$completed_topics/$$total_topics)"
+        kafka-topics --create --if-not-exists --bootstrap-server kafka2:29093 --partitions 1 --replication-factor 1 --topic $$topic
+        if [ $$? -eq 0 ]; then
+          echo -e "Successfully created topic: $$topic"
+        else
+          echo -e "Failed to create topic: $$topic"
+        fi
+      done
+
+      echo -e "Success!"
+      '
+    environment:
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
