@@ -44,7 +44,7 @@ func (p *process) Process(ctx context.Context, input ProcessInput) error {
 
 	return proc.PrepareSteps[*StepContext]().
 		Step(ensureServiceAccountStep).
-		Step(ensureServiceAccountAclStep).Until(func(c *StepContext) bool { return c.HasClusterAccessWithValidAcls() }).
+		Step(ensureServiceAccountAclStep).
 		Step(ensureServiceAccountClusterAccessStep).
 		Step(ensureServiceAccountSchemaRegistryAccessStep).
 		Step(raiseServiceAccountAccessGrantedStep).
@@ -123,12 +123,15 @@ func ensureServiceAccountAclStep(step *StepContext) error {
 			step.LogDebug("found no ACL pending creation")
 			// no acl entries left => continue
 			return nil
-
-		} else {
-			nextEntry := entries[0]
-
-			return step.CreateAclEntry(clusterAccess, nextEntry)
 		}
+
+		for _, entry := range entries {
+			err = step.CreateAclEntry(clusterAccess, entry)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 	return inner(step)
 }
