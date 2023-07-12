@@ -135,7 +135,7 @@ func ensureServiceAccountAclStep(step *StepContext) error {
 
 type EnsureServiceAccountApiKeyStep interface {
 	logger
-	HasClusterApiKey(clusterAccess *models.ClusterAccess) bool
+	HasClusterApiKey(clusterAccess *models.ClusterAccess) (bool, error)
 	GetClusterAccess() (*models.ClusterAccess, error)
 	CreateClusterApiKey(clusterAccess *models.ClusterAccess) error
 }
@@ -149,7 +149,11 @@ func ensureServiceAccountApiKeyStep(step *StepContext) error {
 			return err
 		}
 
-		if step.HasClusterApiKey(clusterAccess) {
+		hasKey, err := step.HasClusterApiKey(clusterAccess)
+		if err != nil {
+			return err
+		}
+		if hasKey {
 			return nil
 		}
 

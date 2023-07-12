@@ -1,6 +1,7 @@
 package models
 
-type User struct {
+// ConfluentInternalUser represents a user internally in Confluent which can both represent a normal user or a service account
+type ConfluentInternalUser struct {
 	Id                 int    `json:"id"`
 	Deactivated        bool   `json:"deactivated"`
 	ServiceName        string `json:"service_name"`

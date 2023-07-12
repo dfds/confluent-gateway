@@ -3,13 +3,14 @@ package storage
 import (
 	"context"
 	"errors"
-
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+var ErrTopicNotFound = errors.New("requested topic not found")
 
 type Database struct {
 	db *gorm.DB
@@ -84,7 +85,7 @@ func (d *Database) GetDeleteProcessState(topicId string) (*models.DeleteProcess,
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, ErrTopicNotFound
 		}
 
 		return nil, err
@@ -153,7 +154,7 @@ func (d *Database) GetTopic(topicId string) (*models.Topic, error) {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, ErrTopicNotFound
 		}
 
 		return nil, err
@@ -175,7 +176,7 @@ func (d *Database) GetSchemaProcessState(messageContractId string) (*models.Sche
 		Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) { //TODO: Don't suppress error, make custom error
 			return nil, nil
 		}
 
