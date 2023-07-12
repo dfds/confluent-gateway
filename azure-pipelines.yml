@@ -17,13 +17,7 @@ stages:
               version: '1.19.2'
           - bash: |
               cd src/
-              echo "##vso[task.setvariable variable=test_packages;]$(go list ./... | grep -v '/functional_tests/')"
-            displayName: 'Set unit test go modules'
-          - task: Go@0
-            inputs:
-              command: 'test'
-              arguments: '$(test_packages)'
-              workingDirectory: '$(srcDir)'
+              go test $(go list ./... | grep -v '/functional_tests')
             displayName: 'Run unit tests'
           - bash: |
               docker-compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
