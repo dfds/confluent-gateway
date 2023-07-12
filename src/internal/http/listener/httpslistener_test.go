@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -26,6 +27,18 @@ const (
 	consumer4 = "consumer4-dev"
 )
 
+type channelBuffer struct {
+	cin  chan bool
+	cout chan bool
+}
+
+func (cb *channelBuffer) Run() {
+	go func() {
+		<-cb.cin
+		cb.cout <- true
+	}()
+}
+
 type mockConsumerGroupHandler struct{}
 
 func (m *mockConsumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error { return nil }
@@ -33,7 +46,7 @@ func (m *mockConsumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error   
 func (m *mockConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for message := range claim.Messages() {
 		session.MarkMessage(message, "")
-		session.Commit()
+		//session.Commit()
 	}
 	return nil
 }
@@ -50,7 +63,7 @@ func must[R interface{}](result R, err error) R {
 	return result
 }
 
-func runConsumer(ctx context.Context, group sarama.ConsumerGroup, topic string) {
+func runConsumer(ctx context.Context, group sarama.ConsumerGroup, topic string, wg *sync.WaitGroup) {
 	go func() {
 		if err := group.Consume(ctx, []string{topic}, &mockConsumerGroupHandler{}); err != nil {
 			panic(err)
@@ -62,8 +75,6 @@ func TestConsumerCount(t *testing.T) {
 	/*
 	** SETUP
 	 */
-	ctx := context.Background()
-
 	config := configuration.LoadInto("../../../", &configuration.Configuration{})
 
 	kafkaConfig := sarama.NewConfig()
@@ -78,9 +89,10 @@ func TestConsumerCount(t *testing.T) {
 
 	// setup topics
 	prodadmin.CreateTopic(topic1, &sarama.TopicDetail{
-		NumPartitions:     3,
+		NumPartitions:     1,
 		ReplicationFactor: 1,
 	}, false)
+
 	prodadmin.CreateTopic(topic2, &sarama.TopicDetail{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
@@ -90,22 +102,30 @@ func TestConsumerCount(t *testing.T) {
 		ReplicationFactor: 1,
 	}, false)
 
+	wg := &sync.WaitGroup{}
+	ctx := context.Background()
+
 	// setup consumers groups and offsets
+	wg.Add(1)
+
 	cg1 := must(sarama.NewConsumerGroupFromClient(consumer1, prodclient))
 	defer cg1.Close()
-	runConsumer(ctx, cg1, topic1)
+	runConsumer(ctx, cg1, topic1, wg)
 
+	wg.Add(1)
 	cg2 := must(sarama.NewConsumerGroupFromClient(consumer2, prodclient))
 	defer cg2.Close()
-	runConsumer(ctx, cg2, topic1)
+	runConsumer(ctx, cg2, topic1, wg)
 
+	wg.Add(1)
 	cg3 := must(sarama.NewConsumerGroupFromClient(consumer3, prodclient))
 	defer cg3.Close()
-	runConsumer(ctx, cg3, topic2)
+	runConsumer(ctx, cg3, topic2, wg)
 
+	wg.Add(1)
 	cg4 := must(sarama.NewConsumerGroupFromClient(consumer4, devclient))
 	defer cg4.Close()
-	runConsumer(ctx, cg4, topic2)
+	runConsumer(ctx, cg4, topic2, wg)
 
 	// setup producers and generate events on topics
 	prodproducer := must(sarama.NewSyncProducerFromClient(prodclient))
@@ -119,6 +139,7 @@ func TestConsumerCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_, _, err = prodproducer.SendMessage(&sarama.ProducerMessage{
 		Topic: topic2,
 		Value: sarama.StringEncoder("hello person"),
