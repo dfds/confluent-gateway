@@ -27,8 +27,7 @@ type AccountService interface {
 	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
-	CreateClusterApiKey(*models.ClusterAccess) error
-	CreateClusterApiKeyAndReturn(*models.ClusterAccess) (models.ApiKey, error)
+	CreateClusterApiKey(*models.ClusterAccess) (models.ApiKey, error)
 	CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) (models.ApiKey, error)
 	CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error
 	CountClusterApiKeys(clusterAccess *models.ClusterAccess) (int, error)
@@ -147,7 +146,7 @@ func createApiKeyAndStoreInVault(capabilityId models.CapabilityId, clusterAccess
 }
 
 func (c *StepContext) CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error {
-	return createApiKeyAndStoreInVault(c.input.CapabilityId, clusterAccess, c.account.CreateClusterApiKeyAndReturn, c.vault.StoreClusterApiKey)
+	return createApiKeyAndStoreInVault(c.input.CapabilityId, clusterAccess, c.account.CreateClusterApiKey, c.vault.StoreClusterApiKey)
 
 }
 func (c *StepContext) CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error {
