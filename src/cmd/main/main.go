@@ -32,6 +32,7 @@ func main() {
 	clusters := Must(db.GetClusters(ctx))
 	confluentClient := confluent.NewClient(logger, config.CreateCloudApiAccess(), storage.NewClusterCache(clusters))
 	awsClient := Must(vault.NewVaultClient(logger, Must(config.CreateVaultConfig())))
+
 	outboxFactory := Must(messaging.ConfigureOutbox(logger,
 		// TODO -- fix inconsistency in message type
 		messaging.RegisterMessage(config.TopicNameProvisioning, "topic_provisioned", &create.TopicProvisioned{}),
