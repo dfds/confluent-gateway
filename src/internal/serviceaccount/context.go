@@ -122,43 +122,30 @@ func (c *StepContext) HasSchemaRegistryApiKeyInVault(clusterAccess *models.Clust
 	return c.vault.QuerySchemaRegistryApiKey(c.input.CapabilityId, clusterAccess.ClusterId)
 }
 
-func createApiKeyAndStoreInVault(capabilityId models.CapabilityId, clusterAccess *models.ClusterAccess,
-	creationFunc func(access *models.ClusterAccess) (models.ApiKey, error),
-	storeFunc func(capabilityId models.CapabilityId, clusterId models.ClusterId, key models.ApiKey) error) error {
-	key, err := creationFunc(clusterAccess)
-
+func (c *StepContext) CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess, shouldOverwriteKey bool) error {
+	newKey, err := c.account.CreateClusterApiKey(clusterAccess)
 	if err != nil {
 		return err
 	}
 
-	err = storeFunc(capabilityId, clusterAccess.ClusterId, key)
+	return c.vault.StoreClusterApiKey(c.input.CapabilityId, clusterAccess.ClusterId, newKey, shouldOverwriteKey)
+
+}
+func (c *StepContext) CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess, shouldOverwriteKey bool) error {
+	newKey, err := c.account.CreateSchemaRegistryApiKey(clusterAccess)
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
-func (c *StepContext) CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error {
-	return createApiKeyAndStoreInVault(c.input.CapabilityId, clusterAccess, c.account.CreateClusterApiKey, c.vault.StoreClusterApiKey)
-
-}
-func (c *StepContext) CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error {
-	return createApiKeyAndStoreInVault(c.input.CapabilityId, clusterAccess, c.account.CreateSchemaRegistryApiKey, c.vault.StoreSchemaRegistryApiKey)
+	return c.vault.StoreSchemaRegistryApiKey(c.input.CapabilityId, clusterAccess.ClusterId, newKey, shouldOverwriteKey)
 }
 
 func (c *StepContext) DeleteClusterApiKey(clusterAccess *models.ClusterAccess) error {
 	return c.account.DeleteClusterApiKey(clusterAccess)
 }
-func (c *StepContext) DeleteClusterApiKeyInVault(access *models.ClusterAccess) error {
-	return c.vault.DeleteClusterApiKey(c.input.CapabilityId, access.ClusterId)
-}
 
 func (c *StepContext) DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
 	return c.account.DeleteSchemaRegistryApiKey(clusterAccess)
-}
-
-func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
-	return c.account.GetServiceAccount(c.input.CapabilityId)
 }
 
 func (c *StepContext) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {

@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/dfds/confluent-gateway/internal/confluent"
-	"github.com/dfds/confluent-gateway/internal/vault"
-	"time"
-
 	"github.com/dfds/confluent-gateway/internal/models"
 	proc "github.com/dfds/confluent-gateway/internal/process"
+	"github.com/dfds/confluent-gateway/internal/vault"
 	"github.com/dfds/confluent-gateway/logging"
 )
 
@@ -140,9 +138,8 @@ type EnsureServiceAccountClusterAccessStep interface {
 	GetClusterAccess() (*models.ClusterAccess, error)
 	HasClusterApiKey(clusterAccess *models.ClusterAccess) (bool, error)
 	HasClusterApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
+	CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess, shouldOverwriteKey bool) error
 	DeleteClusterApiKey(clusterAccess *models.ClusterAccess) error
-	DeleteClusterApiKeyInVault(access *models.ClusterAccess) error
-	CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error
 }
 
 func ensureServiceAccountClusterAccessStep(step *StepContext) error {
@@ -165,26 +162,19 @@ func ensureServiceAccountClusterAccessStep(step *StepContext) error {
 			return nil
 		}
 
+		recreateKey := false
 		if hasKeyInConfluent && !hasKeyInVault {
-			step.LogWarning("found existing api key in Confluent, but not in AWS Parameter Store. Deleting key and creating again.")
+			step.LogWarning("found existing api key in Confluent, but not in Parameter Store. Deleting key and creating again.")
 			err = step.DeleteClusterApiKey(clusterAccess)
 			if err != nil {
 				return err
 			}
 		} else if !hasKeyInConfluent && hasKeyInVault { // not sure if this can happen
-			step.LogWarning("found existing key in AWS Parameter Store, but not in Confluent. Deleting key and creating again.")
-			err = step.DeleteClusterApiKeyInVault(clusterAccess)
-			if err != nil {
-				return err
-			}
-			// TODO: Seems like a bad idea, figure out if it is in fact a bad idea
-			sleepDuration := 31 * time.Second
-			step.LogWarning("requirement to wait at least 30 seconds before recreating key with same parameter name.")
-			step.LogWarning("sleeping for {SleepDuration}", sleepDuration.String())
-			time.Sleep(sleepDuration)
+			step.LogWarning("found existing key in Parameter Store, but not in Confluent. Creating new key and updating Parameter Store.")
+			recreateKey = true
 		}
 
-		return step.CreateClusterApiKeyAndStoreInVault(clusterAccess)
+		return step.CreateClusterApiKeyAndStoreInVault(clusterAccess, recreateKey)
 	}
 	return inner(step)
 }
@@ -195,7 +185,8 @@ type EnsureServiceAccountSchemaRegistryAccessStep interface {
 	HasSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) (bool, error)
 	HasSchemaRegistryApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error)
 	CreateServiceAccountRoleBinding(*models.ClusterAccess) error
-	CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess) error
+	CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess, shouldOverwriteKey bool) error
+	DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error
 }
 
 func ensureServiceAccountSchemaRegistryAccessStep(step *StepContext) error {
@@ -215,7 +206,33 @@ func ensureServiceAccountSchemaRegistryAccessStep(step *StepContext) error {
 			}
 			return err
 		}
-		err = step.CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess)
+
+		hasKeyInConfluent, err := step.HasSchemaRegistryApiKey(clusterAccess)
+		if err != nil {
+			return err
+		}
+		hasKeyInVault, err := step.HasSchemaRegistryApiKeyInVault(clusterAccess)
+		if err != nil {
+			return err
+		}
+
+		if hasKeyInVault && hasKeyInConfluent {
+			return nil
+		}
+
+		recreateKey := false
+		if hasKeyInConfluent && !hasKeyInVault {
+			step.LogWarning("found existing api key in Confluent, but not in Parameter Store. Deleting key and creating again.")
+			err = step.DeleteSchemaRegistryApiKey(clusterAccess)
+			if err != nil {
+				return err
+			}
+		} else if !hasKeyInConfluent && hasKeyInVault { // not sure if this can happen
+			step.LogWarning("found existing key in Parameter Store, but not in Confluent. Creating new key and updating Parameter Store.")
+			recreateKey = true
+		}
+
+		err = step.CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess, recreateKey)
 		if err != nil {
 			return err
 		}

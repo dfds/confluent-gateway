@@ -8,10 +8,10 @@ import (
 )
 
 type VaultService interface {
-	StoreClusterApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error
+	StoreClusterApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey, shouldOverwrite bool) error
 	QueryClusterApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error)
 	DeleteClusterApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId) error
-	StoreSchemaRegistryApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error
+	StoreSchemaRegistryApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey, shouldOverwrite bool) error
 	QuerySchemaRegistryApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId) (bool, error)
 	DeleteSchemaRegistryApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId) error
 }
@@ -25,12 +25,12 @@ func NewVaultService(context context.Context, vault vault.Vault) *vaultService {
 	return &vaultService{context: context, vault: vault}
 }
 
-func (v *vaultService) StoreClusterApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+func (v *vaultService) StoreClusterApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey, shouldOverwrite bool) error {
 	return v.vault.StoreApiKey(v.context, vault.Input{
 		OperationDestination: vault.OperationDestinationCluster,
 		CapabilityId:         capabilityId,
 		ClusterId:            clusterId,
-		StoringInput:         &vault.StoringInput{ApiKey: apiKey, Overwrite: true},
+		StoringInput:         &vault.StoringInput{ApiKey: apiKey, Overwrite: shouldOverwrite},
 	})
 }
 
@@ -50,12 +50,12 @@ func (v *vaultService) DeleteClusterApiKey(capabilityId models.CapabilityId, clu
 	})
 }
 
-func (v *vaultService) StoreSchemaRegistryApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey) error {
+func (v *vaultService) StoreSchemaRegistryApiKey(capabilityId models.CapabilityId, clusterId models.ClusterId, apiKey models.ApiKey, shouldOverwrite bool) error {
 	return v.vault.StoreApiKey(v.context, vault.Input{
 		OperationDestination: vault.OperationDestinationSchemaRegistry,
 		CapabilityId:         capabilityId,
 		ClusterId:            clusterId,
-		StoringInput:         &vault.StoringInput{ApiKey: apiKey, Overwrite: true},
+		StoringInput:         &vault.StoringInput{ApiKey: apiKey, Overwrite: shouldOverwrite},
 	})
 
 }
