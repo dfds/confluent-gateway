@@ -154,7 +154,7 @@ func ensureServiceAccountApiKeyStep(step *StepContext) error {
 			return err
 		}
 		if hasKey {
-
+			return nil
 		}
 
 		err = step.CreateClusterApiKey(clusterAccess)
