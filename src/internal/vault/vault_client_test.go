@@ -59,6 +59,7 @@ func TestVault_StoreApiKey_SendsExpectedPayload(t *testing.T) {
 			"Tier": "Standard",
 			"Type": "SecureString",
 			"Value": "{ \"key\": \"`+stubApiKey.Username+`\", \"secret\": \"`+stubApiKey.Password+`\" }",
+			"Overwrite":false,
 			"Tags": [
 				{
 					"Key": "capabilityId",
