@@ -1,17 +1,13 @@
 name: Make auto PR
 
 on:
-  repository_dispatch:
-    types: run-shared-workflow
+  workflow_dispatch:
 
 jobs:
-  run-shared-workflow:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Auto PR
-        uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml@main
-        with:
-          repository-owner: ${{ github.repository_owner }}
-          repository-name: ${{ github.repository }}
-          main-branch: main
-          develop-branch: develop
+  shared:
+    uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml@master
+    with:
+      repository-owner: ${{ github.repository_owner }}
+      repository-name: ${{ github.repository }}
+      main-branch: main
+      develop-branch: develop
