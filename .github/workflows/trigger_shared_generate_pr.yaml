@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Auto PR
-        uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml
+        uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml@main
         with:
           repository-owner: ${{ github.repository_owner }}
           repository-name: ${{ github.repository }}
