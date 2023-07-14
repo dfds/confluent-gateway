@@ -1,0 +1,27 @@
+- PR: Merge pull request #11 from dfds/feature/1786-create-additional-functional-tests-in-confluent-gateway
+  Author: kralle@gmail.com
+  Date: Wed Jul 12 09:31:50 2023 +0200
+- PR: Merge pull request #13 from dfds/feature/ad-hoc_allow-relative-path-for-environment-file
+  Author: andreas.frisch@gmail.com
+  Date: Tue Jul 11 11:00:34 2023 +0200
+- PR: Merge pull request #10 from dfds/feature/1772/processes-test
+  Author: kralle@gmail.com
+  Date: Thu Jul 6 16:23:29 2023 +0200
+- PR: Merge pull request #8 from dfds/feature/issue-1564/api-key-rbac-for-schema-registry
+  Author: kralle@gmail.com
+  Date: Mon Jun 26 12:41:55 2023 +0200
+- PR: Merge pull request #9 from dfds/CLEAN_remove-unused-coloumns-again
+  Author: andreas.frisch@gmail.com
+  Date: Fri Jun 23 15:30:53 2023 +0200
+- PR: Merge pull request #5 from dfds/CLEAN_topic-request-no-create-serviceaccount
+  Author: andreas.frisch@gmail.com
+  Date: Fri Jun 23 15:08:17 2023 +0200
+- PR: Merge pull request #3 from dfds/dependabot/go_modules/fake_dependencies/confluent-cloud/github.com/gin-gonic/gin-1.9.1
+  Author: andreas.frisch@gmail.com
+  Date: Wed Jun 21 14:26:07 2023 +0200
+- PR: Merge pull request #6 from dfds/feature/removal-of-schemas
+  Author: kralle@gmail.com
+  Date: Thu Jun 15 15:40:23 2023 +0200
+- PR: Merge pull request #4 from dfds/FEAT_service-account-access
+  Author: andreas.frisch@gmail.com
+  Date: Mon Jun 12 10:45:24 2023 +0200
