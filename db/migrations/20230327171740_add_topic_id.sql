@@ -7,4 +7,4 @@ ALTER TABLE delete_process
     ADD COLUMN topic_id VARCHAR(255) NOT NULL;
 
 ALTER TABLE topic
-    ALTER COLUMN id type VARCHAR(255);
+    ALTER COLUMN id TYPE VARCHAR(255);
