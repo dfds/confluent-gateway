@@ -2,6 +2,8 @@ name: Make auto PR
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: 30 12 * * 1
 
 jobs:
   shared:
