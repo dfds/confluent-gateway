@@ -12,3 +12,4 @@ jobs:
       repository-name: ${{ github.repository }}
       main-branch: main
       develop-branch: develop
+      reviewer: selfservice
