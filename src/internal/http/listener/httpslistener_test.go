@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
-	"sync"
 	"testing"
 	"time"
 
