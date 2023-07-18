@@ -62,9 +62,6 @@ func NewServer(config *c.Configuration) (*HttpsListener, error) {
 		}
 		kafkaConfig := sarama.NewConfig()
 		if brokerConfig.username != "" && brokerConfig.password != "" {
-			fmt.Printf("username: %s\n", brokerConfig.username)
-			fmt.Printf("password: %s\n", brokerConfig.password)
-			fmt.Printf(">> Using SASL\n")
 			kafkaConfig.Net.SASL.Enable = true
 			kafkaConfig.Net.SASL.User = brokerConfig.username
 			kafkaConfig.Net.SASL.Password = brokerConfig.password
@@ -72,19 +69,16 @@ func NewServer(config *c.Configuration) (*HttpsListener, error) {
 		fmt.Printf("Broker: %s\n", brokerConfig.broker)
 		client, err := sarama.NewClient([]string{brokerConfig.broker}, kafkaConfig)
 		if err != nil {
-			fmt.Printf(">> AWW!\n%s", err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 		}
 		adm, err := sarama.NewClusterAdminFromClient(client)
 		if err != nil {
-			fmt.Printf(">> EWW!\n%s", err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 		}
 		defer adm.Close()
 
 		partition_ids, err := client.Partitions(topic)
 		if err != nil {
-			fmt.Printf(">> OWW!\n%s", err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 		}
 

@@ -63,7 +63,7 @@ func must[R interface{}](result R, err error) R {
 	return result
 }
 
-func runConsumer(ctx context.Context, group sarama.ConsumerGroup, topic string, wg *sync.WaitGroup) {
+func runConsumer(ctx context.Context, group sarama.ConsumerGroup, topic string) {
 	go func() {
 		if err := group.Consume(ctx, []string{topic}, &mockConsumerGroupHandler{}); err != nil {
 			panic(err)
@@ -102,30 +102,25 @@ func TestConsumerCount(t *testing.T) {
 		ReplicationFactor: 1,
 	}, false)
 
-	wg := &sync.WaitGroup{}
+	//wg := &sync.WaitGroup{}
 	ctx := context.Background()
 
 	// setup consumers groups and offsets
-	wg.Add(1)
-
 	cg1 := must(sarama.NewConsumerGroupFromClient(consumer1, prodclient))
 	defer cg1.Close()
-	runConsumer(ctx, cg1, topic1, wg)
+	runConsumer(ctx, cg1, topic1)
 
-	wg.Add(1)
 	cg2 := must(sarama.NewConsumerGroupFromClient(consumer2, prodclient))
 	defer cg2.Close()
-	runConsumer(ctx, cg2, topic1, wg)
+	runConsumer(ctx, cg2, topic1)
 
-	wg.Add(1)
 	cg3 := must(sarama.NewConsumerGroupFromClient(consumer3, prodclient))
 	defer cg3.Close()
-	runConsumer(ctx, cg3, topic2, wg)
+	runConsumer(ctx, cg3, topic2)
 
-	wg.Add(1)
 	cg4 := must(sarama.NewConsumerGroupFromClient(consumer4, devclient))
 	defer cg4.Close()
-	runConsumer(ctx, cg4, topic2, wg)
+	runConsumer(ctx, cg4, topic2)
 
 	// setup producers and generate events on topics
 	prodproducer := must(sarama.NewSyncProducerFromClient(prodclient))
