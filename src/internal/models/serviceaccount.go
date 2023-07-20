@@ -38,14 +38,12 @@ func (sa *ServiceAccount) TryGetClusterAccess(clusterId ClusterId) (*ClusterAcce
 }
 
 type ClusterAccess struct {
-	Id                   uuid.UUID `gorm:"primarykey"`
-	ClusterId            ClusterId
-	ServiceAccountId     ServiceAccountId
-	UserAccountId        UserAccountId
-	ApiKey               ApiKey `gorm:"embedded;embeddedPrefix:api_key_"`
-	SchemaRegistryApiKey ApiKey `gorm:"embedded;embeddedPrefix:schema_registry_api_key_"`
-	Acl                  []AclEntry
-	CreatedAt            time.Time
+	Id               uuid.UUID `gorm:"primarykey"`
+	ClusterId        ClusterId
+	ServiceAccountId ServiceAccountId
+	UserAccountId    UserAccountId
+	Acl              []AclEntry
+	CreatedAt        time.Time
 }
 
 func (*ClusterAccess) TableName() string {
@@ -72,7 +70,6 @@ func NewClusterAccess(serviceAccountId ServiceAccountId, userAccountId UserAccou
 		ServiceAccountId: serviceAccountId,
 		UserAccountId:    userAccountId,
 		ClusterId:        clusterId,
-		ApiKey:           ApiKey{},
 		Acl:              createAclEntries(capabilityId, clusterAccessId),
 		CreatedAt:        time.Now(),
 	}

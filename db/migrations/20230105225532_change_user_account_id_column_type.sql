@@ -1,13 +1,13 @@
 -- 2023-01-05 22:55:32 : change user_account_id column type
 
-alter table service_account
-alter column user_account_id drop default,
-alter column user_account_id drop not null,
-alter column user_account_id type varchar(50) using
-case when user_account_id=0 then null else concat('User:', user_account_id) end;
+ALTER TABLE service_account
+    ALTER COLUMN user_account_id DROP DEFAULT,
+    ALTER COLUMN user_account_id DROP NOT NULL,
+    ALTER COLUMN user_account_id TYPE VARCHAR(50) USING
+        CASE WHEN user_account_id = 0 THEN NULL ELSE CONCAT('User:', user_account_id) END;
 
-alter table cluster_access
-alter column user_account_id drop default,
-alter column user_account_id drop not null,
-alter column user_account_id type varchar(50) using
-case when user_account_id=0 then null else concat('User:', user_account_id) end;
+ALTER TABLE cluster_access
+    ALTER COLUMN user_account_id DROP DEFAULT,
+    ALTER COLUMN user_account_id DROP NOT NULL,
+    ALTER COLUMN user_account_id TYPE VARCHAR(50) USING
+        CASE WHEN user_account_id = 0 THEN NULL ELSE CONCAT('User:', user_account_id) END;

@@ -191,13 +191,11 @@ func TestCreateServiceAccountProcess(t *testing.T) {
 	//ensureServiceAccountAclStep:
 	setupCreateAclHttpMock(createServiceAccountVariables.CapabilityId, input.ClusterId, userAccountId) // Then we create ACLs for the service account
 
-	//ensureServiceAccountApiKeyStep
-	setupListKeysHTTPMock(string(input.ClusterId), createServiceAccountVariables.ServiceAccountId, 1) // Then we check if the API key was created
-
-	//ensureServiceAccountApiKeyAreStoredInVaultStep
+	//ensureServiceAccountClusterAccessStep
+	setupListKeysHTTPMock(string(input.ClusterId), createServiceAccountVariables.ServiceAccountId, 0)                                                            // Then we check if the API key was created
 	setupCreateApiKeyMock(string(input.ClusterId), createServiceAccountVariables.ServiceAccountId, createdClusterApiKey.Username, createdClusterApiKey.Password) // Then we create an API key for the cluster
 
-	//ensureServiceAccountHasSchemaRegistryAccessStep
+	//ensureServiceAccountSchemaRegistryAccessStep
 	setupListKeysHTTPMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), createServiceAccountVariables.ServiceAccountId, 0)                                                                          // Check if the api key has already been created
 	setupCreateApiKeyMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), createServiceAccountVariables.ServiceAccountId, createdSchemaRegistryApiKey.Username, createdSchemaRegistryApiKey.Password) // Then we create an API key for the schema registry
 	setupRoleBindingHTTPMock(string(createServiceAccountVariables.ServiceAccountId), testerApp.dbSeedVariables.GetDevelopmentClusterValues())                                                                        // Then we create a role binding for the service account

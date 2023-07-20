@@ -27,19 +27,13 @@ type AccountService interface {
 	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
-	CreateClusterApiKey(*models.ClusterAccess) error
-	CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error
+	CreateClusterApiKey(*models.ClusterAccess) (models.ApiKey, error)
+	CreateSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) (models.ApiKey, error)
 	CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error
 	CountClusterApiKeys(clusterAccess *models.ClusterAccess) (int, error)
 	CountSchemaRegistryApiKeys(clusterAccess *models.ClusterAccess) (int, error)
-	RecreateSchemaRegistryApiKeyAndStoreInDb(clusterAccess *models.ClusterAccess) error
-}
-
-type VaultService interface {
-	StoreClusterApiKey(models.CapabilityId, *models.ClusterAccess) error
-	QueryClusterApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
-	StoreSchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess) error
-	QuerySchemaRegistryApiKey(models.CapabilityId, *models.ClusterAccess) (bool, error)
+	DeleteClusterApiKey(clusterAccess *models.ClusterAccess) error
+	DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error
 }
 
 type Outbox interface {
@@ -58,6 +52,10 @@ func (c *StepContext) LogDebug(format string, args ...string) {
 
 func (c *StepContext) LogError(err error, format string, args ...string) {
 	c.logger.Error(err, format, args...)
+}
+
+func (c *StepContext) LogWarning(format string, args ...string) {
+	c.logger.Warning(format, args...)
 }
 
 func (c *StepContext) HasServiceAccount() bool {
@@ -111,62 +109,47 @@ func (c *StepContext) HasClusterApiKey(clusterAccess *models.ClusterAccess) (boo
 	return count > 0, err
 }
 
+func (c *StepContext) HasSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) (bool, error) {
+	count, err := c.account.CountSchemaRegistryApiKeys(clusterAccess)
+	return count > 0, err
+}
+
 func (c *StepContext) HasClusterApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {
-	return c.vault.QueryClusterApiKey(c.input.CapabilityId, clusterAccess)
-}
-
-func (c *StepContext) CreateClusterApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.account.CreateClusterApiKey(clusterAccess)
-}
-
-func (c *StepContext) StoreClusterApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.vault.StoreClusterApiKey(c.input.CapabilityId, clusterAccess)
-}
-
-func (c *StepContext) GetServiceAccount() (*models.ServiceAccount, error) {
-	return c.account.GetServiceAccount(c.input.CapabilityId)
-}
-
-func (c *StepContext) EnsureHasSchemaRegistryApiKey(access *models.ClusterAccess) error {
-
-	keyCount, err := c.account.CountSchemaRegistryApiKeys(access)
-	if err != nil {
-		return err
-	}
-
-	if keyCount > 0 {
-		clusterAccess, err := c.account.GetClusterAccess(c.input.CapabilityId, c.input.ClusterId)
-		if err != nil {
-			return err
-		}
-		if clusterAccess.SchemaRegistryApiKey.Username == "" ||
-			clusterAccess.SchemaRegistryApiKey.Password == "" {
-
-			c.logger.Error(fmt.Errorf("db and confluent schema registry api key are out of sync"), "recreating SchemaRegistryApiKey and then store in DB")
-			return c.account.RecreateSchemaRegistryApiKeyAndStoreInDb(access)
-		}
-
-		c.logger.Information("found SchemaRegistry api key, skipping creation")
-		return nil
-	}
-
-	return c.account.CreateSchemaRegistryApiKey(access)
+	return c.vault.QueryClusterApiKey(c.input.CapabilityId, clusterAccess.ClusterId)
 }
 
 func (c *StepContext) HasSchemaRegistryApiKeyInVault(clusterAccess *models.ClusterAccess) (bool, error) {
-	return c.vault.QuerySchemaRegistryApiKey(c.input.CapabilityId, clusterAccess)
+	return c.vault.QuerySchemaRegistryApiKey(c.input.CapabilityId, clusterAccess.ClusterId)
 }
 
-func (c *StepContext) CreateServiceAccountRoleBinding(*models.ClusterAccess) error {
-	access, err := c.GetClusterAccess()
+func (c *StepContext) CreateClusterApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess, shouldOverwriteKey bool) error {
+	newKey, err := c.account.CreateClusterApiKey(clusterAccess)
 	if err != nil {
 		return err
 	}
-	return c.account.CreateServiceAccountRoleBinding(access)
+
+	return c.vault.StoreClusterApiKey(c.input.CapabilityId, clusterAccess.ClusterId, newKey, shouldOverwriteKey)
+
+}
+func (c *StepContext) CreateSchemaRegistryApiKeyAndStoreInVault(clusterAccess *models.ClusterAccess, shouldOverwriteKey bool) error {
+	newKey, err := c.account.CreateSchemaRegistryApiKey(clusterAccess)
+	if err != nil {
+		return err
+	}
+
+	return c.vault.StoreSchemaRegistryApiKey(c.input.CapabilityId, clusterAccess.ClusterId, newKey, shouldOverwriteKey)
 }
 
-func (c *StepContext) StoreSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
-	return c.vault.StoreSchemaRegistryApiKey(c.input.CapabilityId, clusterAccess)
+func (c *StepContext) DeleteClusterApiKey(clusterAccess *models.ClusterAccess) error {
+	return c.account.DeleteClusterApiKey(clusterAccess)
+}
+
+func (c *StepContext) DeleteSchemaRegistryApiKey(clusterAccess *models.ClusterAccess) error {
+	return c.account.DeleteSchemaRegistryApiKey(clusterAccess)
+}
+
+func (c *StepContext) CreateServiceAccountRoleBinding(clusterAccess *models.ClusterAccess) error {
+	return c.account.CreateServiceAccountRoleBinding(clusterAccess)
 }
 
 func (c *StepContext) RaiseServiceAccountAccessGranted() error {
