@@ -1,0 +1,14 @@
+name: Make auto PR
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 30 12 * * 1
+
+jobs:
+  shared:
+    uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml@master
+    with:
+      repository-name: ${{ github.repository }}
+      main-branch: main
+      develop-branch: develop
