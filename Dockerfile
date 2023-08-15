@@ -1,3 +1,10 @@
+FROM golang:1.21 as build
+
+COPY src/ /src
+WORKDIR /src
+RUN go mod download
+RUN CGO_ENABLED=0 go build github.com/dfds/confluent-gateway/cmd/main
+
 FROM alpine
 
 # ADD Curl
@@ -17,6 +24,6 @@ RUN adduser \
 USER app
 
 WORKDIR /app
-COPY ./.output/app ./
+COPY --from=build /src/main /app/confluent-gateway
 
-ENTRYPOINT [ "./confluent-gateway" ]
+ENTRYPOINT [ "/app/confluent-gateway" ]
