@@ -1,0 +1,160 @@
+# Default values for confluent-gateway.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+managedByHelm: true
+environment: "develop"
+
+image:
+  repository: 579478677147.dkr.ecr.eu-central-1.amazonaws.com/selfservice/confluent-gateway
+  pullPolicy: Always
+  tag: "latest"
+
+app:
+  config:
+    kafkaSecretRef: kafka-credentials
+    confluentSecretRef: confluent-gateway-cloud-credentials
+
+  environment:
+    - name: CG_DB_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: confluent-gateway-postgres
+          key: PGCONNSTRING
+    - name: CG_APPLICATION_NAME
+      value: Confluent Gateway
+    - name: CG_ENVIRONMENT
+      value: Production
+    - name: CG_CONFLUENT_CLOUD_API_URL
+      value: https://api.confluent.cloud
+    - name: CG_CONFLUENT_USER_API_URL
+      value: https://confluent.cloud/api/service_accounts
+    - name: CG_KAFKA_GROUP_ID
+      value: build.selfservice.confluentgateway
+    - name: CG_TOPIC_NAME_KAFKA_CLUSTER_ACCESS
+      value: cloudengineering.selfservice.kafkaclusteraccess
+    - name: CG_TOPIC_NAME_KAFKA_CLUSTER_ACCESS_GRANTED
+      value: cloudengineering.confluentgateway.access
+    - name: CG_TOPIC_NAME_SELF_SERVICE
+      value: cloudengineering.selfservice.kafkatopic
+    - name: CG_TOPIC_NAME_PROVISIONING
+      value: cloudengineering.confluentgateway.provisioning
+    - name: CG_TOPIC_NAME_MESSAGE_CONTRACT
+      value: cloudengineering.selfservice.messagecontract
+    - name: CG_TOPIC_NAME_SCHEMA
+      value: cloudengineering.confluentgateway.schema
+    - name: AWS_REGION
+      value: eu-central-1
+
+gendis:
+  enabled: true
+  fullNameOverrride: ""
+  image:
+    repository: public.ecr.aws/d8r0z9h2/dafda-gendis
+    pullPolicy: Always
+    tag: "0.9.1"
+  service:
+    type: ClusterIP
+    port: 5225
+  environment:
+    - name: DB_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: confluent-gateway-postgres
+          key: GENDIS_CONNECTION_STRING
+  resources:
+    requests:
+      memory: "50Mi"
+      cpu: "50m"
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+dbMigration:
+  secretRef: confluent-gateway-postgres
+  image:
+    repository: 579478677147.dkr.ecr.eu-central-1.amazonaws.com/selfservice/confluent-gateway/dbmigrations
+    pullPolicy: Always
+    tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  awsRoleArn: ""
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8888
+  scrapeMetrics: true
+
+ingress:
+  enabled: true
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  match: Host(`localhost`)
+  matches:
+    - name: confluent-gateway
+      match: Host(`build.dfds.cloud`) && PathPrefix(`/api`)
+      prefix: "/api"
+    - name: confluent-gateway-pub
+      match: Host(`api.hellman.oxygen.dfds.cloud`) && PathPrefix(`/ssu/api`)
+      prefix: "/ssu/api"
+  middlewares: []
+  services: []
+  routes: []
+    # - kind: Rule
+    #   match: Host(`build.dfds.cloud`)
+    #   priority: 90
+    #   middlewares: []
+    #   services:
+    #     - kind: Service
+    #       name: confluent-gateway
+    #       namespace: selfservice
+    #       port: external
+
+resources:
+  requests:
+    memory: "20Mi"
+    cpu: "50m"
+  limits:
+    memory: "100Mi"
+    cpu: "100m"
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
