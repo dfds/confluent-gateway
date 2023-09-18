@@ -51,9 +51,9 @@ gendis:
   enabled: true
   fullNameOverrride: ""
   image:
-    repository: public.ecr.aws/d8r0z9h2/dafda-gendis
+    repository: dfdsdk/dafda-gendis
     pullPolicy: Always
-    tag: "0.9.1"
+    tag: "v0.9.2"
   service:
     type: ClusterIP
     port: 5225
