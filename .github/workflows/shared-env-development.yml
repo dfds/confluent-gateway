@@ -54,11 +54,6 @@ jobs:
           role_arn: ${{ secrets.SSU_APPS_GH_IAM_ROLE }}
           aws_region: eu-central-1
           sha_tag_prefix: develop
-          args: | # FIX THESE
-            REACT_APP_API_BASE_URL=https://internal.hellman.oxygen.dfds.cloud/ssu/dev-env/develop/api
-            REACT_APP_AUTH_REDIRECT_URL=https://internal.hellman.oxygen.dfds.cloud/ssu/dev-env/develop
-            REACT_APP_PUBLIC_URL=https://internal.hellman.oxygen.dfds.cloud/ssu/dev-env/develop
-            PUBLIC_URL=/ssu/dev-env/develop
       - uses: ./ssu-apps/.github/actions/build_push_container_ecr
         name: Build & push container
         id: build_push_container_db_migration
