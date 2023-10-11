@@ -3,6 +3,7 @@ package serviceaccount
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/models"
 	proc "github.com/dfds/confluent-gateway/internal/process"
@@ -128,7 +129,7 @@ func ensureServiceAccountAclStep(step *StepContext) error {
 		for _, entry := range entries {
 			err = step.CreateAclEntry(clusterAccess, entry)
 			if err != nil {
-				return err
+				return fmt.Errorf("unable to create ACL entry with definition %s, error: %w", entry.AclDefinition, err)
 			}
 		}
 		return nil
