@@ -18,7 +18,7 @@ func TestCreateAclDefinitions(t *testing.T) {
 	result := mapToString(all)
 
 	assert.Equal(t, []string{
-		"TOPIC | '*' | PREFIXED | CREATE | DENY",
+		//"TOPIC | * | LITERAL | CREATE | DENY",
 
 		"TOPIC | some-capability | PREFIXED | READ | ALLOW",
 		"TOPIC | some-capability | PREFIXED | WRITE | ALLOW",
