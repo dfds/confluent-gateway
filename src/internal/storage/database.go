@@ -8,6 +8,7 @@ import (
 	"github.com/dfds/confluent-gateway/messaging"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"strings"
 )
 
 var ErrTopicNotFound = errors.New("requested topic not found")
@@ -151,6 +152,12 @@ func (d *Database) GetTopic(topicId string) (*models.Topic, error) {
 	var topic = &models.Topic{}
 
 	err := d.db.First(topic, "id = ?", topicId).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		topicIdWithoutDashes := strings.Replace(topicId, "-", "", -1)
+
+		// Let's try again but without dashes, because SelfService-api changed format in February 2023
+		err = d.db.First(topic, "id = ?", topicIdWithoutDashes).Error
+	}
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
