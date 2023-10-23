@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/dfds/confluent-gateway/internal/models"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
@@ -148,15 +149,25 @@ func (d *Database) CreateTopic(topic *models.Topic) error {
 	return d.db.Create(topic).Error
 }
 
+func addDashesToUUIDWithoutDashes(uuidWithoutDashes string) string {
+	return fmt.Sprintf("%s-%s-%s-%s-%s", uuidWithoutDashes[:8], uuidWithoutDashes[8:12], uuidWithoutDashes[12:16], uuidWithoutDashes[16:20], uuidWithoutDashes[20:])
+}
+
 func (d *Database) GetTopic(topicId string) (*models.Topic, error) {
 	var topic = &models.Topic{}
 
 	err := d.db.First(topic, "id = ?", topicId).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		topicIdWithoutDashes := strings.Replace(topicId, "-", "", -1)
+		// Let's try again but either by adding dashes or removing them, because SelfService-api changed format in February 2023
 
-		// Let's try again but without dashes, because SelfService-api changed format in February 2023
-		err = d.db.First(topic, "id = ?", topicIdWithoutDashes).Error
+		var alteredTopicId string
+		if strings.ContainsAny(topicId, "-") {
+			alteredTopicId = strings.Replace(topicId, "-", "", -1)
+		} else { // no dashes in topicId, let's try to add them and try again
+			alteredTopicId = addDashesToUUIDWithoutDashes(topicId)
+		}
+
+		err = d.db.First(topic, "id = ?", alteredTopicId).Error
 	}
 
 	if err != nil {
