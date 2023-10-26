@@ -60,7 +60,7 @@ const (
 
 func CreateAclDefinitions(capabilityId CapabilityId) []AclDefinition {
 	const publicTopicPrefix = "pub."
-	const allTopics = "'*'"
+	const allTopics = "*"
 	const clusterResourceName = "kafka-cluster"
 
 	capabilityPrefix := string(capabilityId)
@@ -69,7 +69,7 @@ func CreateAclDefinitions(capabilityId CapabilityId) []AclDefinition {
 
 	return []AclDefinition{
 		// deny create operations on all resource types
-		defineAcl(ResourceTypeTopic, allTopics, PatternTypePrefix, OperationTypeCreate, PermissionTypeDeny),
+		//defineAcl(ResourceTypeTopic, allTopics, PatternTypeLiteral, OperationTypeCreate, PermissionTypeDeny),
 
 		// for all private topics
 		defineAcl(ResourceTypeTopic, capabilityPrefix, PatternTypePrefix, OperationTypeRead, PermissionTypeAllow),
