@@ -6,6 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.17.2
 	github.com/aws/aws-sdk-go-v2/config v1.18.4
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.33.2
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/h2non/gock v1.2.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rs/zerolog v1.28.0

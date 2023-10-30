@@ -9,9 +9,11 @@ import (
 	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/h2non/gock"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -34,6 +36,39 @@ func setupCreateTopicHttpMock(input create.ProcessInput, seedVariables *SeedVari
 		BodyString(payload).
 		Reply(200).
 		BodyString("") // our code panics on empty responses
+}
+
+func TestCanFetchTopicWithNoDashesInId(t *testing.T) {
+
+	topicId := uuid.NewV4().String()
+	err := testerApp.db.CreateTopic(&models.Topic{
+		Id:           topicId,
+		CapabilityId: "createTopicVariables",
+		ClusterId:    "testClusterId",
+		Name:         "",
+	})
+	require.NoError(t, err)
+	topicIdWithoutDashes := strings.Replace(topicId, "-", "", -1)
+
+	topic, err := testerApp.db.GetTopic(topicIdWithoutDashes)
+	require.NoError(t, err)
+	require.Equal(t, topicId, topic.Id)
+}
+
+func TestCanFetchTopicDashesInId(t *testing.T) {
+
+	topicIdWithDashes := uuid.NewV4().String()
+	err := testerApp.db.CreateTopic(&models.Topic{
+		Id:           strings.Replace(topicIdWithDashes, "-", "", -1),
+		CapabilityId: "createTopicVariables",
+		ClusterId:    "testClusterId",
+		Name:         "",
+	})
+	require.NoError(t, err)
+
+	topic, err := testerApp.db.GetTopic(topicIdWithDashes)
+	require.NoError(t, err)
+	require.NotEqual(t, topicIdWithDashes, topic.Id)
 }
 
 func TestCreateTopicProcess(t *testing.T) {
