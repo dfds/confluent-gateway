@@ -6,7 +6,7 @@ on:
       - 'develop'
       - 'chore/dev-env-pipeline'
     paths:
-      - '.github/workflows/shared-env-develop.yml'
+      - '.github/workflows/shared-env-development.yml'
       - 'src/**'
   workflow_dispatch:
     inputs:

@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"github.com/dfds/confluent-gateway/internal/models"
+	"github.com/gofrs/uuid"
 )
 
 type TestVariablesConfig struct {
@@ -13,8 +14,12 @@ type TestVariablesConfig struct {
 }
 
 func NewTestVariables(prefix string) *TestVariablesConfig {
+	topicId, err := uuid.NewV4()
+	if err != nil {
+		panic(err)
+	}
 	return &TestVariablesConfig{
-		TopicId:          fmt.Sprintf("%s-topic-id", prefix),
+		TopicId:          topicId.String(),
 		TopicName:        fmt.Sprintf("%s-topic-name", prefix),
 		ServiceAccountId: models.ServiceAccountId(fmt.Sprintf("%s-service-account-id", prefix)),
 		CapabilityId:     models.CapabilityId(fmt.Sprintf("%s-capability-id", prefix)),
