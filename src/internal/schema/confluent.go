@@ -12,5 +12,5 @@ type Confluent interface {
 	CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error
 	CountSchemaRegistryApiKeys(ctx context.Context, clusterAccess models.ServiceAccountId, clusterId models.ClusterId) (int, error)
 	DeleteSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error
-	RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error
+	RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version int32) error
 }
