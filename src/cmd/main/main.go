@@ -47,7 +47,7 @@ func main() {
 		return outboxFactory(repository)
 	})
 	deleteTopicProcess := del.NewProcess(logger, db, confluentClient, func(repository del.OutboxRepository) del.Outbox { return outboxFactory(repository) })
-	addSchemaProcess := schema.NewProcess(logger, db, confluentClient, func(repository schema.OutboxRepository) schema.Outbox { return outboxFactory(repository) })
+	addSchemaProcess := schema.NewProcess(logger, db, confluentClient, awsClient, func(repository schema.OutboxRepository) schema.Outbox { return outboxFactory(repository) })
 	consumer := Must(messaging.ConfigureConsumer(logger, config.KafkaBroker, config.KafkaGroupId,
 		messaging.WithCredentials(config.CreateConsumerCredentials()),
 		messaging.RegisterMessageHandler(config.TopicNameSelfService, "topic_requested", create.NewTopicRequestedHandler(createTopicProcess), &create.TopicRequested{}),
