@@ -34,7 +34,7 @@ func (c *StepContext) IsCompleted() bool {
 }
 
 func (c *StepContext) RegisterSchema() error {
-	return c.registry.RegisterSchema(c.ctx, c.state.ClusterId, c.state.Subject, c.state.Schema)
+	return c.registry.RegisterSchema(c.ctx, c.state.ClusterId, c.state.Subject, c.state.Schema, c.state.SchemaVersion)
 }
 
 func (c *StepContext) MarkAsCompleted() {

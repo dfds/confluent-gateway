@@ -33,6 +33,7 @@ type ProcessInput struct {
 	MessageType       string
 	Description       string
 	Schema            string
+	SchemaVersion     int32
 }
 
 func (p *process) Process(ctx context.Context, input ProcessInput) error {
@@ -113,7 +114,7 @@ func getOrCreateProcessState(repo schemaRepository, input ProcessInput, topic *m
 	}
 
 	subject := fmt.Sprintf("%s-%s", topic.Name, input.MessageType)
-	schema = models.NewSchemaProcess(topic.ClusterId, input.MessageContractId, input.TopicId, input.MessageType, input.Description, subject, input.Schema)
+	schema = models.NewSchemaProcess(topic.ClusterId, input.MessageContractId, input.TopicId, input.MessageType, input.Description, subject, input.Schema, input.SchemaVersion)
 
 	if err := repo.SaveSchemaProcessState(schema); err != nil {
 		return nil, err

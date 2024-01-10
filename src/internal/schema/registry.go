@@ -6,5 +6,5 @@ import (
 )
 
 type SchemaRegistry interface {
-	RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error
+	RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version int32) error
 }
