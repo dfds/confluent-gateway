@@ -19,10 +19,12 @@ func setupCreateSchemaHttpMock(processInput schema.ProcessInput, topicName strin
 	type schemaPayload struct {
 		SchemaType string `json:"schemaType"`
 		Schema     string `json:"schema"`
+		Version    int32  `json:"version"`
 	}
 	payload, err := json.Marshal(schemaPayload{
 		SchemaType: "JSON",
 		Schema:     processInput.Schema,
+		Version:    processInput.SchemaVersion,
 	})
 	if err != nil {
 		panic(err)
@@ -63,6 +65,7 @@ func TestCreateSchemaProcess(t *testing.T) {
 		MessageType:       "message-type-for-schema-registry",
 		Description:       "schema-description",
 		Schema:            "test-schema",
+		SchemaVersion:     1,
 	}
 
 	err = process.Process(context.Background(), input)
