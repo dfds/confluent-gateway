@@ -9,6 +9,7 @@ import (
 	schema "github.com/dfds/confluent-gateway/internal/schema"
 	"github.com/dfds/confluent-gateway/messaging"
 	"github.com/h2non/gock"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -53,7 +54,43 @@ func TestCreateSchemaProcess(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	process := schema.NewProcess(testerApp.logger, testerApp.db, testerApp.confluentClient, func(repository schema.OutboxRepository) schema.Outbox {
+	err = testerApp.db.CreateTopic(&models.Topic{
+		Id:           createSchemaVariables.TopicId,
+		CapabilityId: createSchemaVariables.CapabilityId,
+		ClusterId:    testerApp.dbSeedVariables.DevelopmentClusterId,
+		Name:         createSchemaVariables.TopicName,
+		CreatedAt:    time.Now(),
+	})
+	require.NoError(t, err)
+
+	someUserId := models.MakeUserAccountId(123)
+	someServiceAccountID := models.ServiceAccountId(uuid.NewV4().String())
+	clusterAccess := models.ClusterAccess{
+		Id:               uuid.NewV4(),
+		ClusterId:        testerApp.dbSeedVariables.DevelopmentClusterId,
+		ServiceAccountId: someServiceAccountID,
+		UserAccountId:    someUserId,
+		Acl:              nil,
+		CreatedAt:        time.Time{},
+	}
+	err = testerApp.db.CreateServiceAccount(&models.ServiceAccount{
+		Id:            someServiceAccountID,
+		UserAccountId: someUserId,
+		CapabilityId:  createSchemaVariables.CapabilityId,
+		ClusterAccesses: []models.ClusterAccess{
+			clusterAccess,
+		},
+		CreatedAt: time.Time{},
+	})
+
+	err = testerApp.db.CreateClusterAccess(&clusterAccess)
+
+	//ensureServiceAccountSchemaRegistryAccessStep
+	setupListKeysHTTPMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), someServiceAccountID, 0)                      // Check if the api key has already been created
+	setupCreateApiKeyMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), someServiceAccountID, "username", "p4ssword") // Then we create an API key for the schema registry
+	setupRoleBindingHTTPMock(string(someServiceAccountID), testerApp.dbSeedVariables.GetDevelopmentClusterValues())                    // Then we create a role binding for the service account
+
+	process := schema.NewProcess(testerApp.logger, testerApp.db, testerApp.confluentClient, *testerApp.vaultClient, func(repository schema.OutboxRepository) schema.Outbox {
 		return outboxFactory(repository)
 	})
 
@@ -64,20 +101,6 @@ func TestCreateSchemaProcess(t *testing.T) {
 		Description:       "schema-description",
 		Schema:            "test-schema",
 	}
-
-	err = process.Process(context.Background(), input)
-	// TODO: Although the topic does not exist, the process ignores that and continues.
-	//require.ErrorIs(t, err, storage.ErrTopicNotFound)
-	require.NoError(t, err)
-
-	err = testerApp.db.CreateTopic(&models.Topic{
-		Id:           createSchemaVariables.TopicId,
-		CapabilityId: createSchemaVariables.CapabilityId,
-		ClusterId:    testerApp.dbSeedVariables.DevelopmentClusterId,
-		Name:         createSchemaVariables.TopicName,
-		CreatedAt:    time.Now(),
-	})
-	require.NoError(t, err)
 
 	setupCreateSchemaHttpMock(input, createSchemaVariables.TopicName, testerApp.dbSeedVariables)
 	err = process.Process(context.Background(), input)
