@@ -6,6 +6,7 @@ type MessageContractRequested struct {
 	MessageType       string `json:"messageType"`
 	Description       string `json:"description"`
 	Schema            string `json:"schema"`
+	SchemaVersion     int32  `json:"schemaVersion"`
 }
 
 type SchemaRegistered struct {
