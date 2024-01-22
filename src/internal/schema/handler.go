@@ -28,6 +28,7 @@ func (h *handler) Handle(ctx context.Context, msgContext messaging.MessageContex
 			MessageType:       message.MessageType,
 			Description:       message.Description,
 			Schema:            message.Schema,
+			SchemaVersion:     message.SchemaVersion,
 		}
 		return h.process.Process(ctx, input)
 

@@ -16,9 +16,10 @@ type SchemaProcess struct {
 	Schema            string
 	CreatedAt         time.Time
 	CompletedAt       *time.Time
+	SchemaVersion     int32
 }
 
-func NewSchemaProcess(clusterId ClusterId, messageContractId string, topicId string, messageType string, description string, subject string, schema string) *SchemaProcess {
+func NewSchemaProcess(clusterId ClusterId, messageContractId string, topicId string, messageType string, description string, subject string, schema string, schemaVersion int32) *SchemaProcess {
 	return &SchemaProcess{
 		Id:                uuid.NewV4(),
 		ClusterId:         clusterId,
@@ -30,6 +31,7 @@ func NewSchemaProcess(clusterId ClusterId, messageContractId string, topicId str
 		Schema:            schema,
 		CreatedAt:         time.Now(),
 		CompletedAt:       nil,
+		SchemaVersion:     schemaVersion,
 	}
 }
 

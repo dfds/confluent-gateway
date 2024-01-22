@@ -461,11 +461,12 @@ func (c *Client) delete(ctx context.Context, url string, apiKey models.ApiKey) (
 }
 
 type schemaPayload struct {
+	Version    int32  `json:"version"`
 	SchemaType string `json:"schemaType"`
 	Schema     string `json:"schema"`
 }
 
-func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string) error {
+func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version int32) error {
 	cluster, err := c.clusters.Get(clusterId)
 
 	if err != nil {
@@ -479,6 +480,7 @@ func (c *Client) RegisterSchema(ctx context.Context, clusterId models.ClusterId,
 	url := fmt.Sprintf("%s/subjects/%s/versions", cluster.SchemaRegistryApiEndpoint, subject)
 
 	payload, err := json.Marshal(schemaPayload{
+		Version:    version,
 		SchemaType: "JSON",
 		Schema:     schema,
 	})
