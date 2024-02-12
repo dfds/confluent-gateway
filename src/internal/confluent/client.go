@@ -129,17 +129,13 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	}`
 
 	response, err := c.post(ctx, url, payload, c.cloudApiAccess.ApiKey())
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
 	if response != nil && response.StatusCode == 409 {
 		return "", ErrFoundExistingServiceAccount
 	}
 	if err != nil {
 		return "", err
 	}
+	defer response.Body.Close()
 
 	serviceAccountResponse := &createServiceAccountResponse{}
 	derr := json.NewDecoder(response.Body).Decode(serviceAccountResponse)
