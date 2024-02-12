@@ -76,6 +76,7 @@ type EnsureServiceAccountStepRequirement interface {
 	logger
 	HasServiceAccount() bool
 	CreateServiceAccount() error
+	CreateServiceAccountDbLink() error
 	GetInputCapabilityId() models.CapabilityId
 }
 
@@ -88,6 +89,9 @@ func ensureServiceAccountStep(step *StepContext) error {
 		}
 
 		err := step.CreateServiceAccount()
+		if errors.Is(confluent.ErrFoundExistingServiceAccount, err) {
+			return step.CreateServiceAccountDbLink()
+		}
 		if err != nil {
 			return err
 		}

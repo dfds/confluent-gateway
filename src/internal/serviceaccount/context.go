@@ -24,6 +24,7 @@ func NewStepContext(logger logging.Logger, account AccountService, vault VaultSe
 type AccountService interface {
 	GetServiceAccount(models.CapabilityId) (*models.ServiceAccount, error)
 	CreateServiceAccount(models.CapabilityId, models.ClusterId) error
+	FindServiceAccountAndCreateDBLink(models.CapabilityId, models.ClusterId) error
 	GetOrCreateClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	GetClusterAccess(models.CapabilityId, models.ClusterId) (*models.ClusterAccess, error)
 	CreateAclEntry(models.ClusterId, models.UserAccountId, *models.AclEntry) error
@@ -69,6 +70,10 @@ func (c *StepContext) HasServiceAccount() bool {
 
 func (c *StepContext) CreateServiceAccount() error {
 	return c.account.CreateServiceAccount(c.input.CapabilityId, c.input.ClusterId)
+}
+
+func (c *StepContext) CreateServiceAccountDbLink() error {
+	return c.account.FindServiceAccountAndCreateDBLink(c.input.CapabilityId, c.input.ClusterId)
 }
 
 func (c *StepContext) GetInputCapabilityId() models.CapabilityId {

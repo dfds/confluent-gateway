@@ -30,6 +30,42 @@ func setupCreateServiceAccountHttpMock(processInput serviceaccount.ProcessInput,
 
 }
 
+func setupCreateServiceAccountFailureExistingDisplayNameHttpMock(processInput serviceaccount.ProcessInput) {
+
+	payload := string(`{
+		"display_name": "` + processInput.CapabilityId + `",
+		"description": "` + "Created by Confluent Gateway" + `"
+	}`)
+
+	gock.New(testerApp.config.ConfluentCloudApiUrl).
+		Post("/iam/v2/service-accounts").
+		BodyString(payload).
+		BasicAuth(testerApp.config.ConfluentCloudApiUserName, testerApp.config.ConfluentCloudApiPassword).
+		Reply(409)
+
+}
+
+func setupListServiceAccountsHttpMock(serviceAccountId models.ServiceAccountId, displayName string) {
+	serviceAccounts := fmt.Sprintf(`{
+		"data": [
+			{
+				"id": "%s",
+				"display_name": "%s"
+			},
+			{
+				"id": "some-other-id",
+				"display_name":"hey there"
+			}
+		]
+		}`, serviceAccountId, displayName)
+
+	gock.New(testerApp.config.ConfluentCloudApiUrl).
+		Get("/iam/v2/service-accounts").
+		BasicAuth(testerApp.config.ConfluentCloudApiUserName, testerApp.config.ConfluentCloudApiPassword).
+		Reply(200).
+		BodyString(serviceAccounts)
+}
+
 func setupGetInternalConfluentUsersHttpMock(serviceAccountId models.ServiceAccountId) {
 
 	s := struct {
@@ -208,6 +244,80 @@ func TestCreateServiceAccountProcess(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, outboxEntries, 1)
 	require.Equal(t, outboxEntries[0].Topic, testerApp.config.TopicNameKafkaClusterAccessGranted)
+
+	helpers.RequireNoUnmatchedGockMocks(t)
+}
+
+func TestCreateServiceAccountWithExistingServiceAccountNameProcess(t *testing.T) {
+	createServiceAccountVariables := helpers.NewTestVariables("create_serviceaccount_test")
+	userAccountId := models.MakeUserAccountId(internalConfluentUserId)
+	defer func() {
+		testerApp.db.RemoveAllOutboxEntries()
+		testerApp.db.RemoveAllServiceAccounts()
+	}()
+	outboxFactory, err := messaging.ConfigureOutbox(testerApp.logger,
+		messaging.RegisterMessage(testerApp.config.TopicNameKafkaClusterAccessGranted, "cluster-access-granted", &serviceaccount.ServiceAccountAccessGranted{}),
+	)
+	require.NoError(t, err)
+
+	process := serviceaccount.NewProcess(testerApp.logger,
+		testerApp.db,
+		testerApp.confluentClient,
+		*testerApp.vaultClient,
+		func(repository serviceaccount.OutboxRepository) serviceaccount.Outbox {
+			return outboxFactory(repository)
+		})
+
+	input := serviceaccount.ProcessInput{
+		CapabilityId: createServiceAccountVariables.CapabilityId,
+		ClusterId:    testerApp.dbSeedVariables.DevelopmentClusterId,
+	}
+
+	createdClusterApiKey := models.ApiKey{
+		Username: "new_cluster_apikey_username",
+		Password: "new_cluster_apikey_password",
+	}
+	createdSchemaRegistryApiKey := models.ApiKey{
+		Username: "new_schema_registry_apikey_username",
+		Password: "new_schema_registry_apikey_password",
+	}
+
+	account, err := testerApp.db.GetServiceAccount(input.CapabilityId)
+	require.Error(t, err)
+	require.Nil(t, account)
+
+	// a lot of mocking going on here, might indicate that this process is doing too much
+
+	//ensureServiceAccountStep:
+	setupCreateServiceAccountFailureExistingDisplayNameHttpMock(input) // First we create a service account that fails
+	setupListServiceAccountsHttpMock(createServiceAccountVariables.ServiceAccountId, string(input.CapabilityId))
+	setupGetInternalConfluentUsersHttpMock(createServiceAccountVariables.ServiceAccountId) // Then we check if we have a matching user for that service account
+
+	//ensureServiceAccountAclStep:
+	setupCreateAclHttpMock(createServiceAccountVariables.CapabilityId, input.ClusterId, userAccountId) // Then we create ACLs for the service account
+
+	//ensureServiceAccountClusterAccessStep
+	setupListKeysHTTPMock(string(input.ClusterId), createServiceAccountVariables.ServiceAccountId, 0)                                                            // Then we check if the API key was created
+	setupCreateApiKeyMock(string(input.ClusterId), createServiceAccountVariables.ServiceAccountId, createdClusterApiKey.Username, createdClusterApiKey.Password) // Then we create an API key for the cluster
+
+	//ensureServiceAccountSchemaRegistryAccessStep
+	setupListKeysHTTPMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), createServiceAccountVariables.ServiceAccountId, 0)                                                                          // Check if the api key has already been created
+	setupCreateApiKeyMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), createServiceAccountVariables.ServiceAccountId, createdSchemaRegistryApiKey.Username, createdSchemaRegistryApiKey.Password) // Then we create an API key for the schema registry
+	setupRoleBindingHTTPMock(string(createServiceAccountVariables.ServiceAccountId), testerApp.dbSeedVariables.GetDevelopmentClusterValues())                                                                        // Then we create a role binding for the service account
+
+	err = process.Process(context.Background(), input)
+	require.NoError(t, err)
+
+	// check outbox
+	outboxEntries, err := testerApp.db.GetAllOutboxEntries()
+	require.NoError(t, err)
+	require.Len(t, outboxEntries, 1)
+	require.Equal(t, outboxEntries[0].Topic, testerApp.config.TopicNameKafkaClusterAccessGranted)
+
+	// Check if we actually got the service account in db
+	account, err = testerApp.db.GetServiceAccount(input.CapabilityId)
+	require.NoError(t, err)
+	require.Equal(t, account.Id, createServiceAccountVariables.ServiceAccountId)
 
 	helpers.RequireNoUnmatchedGockMocks(t)
 }

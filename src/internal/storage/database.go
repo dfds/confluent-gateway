@@ -13,6 +13,7 @@ import (
 )
 
 var ErrTopicNotFound = errors.New("requested topic not found")
+var ErrServiceAccountNotFound = errors.New("requested service account not found")
 
 type Database struct {
 	db *gorm.DB
@@ -115,8 +116,8 @@ func (d *Database) GetServiceAccount(capabilityId models.CapabilityId) (*models.
 		Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) { // TODO: do not suppress error, but instead return custom error
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrServiceAccountNotFound
 		}
 
 		return nil, err
