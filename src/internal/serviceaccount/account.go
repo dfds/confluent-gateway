@@ -14,6 +14,8 @@ type accountService struct {
 	repo      serviceAccountRepository
 }
 
+const defaultServiceAccountDescription = "Created by Confluent Gateway"
+
 type serviceAccountRepository interface {
 	GetServiceAccount(capabilityId models.CapabilityId) (*models.ServiceAccount, error)
 	CreateServiceAccount(serviceAccount *models.ServiceAccount) error
@@ -35,10 +37,22 @@ func (h *accountService) GetServiceAccount(capabilityId models.CapabilityId) (*m
 }
 
 func (h *accountService) CreateServiceAccount(capabilityId models.CapabilityId, clusterId models.ClusterId) error {
-	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, string(capabilityId), "Created by Confluent Gateway")
+	serviceAccountId, err := h.confluent.CreateServiceAccount(h.context, string(capabilityId), defaultServiceAccountDescription)
 	if err != nil {
 		return err
 	}
+	return h.CreateServiceAccountDBLink(capabilityId, clusterId, serviceAccountId)
+}
+
+func (h *accountService) FindServiceAccountAndCreateDBLink(capabilityId models.CapabilityId, clusterId models.ClusterId) error {
+	serviceAccountId, err := h.confluent.GetServiceAccount(h.context, string(capabilityId))
+	if err != nil {
+		return err
+	}
+	return h.CreateServiceAccountDBLink(capabilityId, clusterId, serviceAccountId)
+}
+
+func (h *accountService) CreateServiceAccountDBLink(capabilityId models.CapabilityId, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error {
 
 	users, err := h.confluent.GetConfluentInternalUsers(h.context)
 	if err != nil {

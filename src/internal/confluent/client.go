@@ -25,6 +25,8 @@ type CloudApiAccess struct {
 var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
 var ErrMissingSchemaRegistryIds = errors.New("unable to create schema registry role binding: cluster table has any or all missing ids: organization_id, environment_id, schema_registry_id")
 var ErrApiKeyNotFoundForDeletion = errors.New("unable to delete api key: key not found in confluent")
+var ErrFoundExistingServiceAccount = errors.New("unable to create service account, service name already in use")
+var ErrNoServiceAccountFound = errors.New("unable to find requested service account")
 
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
@@ -46,6 +48,14 @@ func NewClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo Cluste
 
 type createServiceAccountResponse struct {
 	Id string `json:"id"`
+}
+
+type listServiceAccountsResponse struct {
+	Data []struct {
+		ID          string `json:"id"`
+		DisplayName string `json:"display_name"`
+		Description string `json:"description"`
+	} `json:"data"`
 }
 
 type createApiKeyResponse struct {
@@ -124,6 +134,9 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	}
 	defer response.Body.Close()
 
+	if response != nil && response.StatusCode == 409 {
+		return "", ErrFoundExistingServiceAccount
+	}
 	if err != nil {
 		return "", err
 	}
@@ -135,6 +148,33 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 	}
 
 	return models.ServiceAccountId(serviceAccountResponse.Id), nil
+}
+
+func (c *Client) GetServiceAccount(ctx context.Context, displayName string) (models.ServiceAccountId, error) {
+	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
+
+	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+	if err != nil {
+		return "", err
+	}
+
+	serviceAccountResponse := &listServiceAccountsResponse{}
+	decodeErr := json.NewDecoder(response.Body).Decode(serviceAccountResponse)
+	if decodeErr != nil {
+		return "", decodeErr
+	}
+
+	for _, accountData := range serviceAccountResponse.Data {
+		if accountData.DisplayName == displayName {
+			return models.ServiceAccountId(accountData.ID), nil
+		}
+	}
+
+	return "", ErrNoServiceAccountFound
 }
 
 func (c *Client) post(ctx context.Context, url string, payload string, apiKey models.ApiKey) (*http.Response, error) {

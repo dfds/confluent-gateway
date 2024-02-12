@@ -8,6 +8,7 @@ import (
 
 type Confluent interface {
 	CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error)
+	GetServiceAccount(ctx context.Context, displayName string) (models.ServiceAccountId, error)
 	CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error
 	CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (models.ApiKey, error)
 	CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (models.ApiKey, error)
