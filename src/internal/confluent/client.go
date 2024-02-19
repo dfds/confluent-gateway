@@ -56,6 +56,9 @@ type listServiceAccountsResponse struct {
 		DisplayName string `json:"display_name"`
 		Description string `json:"description"`
 	} `json:"data"`
+	Metadata struct {
+		Next string `json:"next"`
+	} `json:"metadata"`
 }
 
 type createApiKeyResponse struct {
@@ -147,30 +150,47 @@ func (c *Client) CreateServiceAccount(ctx context.Context, name string, descript
 }
 
 func (c *Client) GetServiceAccount(ctx context.Context, displayName string) (models.ServiceAccountId, error) {
-	url := c.cloudApiAccess.ApiEndpoint + "/iam/v2/service-accounts"
 
-	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-	if err != nil {
-		return "", err
-	}
+	url := fmt.Sprintf("%s/iam/v2/service-accounts?page_size=100", c.cloudApiAccess.ApiEndpoint)
 
-	serviceAccountResponse := &listServiceAccountsResponse{}
-	decodeErr := json.NewDecoder(response.Body).Decode(serviceAccountResponse)
-	if decodeErr != nil {
-		return "", decodeErr
-	}
-
-	for _, accountData := range serviceAccountResponse.Data {
-		if accountData.DisplayName == displayName {
-			return models.ServiceAccountId(accountData.ID), nil
+	for {
+		serviceAccountResponse, err := c.fetchServiceAccounts(ctx, url)
+		if err != nil {
+			return "", err
+		}
+		if len(serviceAccountResponse.Data) == 0 {
+			return "", ErrNoServiceAccountFound
+		}
+		for _, accountData := range serviceAccountResponse.Data {
+			if accountData.DisplayName == displayName {
+				return models.ServiceAccountId(accountData.ID), nil
+			}
+		}
+		url = serviceAccountResponse.Metadata.Next
+		if url == "" {
+			return "", ErrNoServiceAccountFound
 		}
 	}
 
-	return "", ErrNoServiceAccountFound
+}
+
+func (c *Client) fetchServiceAccounts(ctx context.Context, url string) (listServiceAccountsResponse, error) {
+
+	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return listServiceAccountsResponse{}, err
+	}
+	defer response.Body.Close()
+	if err != nil {
+		return listServiceAccountsResponse{}, err
+	}
+
+	serviceAccountResponse := listServiceAccountsResponse{}
+	decodeErr := json.NewDecoder(response.Body).Decode(&serviceAccountResponse)
+	if decodeErr != nil {
+		return listServiceAccountsResponse{}, decodeErr
+	}
+	return serviceAccountResponse, nil
 }
 
 func (c *Client) post(ctx context.Context, url string, payload string, apiKey models.ApiKey) (*http.Response, error) {
