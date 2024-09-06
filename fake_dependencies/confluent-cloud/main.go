@@ -8,9 +8,71 @@ import (
 )
 
 const serviceAccountId = "sa-150405"
+const clusterRegion = "eu-central-1"
+const clusterId = "`lkc-4dzn8`"
+const clusterName = "pkc-e8dzn"
 
 func main() {
 	r := gin.Default()
+
+	r.GET("/kafka/v3/clusters/:cluster_id/topics", func(c *gin.Context) {
+		c.Data(200, "application/json", []byte(`{
+			{
+				"kind": "KafkaTopicList",
+				"metadata": {
+					"self": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics",
+					"next": null
+				},
+				"data": [
+					{
+					"kind": "KafkaTopic",
+					"metadata": {
+						"self": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-command",
+						"resource_name": "crn:///kafka=`+clusterId+`/topic=_confluent-command"
+					},
+					"cluster_id": "`+clusterId+`",
+					"topic_name": "_confluent-command",
+					"is_internal": false,
+					"replication_factor": 3,
+					"partitions_count": 1,
+					"partitions": {
+						"related": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-command/partitions"
+					},
+					"configs": {
+						"related": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-command/configs"
+					},
+					"partition_reassignments": {
+						"related": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-command/partitions/-/reassignment"
+					},
+					"authorized_operations": []
+					},
+					{
+					"kind": "KafkaTopic",
+					"metadata": {
+						"self": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-controlcenter-5-1-2-1-AlertHistoryStore-changelog",
+						"resource_name": "crn:///kafka=`+clusterId+`/topic=_confluent-controlcenter-5-1-2-1-AlertHistoryStore-changelog"
+					},
+					"cluster_id": "`+clusterId+`",
+					"topic_name": "_confluent-controlcenter-5-1-2-1-AlertHistoryStore-changelog",
+					"is_internal": false,
+					"replication_factor": 3,
+					"partitions_count": 3,
+					"partitions": {
+						"related": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-controlcenter-5-1-2-1-AlertHistoryStore-changelog/partitions"
+					},
+					"configs": {
+						"related": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-controlcenter-5-1-2-1-AlertHistoryStore-changelog/configs"
+					},
+					"partition_reassignments": {
+						"related": "https://`+clusterName+`.`+clusterRegion+`.aws.confluent.cloud/kafka/v3/clusters/`+clusterId+`/topics/_confluent-controlcenter-5-1-2-1-AlertHistoryStore-changelog/partitions/-/reassignment"
+					},
+					"authorized_operations": []
+					}
+				]
+			}
+		}`))
+
+	})
 
 	r.POST("/kafka/v3/clusters/:cluster_id/topics", func(c *gin.Context) {
 		c.Status(204)
@@ -95,6 +157,79 @@ func main() {
 			   "id":  100001
 			}
 		`))
+	})
+
+	r.GET("/schemas", func(c *gin.Context) {
+		subjectPrefix := c.Query("subjectPrefix")
+
+		if subjectPrefix == "" {
+			c.Data(200, "application/json", []byte(`{
+				[
+					{
+						"subject": "asdasd-lala",
+						"version": 1,
+						"id": 100022,
+						"schemaType": "JSON",
+						"schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"http://example.com/myURI.schema.json\",\"title\":\"SampleRecord\",\"description\":\"Sample schema to help you get started.\",\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"myField1\":{\"type\":\"integer\",\"description\":\"The integer type is used for integral numbers.\"},\"myField2\":{\"type\":\"number\",\"description\":\"The number type is used for any numeric type, either integers or floating point numbers.\"},\"myField3\":{\"type\":\"string\",\"description\":\"The string type is used for strings of text.\"}}}"
+					},
+					{
+						"subject": "cloudengineering.selfservice.test-EnvelopeOfAdmin",
+						"version": 1,
+						"id": 100019,
+						"schemaType": "JSON",
+						"schema": "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"title\":\"EnvelopeOfAdmin\",\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"messageId\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"data\":{\"$ref\":\"#/definitions/Admin\"}},\"definitions\":{\"Admin\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"name\"],\"properties\":{\"name\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"}}}}}"
+					},
+					{
+						"subject": "cloudengineering.selfservice.test-EnvelopeOfAdmin",
+						"version": 2,
+						"id": 100020,
+						"schemaType": "JSON",
+						"schema": "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"additionalProperties\":false,\"definitions\":{\"Admin\":{\"additionalProperties\":false,\"properties\":{\"description\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}},\"properties\":{\"data\":{\"$ref\":\"#/definitions/Admin\"},\"messageId\":{\"type\":\"string\"},\"type\":{\"type\":\"string\",\"pattern\":\"admin\"}},\"title\":\"EnvelopeOfAdmin\",\"type\":\"object\"}"
+					},
+					{
+						"subject": "cloudengineering.selfservice.test-EnvelopeOfUser",
+						"version": 1,
+						"id": 100018,
+						"schemaType": "JSON",
+						"schema": "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"title\":\"EnvelopeOfUser\",\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"messageId\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"data\":{\"$ref\":\"#/definitions/User\"}},\"definitions\":{\"User\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"name\",\"favorite_color\"],\"properties\":{\"name\":{\"type\":\"string\"},\"favorite_color\":{\"type\":\"string\"},\"favorite_number\":{\"type\":\"integer\",\"format\":\"int64\"}}}}}"
+					},
+					{
+						"subject": "test-01",
+						"version": 1,
+						"id": 100001,
+						"schema": "{\"type\":\"record\",\"name\":\"sampleRecord\",\"namespace\":\"com.mycorp.mynamespace\",\"doc\":\"Sample schema to help you get started.\",\"fields\":[{\"name\":\"my_field1\",\"type\":\"int\",\"doc\":\"The int type is a 32-bit signed integer.\"},{\"name\":\"my_field2\",\"type\":\"double\",\"doc\":\"The double type is a double precision (64-bit) IEEE 754 floating-point number.\"},{\"name\":\"my_field3\",\"type\":\"string\",\"doc\":\"The string is a unicode character sequence.\"}]}"
+					},
+					{
+						"subject": "x-value",
+						"version": 1,
+						"id": 100001,
+						"schema": "{\"type\":\"record\",\"name\":\"sampleRecord\",\"namespace\":\"com.mycorp.mynamespace\",\"doc\":\"Sample schema to help you get started.\",\"fields\":[{\"name\":\"my_field1\",\"type\":\"int\",\"doc\":\"The int type is a 32-bit signed integer.\"},{\"name\":\"my_field2\",\"type\":\"double\",\"doc\":\"The double type is a double precision (64-bit) IEEE 754 floating-point number.\"},{\"name\":\"my_field3\",\"type\":\"string\",\"doc\":\"The string is a unicode character sequence.\"}]}"
+					}
+				]
+	
+			}`))
+		} else {
+			c.Data(200, "application/json", []byte(`{
+				[
+					{
+						"subject": "`+subjectPrefix+`.asdasd-lala",
+						"version": 1,
+						"id": 100022,
+						"schemaType": "JSON",
+						"schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"http://example.com/myURI.schema.json\",\"title\":\"SampleRecord\",\"description\":\"Sample schema to help you get started.\",\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"myField1\":{\"type\":\"integer\",\"description\":\"The integer type is used for integral numbers.\"},\"myField2\":{\"type\":\"number\",\"description\":\"The number type is used for any numeric type, either integers or floating point numbers.\"},\"myField3\":{\"type\":\"string\",\"description\":\"The string type is used for strings of text.\"}}}"
+					},
+					{
+						"subject": "`+subjectPrefix+`.selfservice.test-EnvelopeOfAdmin",
+						"version": 1,
+						"id": 100019,
+						"schemaType": "JSON",
+						"schema": "{\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"title\":\"EnvelopeOfAdmin\",\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"messageId\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"data\":{\"$ref\":\"#/definitions/Admin\"}},\"definitions\":{\"Admin\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"name\"],\"properties\":{\"name\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"}}}}}"
+					}
+				]
+	
+			}`))
+		}
+
 	})
 
 	r.POST("/aws-ssm-put", func(c *gin.Context) {
