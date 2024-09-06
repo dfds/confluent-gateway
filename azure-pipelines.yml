@@ -20,7 +20,7 @@ stages:
               go test $(go list ./... | grep -v '/functional_tests')
             displayName: 'Run unit tests'
           - bash: |
-              docker-compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
+              docker compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
             displayName: 'Docker compose postgres'
           - task: Go@0
             inputs:

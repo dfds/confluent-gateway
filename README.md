@@ -12,7 +12,7 @@ These commands assume the working directory to be the root of the repository.
 
 1. start dependencies using
 ```
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 This will start a fake Confluent Cloud (::5051), postgres (::5432), kafka (::9092), and some supporting containers.
