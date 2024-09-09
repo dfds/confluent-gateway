@@ -17,7 +17,7 @@ services:
     environment:
     - LOCAL_DEVELOPMENT=1           # will CREATE DATABASE ${PGDATABASE} every time
     - PGDATABASE=db                 # database name
-    - PGHOST=database               # docker-compose service name
+    - PGHOST=database               # docker compose service name
     - PGUSER=postgres               # same as above
     - PGPASSWORD=p                  # same as above
     - PGSSLMODE=disable             # ignore SSLMODE for local development
