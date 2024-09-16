@@ -3,17 +3,23 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	_ "github.com/dfds/confluent-gateway/cmd/main/docs"
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/internal/confluent"
 	"github.com/dfds/confluent-gateway/internal/create"
 	del "github.com/dfds/confluent-gateway/internal/delete"
+	"github.com/dfds/confluent-gateway/internal/handlers"
 	"github.com/dfds/confluent-gateway/internal/http/metrics"
+	"github.com/dfds/confluent-gateway/internal/router"
 	schema "github.com/dfds/confluent-gateway/internal/schema"
 	"github.com/dfds/confluent-gateway/internal/serviceaccount"
+	"github.com/dfds/confluent-gateway/internal/services"
 	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/internal/vault"
 	"github.com/dfds/confluent-gateway/logging"
@@ -58,7 +64,11 @@ func main() {
 		messaging.RegisterMessageHandler(config.TopicNameKafkaClusterAccess, "cluster-access-requested", serviceaccount.NewAccessRequestedHandler(createServiceAccountProcess), &serviceaccount.ServiceAccountAccessRequested{}),
 	))
 
-	m := NewMain(logger, config, consumer)
+	// API setup
+	schemaService := services.NewSchemaService(logger, confluentClient)
+	handler := handlers.NewHandler(ctx, logger, schemaService)
+
+	m := NewMain(logger, config, consumer, handler)
 
 	logger.Information("Running")
 
@@ -81,13 +91,18 @@ type Main struct {
 	Logger        logging.Logger
 	Consumer      messaging.Consumer
 	MetricsServer *metrics.Server
+	HttpServer    *http.Server
 }
 
-func NewMain(logger logging.Logger, config *configuration.Configuration, consumer messaging.Consumer) *Main {
+func NewMain(logger logging.Logger, config *configuration.Configuration, consumer messaging.Consumer, handler *handlers.Handler) *Main {
 	return &Main{
 		Logger:        logger,
 		Consumer:      consumer,
 		MetricsServer: metrics.NewServer(logger, config.IsProduction()),
+		HttpServer: &http.Server{
+			Addr:    ":8080",
+			Handler: router.SetupRoutes(handler),
+		},
 	}
 }
 
@@ -96,9 +111,30 @@ func (m *Main) Run(ctx context.Context) error {
 
 	m.RunMetricsServer(g, gCtx)
 	m.RunConsumer(g, gCtx)
+	m.RunHttpServer(g, gCtx)
 
 	// wait for context or all go routines to finish
 	return g.Wait()
+}
+
+func (m *Main) RunHttpServer(g *errgroup.Group, ctx context.Context) {
+	g.Go(func() error {
+		m.Logger.Information("Starting HTTP server on :8080")
+		if err := m.HttpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			return err
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		<-ctx.Done()
+		m.Logger.Information("Shutting down HTTP server...")
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return m.HttpServer.Shutdown(shutdownCtx) // Gracefully shutdown
+	})
 }
 
 func (m *Main) RunMetricsServer(g *errgroup.Group, ctx context.Context) {

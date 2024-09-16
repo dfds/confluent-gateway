@@ -16,10 +16,13 @@ import (
 )
 
 type CloudApiAccess struct {
-	ApiEndpoint     string
-	Username        string
-	Password        string
-	UserApiEndpoint string
+	ApiEndpoint                 string
+	Username                    string
+	Password                    string
+	UserApiEndpoint             string
+	StreamGovernanceApiEndpoint string
+	StreamGovernanceApiUsername string
+	StreamGovernanceApiPassword string
 }
 
 var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
@@ -32,6 +35,10 @@ func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
 }
 
+func (a *CloudApiAccess) StreamGovernanceApiKey() models.ApiKey {
+	return models.ApiKey{Username: a.StreamGovernanceApiUsername, Password: a.StreamGovernanceApiPassword}
+}
+
 type Clusters interface {
 	Get(clusterId models.ClusterId) (*models.Cluster, error)
 }
@@ -42,7 +49,26 @@ type Client struct {
 	clusters       Clusters
 }
 
-func NewClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo Clusters) *Client {
+type ConfluentClient interface {
+	ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error)
+	CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error)
+	GetServiceAccount(ctx context.Context, displayName string) (models.ServiceAccountId, error)
+	CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error
+	CreateClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (models.ApiKey, error)
+	CreateSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) (models.ApiKey, error)
+	DeleteClusterApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error
+	DeleteSchemaRegistryApiKey(ctx context.Context, clusterId models.ClusterId, serviceAccountId models.ServiceAccountId) error
+	CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error
+	CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error
+	DeleteTopic(ctx context.Context, clusterId models.ClusterId, topicName string) error
+	GetConfluentInternalUsers(ctx context.Context) ([]models.ConfluentInternalUser, error)
+	RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version int32) error
+	DeleteSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version string) error
+	CountClusterApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error)
+	CountSchemaRegistryApiKeys(ctx context.Context, serviceAccountId models.ServiceAccountId, clusterId models.ClusterId) (int, error)
+}
+
+func NewClient(logger logging.Logger, cloudApiAccess CloudApiAccess, repo Clusters) ConfluentClient {
 	return &Client{logger: logger, cloudApiAccess: cloudApiAccess, clusters: repo}
 }
 
@@ -119,6 +145,33 @@ type listApiKeysResponse struct {
 
 type createRoleBindingResponse struct {
 	Id string `json:"id"`
+}
+
+func (c *Client) ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error) {
+
+	url := c.cloudApiAccess.StreamGovernanceApiEndpoint + "/schemas"
+
+	if subjectPrefix != "" {
+		url += "?subjectPrefix=" + subjectPrefix
+	}
+
+	response, err := c.get(ctx, url, c.cloudApiAccess.StreamGovernanceApiKey())
+
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, errors.New("failed to fetch schemas: " + response.Status)
+	}
+
+	var schemas []models.Schema
+	if err := json.NewDecoder(response.Body).Decode(&schemas); err != nil {
+		return nil, err
+	}
+
+	return schemas, nil
 }
 
 func (c *Client) CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error) {
