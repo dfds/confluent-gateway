@@ -2,7 +2,7 @@
 [![Build Status](https://dfds.visualstudio.com/CloudEngineering/_apis/build/status%2Fconfluent-gateway)][https://dfds.visualstudio.com/CloudEngineering/_apis/build/status%2Fconfluent-gateway]
 
 A dedicated service in Golang made for interfacing with the third party service Confluent Cloud.
-Communication with this service is solely through Kafka messages.
+Communication with this service is through Kafka messages. There is also an API.
 
 ## How to run
 The following steps describe how to start an instance of the confluent gateway on your local machine.
@@ -25,7 +25,7 @@ If it fails it's usually because the ports are already in use (often by other do
 make run
 ```
 to start the confluent gateway.
-The confluent gateway uses kafka to listen for incoming requests and does not expose a restful interface.
+The confluent gateway uses kafka to listen for incoming requests. It also exposes an API to support some queries.
 
 ## Checks and tests
 To quickly check for issues simply run ```make build``` and ```make tests```.
