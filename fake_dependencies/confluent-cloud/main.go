@@ -163,7 +163,7 @@ func main() {
 		subjectPrefix := c.Query("subjectPrefix")
 
 		if subjectPrefix == "" {
-			c.Data(200, "application/json", []byte(`{
+			c.Data(200, "application/json", []byte(`
 				[
 					{
 						"subject": "asdasd-lala",
@@ -206,10 +206,9 @@ func main() {
 						"schema": "{\"type\":\"record\",\"name\":\"sampleRecord\",\"namespace\":\"com.mycorp.mynamespace\",\"doc\":\"Sample schema to help you get started.\",\"fields\":[{\"name\":\"my_field1\",\"type\":\"int\",\"doc\":\"The int type is a 32-bit signed integer.\"},{\"name\":\"my_field2\",\"type\":\"double\",\"doc\":\"The double type is a double precision (64-bit) IEEE 754 floating-point number.\"},{\"name\":\"my_field3\",\"type\":\"string\",\"doc\":\"The string is a unicode character sequence.\"}]}"
 					}
 				]
-	
-			}`))
+			`))
 		} else {
-			c.Data(200, "application/json", []byte(`{
+			c.Data(200, "application/json", []byte(`
 				[
 					{
 						"subject": "`+subjectPrefix+`.asdasd-lala",
@@ -227,7 +226,7 @@ func main() {
 					}
 				]
 	
-			}`))
+			`))
 		}
 
 	})

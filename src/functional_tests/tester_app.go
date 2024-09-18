@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/dfds/confluent-gateway/configuration"
 	"github.com/dfds/confluent-gateway/functional_tests/helpers"
 	"github.com/dfds/confluent-gateway/functional_tests/mocks"
@@ -58,12 +59,12 @@ type TesterApp struct {
 	logger          logging.Logger
 	config          *configuration.Configuration
 	db              *mocks.Database
-	confluentClient *confluent.Client
+	confluentClient confluent.ConfluentClient
 	vaultClient     *vault.Vault
 	dbSeedVariables *SeedVariables
 }
 
-func newTesterApp(logger logging.Logger, config *configuration.Configuration, db *mocks.Database, confluentClient *confluent.Client, vaultClient *vault.Vault, seedVariables *SeedVariables) *TesterApp {
+func newTesterApp(logger logging.Logger, config *configuration.Configuration, db *mocks.Database, confluentClient confluent.ConfluentClient, vaultClient *vault.Vault, seedVariables *SeedVariables) *TesterApp {
 	return &TesterApp{logger: logger,
 		config:          config,
 		db:              db,

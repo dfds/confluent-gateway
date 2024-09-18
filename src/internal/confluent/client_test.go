@@ -3,16 +3,111 @@ package confluent
 import (
 	"context"
 	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
-	"github.com/dfds/confluent-gateway/internal/models"
-	"github.com/dfds/confluent-gateway/logging"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/dfds/confluent-gateway/internal/models"
+	"github.com/dfds/confluent-gateway/logging"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestListSchemas(t *testing.T) {
+	expectedSchemas := []models.Schema{
+		{
+			ID:         1,
+			Subject:    "subject-1",
+			Version:    1,
+			SchemaType: "AVRO",
+			Schema:     `{"type": "record", "name": "TestRecord", "fields": [{"name": "field1", "type": "string"}]}`,
+			References: []models.Reference{
+				{
+					Name:    "ref1",
+					Subject: "other-subject",
+					Version: 1,
+				},
+			},
+			Metadata: models.Metadata{
+				Tags: map[string][]string{
+					"env": {"test"},
+				},
+				Properties: map[string]string{
+					"key1": "value1",
+				},
+				Sensitive: []string{"password"},
+			},
+			RuleSet: models.RuleSet{
+				MigrationRules: []models.Rule{
+					{
+						Name:      "rule1",
+						Doc:       "Migration rule",
+						Kind:      "kind1",
+						Mode:      "STRICT",
+						Type:      "type1",
+						Tags:      []string{"tag1", "tag2"},
+						Params:    models.Params{Property1: "p1", Property2: "p2"},
+						Expr:      "expr1",
+						OnSuccess: "success",
+						OnFailure: "failure",
+						Disabled:  false,
+					},
+				},
+				DomainRules: []models.Rule{},
+			},
+		},
+		{
+			ID:         2,
+			Subject:    "subject-2",
+			Version:    2,
+			SchemaType: "JSON",
+			Schema:     `{"type": "record", "name": "AnotherRecord", "fields": [{"name": "field1", "type": "int"}]}`,
+			References: nil,
+			Metadata: models.Metadata{
+				Tags:       map[string][]string{},
+				Properties: map[string]string{},
+				Sensitive:  []string{},
+			},
+			RuleSet: models.RuleSet{
+				MigrationRules: nil,
+				DomainRules:    nil,
+			},
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("expected GET request, got %s", r.Method)
+		}
+		if r.URL.Path != "/schemas" {
+			t.Errorf("expected request to /schemas, got %s", r.URL.Path)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(expectedSchemas)
+	}))
+	defer server.Close()
+
+	stubClient := Client{
+		logger: logging.NilLogger(),
+		cloudApiAccess: CloudApiAccess{
+			StreamGovernanceApiEndpoint: server.URL,
+			StreamGovernanceApiUsername: "dummy",
+			StreamGovernanceApiPassword: "dummy",
+		},
+		clusters: &clustersStub{},
+	}
+
+	// Act
+	schemas, err := stubClient.ListSchemas(context.TODO(), "")
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, expectedSchemas, schemas)
+}
 
 func TestCreateTopicCallsExpectedClusterAdminEndpoint(t *testing.T) {
 	tests := []string{"foo", "bar", "baz", "qux"}

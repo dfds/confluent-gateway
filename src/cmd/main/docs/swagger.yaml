@@ -1,0 +1,150 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Metadata:
+    properties:
+      properties:
+        additionalProperties:
+          type: string
+        type: object
+      sensitive:
+        items:
+          type: string
+        type: array
+      tags:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
+  models.Params:
+    properties:
+      property1:
+        type: string
+      property2:
+        type: string
+    type: object
+  models.Reference:
+    properties:
+      name:
+        type: string
+      subject:
+        type: string
+      version:
+        type: integer
+    type: object
+  models.Rule:
+    properties:
+      disabled:
+        type: boolean
+      doc:
+        type: string
+      expr:
+        type: string
+      kind:
+        type: string
+      mode:
+        type: string
+      name:
+        type: string
+      onFailure:
+        type: string
+      onSuccess:
+        type: string
+      params:
+        $ref: '#/definitions/models.Params'
+      tags:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+  models.RuleSet:
+    properties:
+      domainRules:
+        items:
+          $ref: '#/definitions/models.Rule'
+        type: array
+      migrationRules:
+        items:
+          $ref: '#/definitions/models.Rule'
+        type: array
+    type: object
+  models.Schema:
+    properties:
+      id:
+        type: integer
+      metadata:
+        $ref: '#/definitions/models.Metadata'
+      references:
+        items:
+          $ref: '#/definitions/models.Reference'
+        type: array
+      ruleSet:
+        $ref: '#/definitions/models.RuleSet'
+      schema:
+        type: string
+      schemaType:
+        type: string
+      subject:
+        type: string
+      version:
+        type: integer
+    type: object
+info:
+  contact:
+    email: cloud.engineering@dfds.com
+    name: Cloud Engineering
+  description: This is a DFDS REST API for interacting with the Confluent Cloud API
+  title: Confluent Gateway API
+  version: "0.1"
+paths:
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns health status of the API
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health endpoint
+      tags:
+      - health
+  /schemas:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of schemas from the Confluent Cloud API.
+      parameters:
+      - description: Subject prefix to filter schemas by
+        in: query
+        name: subjectPrefix
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Schema'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List schemas from Confluent Cloud
+      tags:
+      - schemas
+swagger: "2.0"
