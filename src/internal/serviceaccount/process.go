@@ -90,6 +90,7 @@ func ensureServiceAccountStep(step *StepContext) error {
 
 		err := step.CreateServiceAccount()
 		if errors.Is(confluent.ErrFoundExistingServiceAccount, err) {
+			step.LogWarning("found dangling service account for CapabilityId {CapabilityId}, attempting to connect confluent cloud service account with db service account", string(step.GetInputCapabilityId()))
 			return step.CreateServiceAccountDbLink()
 		}
 		if err != nil {

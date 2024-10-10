@@ -45,7 +45,7 @@ func setupCreateServiceAccountFailureExistingDisplayNameHttpMock(processInput se
 
 }
 
-func setupListServiceAccountsHttpMock(serviceAccountId models.ServiceAccountId, displayName string) {
+func setupListServiceAccountsWithPageTokenHttpMock(token string, serviceAccountId models.ServiceAccountId, displayName string) {
 	serviceAccounts := fmt.Sprintf(`{
 		"data": [
 			{
@@ -59,11 +59,33 @@ func setupListServiceAccountsHttpMock(serviceAccountId models.ServiceAccountId, 
 		]
 		}`, serviceAccountId, displayName)
 
-	gock.New(testerApp.config.ConfluentCloudApiUrl).
-		Get("/iam/v2/service-accounts").
+	gock.New(token).
+		Get("").
 		BasicAuth(testerApp.config.ConfluentCloudApiUserName, testerApp.config.ConfluentCloudApiPassword).
 		Reply(200).
 		BodyString(serviceAccounts)
+}
+
+func setupConnectingListServiceAccountsHttpMock(pageToken string) {
+	serviceAccounts := fmt.Sprintf(`{
+		"data": [
+			{
+				"id": "not-match",
+				"display_name": "not-match-name"
+			}
+		],
+		"metadata":{
+			"next": "%s"
+		}
+		}`, pageToken)
+
+	gock.New(testerApp.config.ConfluentCloudApiUrl).
+		Get("/iam/v2/service-accounts").
+		//PathParam("page_size", "100").
+		BasicAuth(testerApp.config.ConfluentCloudApiUserName, testerApp.config.ConfluentCloudApiPassword).
+		Reply(200).
+		BodyString(serviceAccounts)
+
 }
 
 func setupGetInternalConfluentUsersHttpMock(serviceAccountId models.ServiceAccountId) {
@@ -290,7 +312,9 @@ func TestCreateServiceAccountWithExistingServiceAccountNameProcess(t *testing.T)
 
 	//ensureServiceAccountStep:
 	setupCreateServiceAccountFailureExistingDisplayNameHttpMock(input) // First we create a service account that fails
-	setupListServiceAccountsHttpMock(createServiceAccountVariables.ServiceAccountId, string(input.CapabilityId))
+	pageToken := fmt.Sprintf("%s/iam/v2/service-accounts?page_token=some-token", testerApp.config.ConfluentCloudApiUrl)
+	setupConnectingListServiceAccountsHttpMock(pageToken)
+	setupListServiceAccountsWithPageTokenHttpMock(pageToken, createServiceAccountVariables.ServiceAccountId, string(input.CapabilityId))
 	setupGetInternalConfluentUsersHttpMock(createServiceAccountVariables.ServiceAccountId) // Then we check if we have a matching user for that service account
 
 	//ensureServiceAccountAclStep:
@@ -305,6 +329,7 @@ func TestCreateServiceAccountWithExistingServiceAccountNameProcess(t *testing.T)
 	setupCreateApiKeyMock(string(testerApp.dbSeedVariables.DevelopmentSchemaRegistryId), createServiceAccountVariables.ServiceAccountId, createdSchemaRegistryApiKey.Username, createdSchemaRegistryApiKey.Password) // Then we create an API key for the schema registry
 	setupRoleBindingHTTPMock(string(createServiceAccountVariables.ServiceAccountId), testerApp.dbSeedVariables.GetDevelopmentClusterValues())                                                                        // Then we create a role binding for the service account
 
+	helpers.RequireNoUnmatchedGockMocks(t)
 	err = process.Process(context.Background(), input)
 	require.NoError(t, err)
 

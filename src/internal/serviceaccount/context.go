@@ -1,8 +1,10 @@
 package serviceaccount
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dfds/confluent-gateway/internal/models"
+	"github.com/dfds/confluent-gateway/internal/storage"
 	"github.com/dfds/confluent-gateway/logging"
 	"github.com/dfds/confluent-gateway/messaging"
 )
@@ -62,7 +64,9 @@ func (c *StepContext) LogWarning(format string, args ...string) {
 func (c *StepContext) HasServiceAccount() bool {
 	account, err := c.account.GetServiceAccount(c.input.CapabilityId)
 	if err != nil {
-		c.LogError(err, fmt.Sprintf("encountered error when checking if ServiceAccount exists for CapabilityId %s", c.input.CapabilityId))
+		if !errors.Is(err, storage.ErrServiceAccountNotFound) {
+			c.LogError(err, fmt.Sprintf("encountered error when checking if ServiceAccount exists for CapabilityId %s", c.input.CapabilityId))
+		}
 		return false
 	}
 	return account != nil
