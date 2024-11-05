@@ -31,20 +31,15 @@ build:
 # go build -ldflags='-extldflags=-static -w -s' -tags netgo,osusergo
 
 test: tests
-
-tests:
-ifdef RICHGO
-	@cd src && richgo test \
-		-v \
-		-cover \
-		./...
-else
-	@cd src && go test \
-		-v \
-		-cover \
-		./...
-endif
-
+tests: test-setup test-scripts test-teardown
+test-scripts:
+	-@cd src && go test -v -cover github.com/dfds/confluent-gateway/functional_tests
+	-@cd src && go test -v -cover ./...
+test-setup:
+	docker compose -f azure_pipelines/docker-compose.functional_tests.yml up -d --build
+	@sleep 3
+test-teardown:
+	docker compose -f azure_pipelines/docker-compose.functional_tests.yml down
 
 container:
 	@docker build -t $(APP_IMAGE_NAME) .
