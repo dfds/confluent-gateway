@@ -52,3 +52,5 @@ type Schema struct {
 	Metadata   Metadata    `json:"metadata"`
 	RuleSet    RuleSet     `json:"ruleSet"`
 }
+
+

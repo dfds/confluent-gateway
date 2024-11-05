@@ -102,7 +102,7 @@ func TestListSchemas(t *testing.T) {
 	}
 
 	// Act
-	schemas, err := stubClient.ListSchemas(context.TODO(), "")
+	schemas, err := stubClient.ListSchemas(context.TODO(), "", "")
 
 	// Assert
 	assert.NoError(t, err)

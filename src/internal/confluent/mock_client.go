@@ -13,7 +13,7 @@ type MockClient struct {
 	mock.Mock
 }
 
-func (m *MockClient) ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error) {
-	args := m.Called(ctx, subjectPrefix)
+func (m *MockClient) ListSchemas(ctx context.Context, subjectPrefix string, clusterId models.ClusterId) ([]models.Schema, error) {
+	args := m.Called(ctx, subjectPrefix, clusterId)
 	return args.Get(0).([]models.Schema), args.Error(1)
 }

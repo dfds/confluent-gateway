@@ -9,7 +9,7 @@ import (
 )
 
 type SchemaServiceInterface interface {
-	ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error)
+	ListSchemas(ctx context.Context, subjectPrefix string, clusterId models.ClusterId) ([]models.Schema, error)
 }
 
 type SchemaService struct {
@@ -23,8 +23,8 @@ func NewSchemaService(logger logging.Logger, confluentClient confluent.Confluent
 	}
 }
 
-func (s *SchemaService) ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error) {
-	schemas, err := s.ConfluentClient.ListSchemas(ctx, subjectPrefix)
+func (s *SchemaService) ListSchemas(ctx context.Context, subjectPrefix string, clusterId models.ClusterId) ([]models.Schema, error) {
+	schemas, err := s.ConfluentClient.ListSchemas(ctx, subjectPrefix, clusterId)
 
 	if err != nil {
 		s.Logger.Error(err, "failed to list schemas")

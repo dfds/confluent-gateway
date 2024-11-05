@@ -50,7 +50,7 @@ type Client struct {
 }
 
 type ConfluentClient interface {
-	ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error)
+	ListSchemas(ctx context.Context, subjectPrefix string, clusterId models.ClusterId) ([]models.Schema, error)
 	CreateServiceAccount(ctx context.Context, name string, description string) (models.ServiceAccountId, error)
 	GetServiceAccount(ctx context.Context, displayName string) (models.ServiceAccountId, error)
 	CreateACLEntry(ctx context.Context, clusterId models.ClusterId, userAccountId models.UserAccountId, entry models.AclDefinition) error
@@ -147,15 +147,27 @@ type createRoleBindingResponse struct {
 	Id string `json:"id"`
 }
 
-func (c *Client) ListSchemas(ctx context.Context, subjectPrefix string) ([]models.Schema, error) {
+func (c *Client) ListSchemas(ctx context.Context, subjectPrefix string, clusterId models.ClusterId) ([]models.Schema, error) {
+	cluster, err := c.clusters.Get(clusterId)
 
-	url := c.cloudApiAccess.StreamGovernanceApiEndpoint + "/schemas"
-
-	if subjectPrefix != "" {
-		url += "?subjectPrefix=" + subjectPrefix
+	if err != nil {
+		return nil, err
 	}
 
-	response, err := c.get(ctx, url, c.cloudApiAccess.StreamGovernanceApiKey())
+	if len(cluster.SchemaRegistryApiEndpoint) == 0 {
+		return nil, ErrNoSchemaRegistry
+	}
+
+	url := fmt.Sprintf("%s/schemas", cluster.SchemaRegistryApiEndpoint)
+
+	/*
+		ignore subjectPrefix for now
+		if subjectPrefix != "" {
+		  url += "?subjectPrefix=" + subjectPrefix
+		}
+	*/
+
+	response, err := c.get(ctx, url, cluster.SchemaRegistryApiKey)
 
 	if err != nil {
 		return nil, err
