@@ -84,8 +84,8 @@ func TestListSchemas(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Errorf("expected GET request, got %s", r.Method)
 		}
-		if r.URL.Path != fmt.Sprintf("/clusters/%s/schemas", stubClusterId) {
-			t.Errorf("expected request to /clusters/%s/schemas, got %s", stubClusterId, r.URL.Path)
+		if r.URL.Path != "/schemas" {
+			t.Errorf("expected request to /schemas, got %s", r.URL.Path)
 		}
 
 		w.WriteHeader(http.StatusOK)
