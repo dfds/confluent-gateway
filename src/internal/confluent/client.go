@@ -151,7 +151,7 @@ func (c *Client) ListSchemas(ctx context.Context, subjectPrefix string, clusterI
 		return nil, ErrNoSchemaRegistry
 	}
 
-	url := fmt.Sprintf("%s/schemas", cluster.SchemaRegistryApiEndpoint)
+	url := fmt.Sprintf("%s/clusters/%s/schemas", cluster.SchemaRegistryApiEndpoint, clusterId)
 
 	/*
 		ignore subjectPrefix for now

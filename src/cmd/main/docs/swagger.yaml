@@ -121,7 +121,7 @@ paths:
       summary: Health endpoint
       tags:
       - health
-  /schemas:
+  /cluster/{clusterId}/schemas:
     get:
       consumes:
       - application/json

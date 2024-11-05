@@ -78,12 +78,14 @@ func TestListSchemas(t *testing.T) {
 		},
 	}
 
+	stubClusterId := models.ClusterId("test-cluster-id")
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			t.Errorf("expected GET request, got %s", r.Method)
 		}
-		if r.URL.Path != "/schemas" {
-			t.Errorf("expected request to /schemas, got %s", r.URL.Path)
+		if r.URL.Path != fmt.Sprintf("/clusters/%s/schemas", stubClusterId) {
+			t.Errorf("expected request to /clusters/%s/schemas, got %s", stubClusterId, r.URL.Path)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -91,18 +93,26 @@ func TestListSchemas(t *testing.T) {
 	}))
 	defer server.Close()
 
-	stubClient := Client{
-		logger: logging.NilLogger(),
-		cloudApiAccess: CloudApiAccess{
-			StreamGovernanceApiEndpoint: server.URL,
-			StreamGovernanceApiUsername: "dummy",
-			StreamGovernanceApiPassword: "dummy",
+	stubCluster := models.Cluster{
+		ClusterId:        stubClusterId,
+		Name:             "dummy",
+		AdminApiEndpoint: server.URL,
+		AdminApiKey: models.ApiKey{
+			Username: "dummy",
+			Password: "dummy",
 		},
-		clusters: &clustersStub{},
+		SchemaRegistryApiEndpoint: server.URL,
+		BootstrapEndpoint:         "dummy",
+	}
+
+	stubClient := Client{
+		logger:         logging.NilLogger(),
+		cloudApiAccess: CloudApiAccess{},
+		clusters:       &clustersStub{Cluster: stubCluster},
 	}
 
 	// Act
-	schemas, err := stubClient.ListSchemas(context.TODO(), "", "")
+	schemas, err := stubClient.ListSchemas(context.TODO(), "", stubClusterId)
 
 	// Assert
 	assert.NoError(t, err)

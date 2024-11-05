@@ -25,9 +25,9 @@ func TestListSchemas_Success(t *testing.T) {
 		{ID: 2, Subject: "Schema2"},
 	}
 
-	mockService.On("ListSchemas", mock.Anything, "", "").Return(schemas, nil)
+	mockService.On("ListSchemas", mock.Anything, "", mock.Anything).Return(schemas, nil)
 
-	req, err := http.NewRequest(http.MethodGet, "/schemas", nil)
+	req, err := http.NewRequest(http.MethodGet, "/clusters/abc-1234/schemas", nil)
 	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -50,9 +50,9 @@ func TestListSchemas_Error(t *testing.T) {
 
 	mockLogger.On("Error", mock.Anything, "failed to list schemas", mock.Anything).Return(nil)
 
-	mockService.On("ListSchemas", mock.Anything, "", "").Return(nil, errors.New("failed to list schemas"))
+	mockService.On("ListSchemas", mock.Anything, "", mock.Anything).Return(nil, errors.New("failed to list schemas"))
 
-	req, err := http.NewRequest(http.MethodGet, "/schemas", nil)
+	req, err := http.NewRequest(http.MethodGet, "/clusters/abc-1234/schemas", nil)
 	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()

@@ -1,3 +1,3 @@
 id,name,admin_api_endpoint,admin_api_key_username,admin_api_key_password,bootstrap_endpoint,schema_registry_api_endpoint,schema_registry_api_key_username,schema_registry_api_key_password,organization_id,environment_id,schema_registry_id
-abc-1234,prod,http://localhost:5051,admin_user,admin_pass,localhost:9092,http://selfservice-setup-fake-confluent-cloud-1:8080,admin_user,admin_pass,dfds_org,prod_env,lsrc-prod12
-def-5678,test,http://localhost:5051,admin_user,admin_pass,localhost:9092,http://selfservice-setup-fake-confluent-cloud-1:8080,admin_user,admin_pass,dfds_org,test_env,lsrc-test12
+abc-1234,prod,http://localhost:5051,admin_user,admin_pass,localhost:9092,http://localhost:5051,admin_user,admin_pass,dfds_org,prod_env,lsrc-prod12
+def-5678,test,http://localhost:5051,admin_user,admin_pass,localhost:9092,http://localhost:5051,admin_user,admin_pass,dfds_org,test_env,lsrc-test12

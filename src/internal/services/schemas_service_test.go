@@ -32,7 +32,7 @@ func TestListSchemas(t *testing.T) {
 	}
 
 	// Test 1: Successful listing of schemas
-	mockClient.On("ListSchemas", mock.Anything, "", "").Return(expectedSchemas, nil)
+	mockClient.On("ListSchemas", mock.Anything, "", mock.Anything).Return(expectedSchemas, nil)
 
 	schemas, err := schemaService.ListSchemas(context.TODO(), "", "")
 	assert.Equal(t, expectedSchemas, schemas)

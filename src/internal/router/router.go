@@ -21,9 +21,9 @@ func SetupRoutes(handler *handlers.Handler) *http.ServeMux {
 		handlers.Health(w, r)
 	})
 
-	mux.Handle("/swagger/", httpSwagger.WrapHandler)
+	mux.Handle("/swagger", httpSwagger.WrapHandler)
 
-	mux.HandleFunc("GET /clusters/{clusterId}/schemas/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /clusters/{clusterId}/schemas", func(w http.ResponseWriter, r *http.Request) {
 		clusterId := models.ClusterId(r.PathValue("clusterId"))
 
 		subjectPrefix := r.URL.Query().Get("subjectPrefix")

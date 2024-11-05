@@ -22,7 +22,7 @@ func TestSetupRoutes(t *testing.T) {
 	mockSchemaService := &mocks.MockSchemaService{}
 
 	// Mock the ListSchemas method in the SchemaService
-	mockSchemaService.On("ListSchemas", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+	mockSchemaService.On("ListSchemas", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil, nil)
 
 	// Create a new handler with the mock services
 	handler := handlers.NewHandler(context.Background(), mockLogger, mockSchemaService)
@@ -31,7 +31,7 @@ func TestSetupRoutes(t *testing.T) {
 	router := SetupRoutes(handler)
 
 	// Create a new HTTP request to the /schemas route
-	req, err := http.NewRequest("GET", "/schemas", nil)
+	req, err := http.NewRequest("GET", "/clusters/abc-1234/schemas", nil)
 	require.NoError(t, err)
 
 	// Record the response

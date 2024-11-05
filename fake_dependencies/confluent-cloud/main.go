@@ -159,7 +159,7 @@ func main() {
 		`))
 	})
 
-	r.GET("/schemas", func(c *gin.Context) {
+	r.GET("/cluster/:clusterId/schemas", func(c *gin.Context) {
 		subjectPrefix := c.Query("subjectPrefix")
 
 		if subjectPrefix == "" {
