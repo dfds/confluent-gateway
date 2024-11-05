@@ -20,5 +20,3 @@ services:
     - PGUSER=postgres               # same as above
     - PGPASSWORD=p                  # same as above
     - PGSSLMODE=disable             # ignore SSLMODE for local development
-    volumes:
-    - ./cluster.csv:/db/seed/cluster.csv

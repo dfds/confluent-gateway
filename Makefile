@@ -37,7 +37,6 @@ test-scripts:
 	-@cd src && go test -v -cover ./...
 test-setup:
 	docker compose -f azure_pipelines/docker-compose.functional_tests.yml up -d --build
-	@sleep 3
 test-teardown:
 	docker compose -f azure_pipelines/docker-compose.functional_tests.yml down
 
