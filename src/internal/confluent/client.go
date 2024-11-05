@@ -16,13 +16,10 @@ import (
 )
 
 type CloudApiAccess struct {
-	ApiEndpoint                 string
-	Username                    string
-	Password                    string
-	UserApiEndpoint             string
-	StreamGovernanceApiEndpoint string
-	StreamGovernanceApiUsername string
-	StreamGovernanceApiPassword string
+	ApiEndpoint     string
+	Username        string
+	Password        string
+	UserApiEndpoint string
 }
 
 var ErrSchemaRegistryIdIsEmpty = errors.New("schema registry id is not found, manually add id to cluster table")
@@ -33,10 +30,6 @@ var ErrNoServiceAccountFound = errors.New("unable to find requested service acco
 
 func (a *CloudApiAccess) ApiKey() models.ApiKey {
 	return models.ApiKey{Username: a.Username, Password: a.Password}
-}
-
-func (a *CloudApiAccess) StreamGovernanceApiKey() models.ApiKey {
-	return models.ApiKey{Username: a.StreamGovernanceApiUsername, Password: a.StreamGovernanceApiPassword}
 }
 
 type Clusters interface {
