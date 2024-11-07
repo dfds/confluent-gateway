@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/dfds/confluent-gateway/internal/models"
 )
 
 // ListSchemas godoc
@@ -17,9 +19,9 @@ import (
 //	@Router			/schemas [get]
 //
 //	@Param			subjectPrefix	query	string	false	"Subject prefix to filter schemas by"
-func ListSchemas(h *Handler, w http.ResponseWriter, r *http.Request, subjectPrefix string) {
+func ListSchemas(h *Handler, w http.ResponseWriter, r *http.Request, subjectPrefix string, clusterId models.ClusterId) {
 
-	schemas, err := h.SchemaService.ListSchemas(h.Ctx, subjectPrefix)
+	schemas, err := h.SchemaService.ListSchemas(h.Ctx, subjectPrefix, clusterId)
 
 	if err != nil {
 		h.Logger.Error(err, "failed to list schemas")

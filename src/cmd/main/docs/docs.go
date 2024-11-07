@@ -44,7 +44,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/schemas": {
+        "/clusters/{clusterId}/schemas": {
             "get": {
                 "description": "Get a list of schemas from the Confluent Cloud API.",
                 "consumes": [
