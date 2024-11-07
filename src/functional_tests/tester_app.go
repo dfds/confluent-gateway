@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/dfds/confluent-gateway/configuration"
@@ -89,31 +88,28 @@ func CreateAndSetupTester(logger logging.Logger) (*TesterApp, error) {
 
 	mockDb := mocks.NewDatabase(db, rawDb)
 
-	clusters, err := mockDb.GetClusters(context.Background())
-	if err != nil {
-		return nil, err
+	seedVariables := &SeedVariables{
+		AdminUser:                   "admin_user",
+		AdminPassword:               "admin_pass",
+		SchemaRegistryAdminUser:     "admin_user",
+		SchemaRegistryAdminPassword: "admin_pass",
+		AdminApiEndpoint:            "http://localhost:5051",
+		SchemaRegistryApiEndpoint:   "http://localhost:5051",
+		ProductionClusterId:         "abc-1234",
+		DevelopmentClusterId:        "def-5678",
+		OrganizationId:              "dfds_org",
+		DevelopmentEnvironmentId:    "test_env",
+		ProductionEnvironmentId:     "prod_env",
+		DevelopmentSchemaRegistryId: "lsrc-test12",
+		ProductionSchemaRegistryId:  "lsrc-prod12",
+		BootstrapApiEndpoint:        "http://localhost:9092",
 	}
+
+	devCluster := seedVariables.GetDevelopmentClusterValues()
+	clusters := []*models.Cluster{&devCluster}
 	confluentClient := confluent.NewClient(logger, config.CreateCloudApiAccess(), storage.NewClusterCache(clusters))
 
 	mockVault := mocks.NewVaultMock()
-
-	seedVariables :=
-		&SeedVariables{
-			AdminUser:                   "admin_user",
-			AdminPassword:               "admin_pass",
-			SchemaRegistryAdminUser:     "admin_user",
-			SchemaRegistryAdminPassword: "admin_pass",
-			AdminApiEndpoint:            "http://localhost:5051",
-			SchemaRegistryApiEndpoint:   "http://localhost:5051",
-			ProductionClusterId:         "abc-1234",
-			DevelopmentClusterId:        "def-5678",
-			OrganizationId:              "dfds_org",
-			DevelopmentEnvironmentId:    "test_env",
-			ProductionEnvironmentId:     "prod_env",
-			DevelopmentSchemaRegistryId: "lsrc-test12",
-			ProductionSchemaRegistryId:  "lsrc-prod12",
-			BootstrapApiEndpoint:        "http://localhost:9092",
-		}
 
 	return newTesterApp(logger, config, mockDb, confluentClient, &mockVault, seedVariables), nil
 }
