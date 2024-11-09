@@ -1,0 +1,37 @@
+name: Update Helm repo
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'develop'
+      - 'feat/chart'
+    paths:
+      - '.github/workflows/chart.yml'
+      - 'chart/**'
+  workflow_dispatch:
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+jobs:
+  deploy:
+    name:  '01 - Linux'
+    runs-on: [ubuntu-22.04]
+    strategy:
+      matrix:
+        arch: ['x86_64']
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dfds/shared-workflows/.github/actions/helm-repo-update@master
+        name: Helm repo update
+        id: helm_repo_update
+        with:
+          chart_path: chart
+          repo_url: https://charts.dfds.cloud
+          s3_arn: ${{ secrets.S3_CHART_ARN }}
+          role_arn: ${{ secrets.HELM_REPO_GH_IAM_ROLE }}
+          aws_region: eu-central-1
