@@ -21,7 +21,7 @@ stages:
           - task: Go@0
             inputs:
               command: 'test'
-              arguments: '$(go list ./...)'
+              arguments: './...'
               workingDirectory: '$(srcDir)'
             displayName: 'Unit and Functional tests'
 
