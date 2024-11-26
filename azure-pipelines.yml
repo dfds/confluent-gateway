@@ -14,20 +14,16 @@ stages:
         steps:
           - task: GoTool@0
             inputs:
-              version: '1.23.1'
-          - bash: |
-              cd src/
-              go test $(go list ./... | grep -v '/functional_tests')
-            displayName: 'Run unit tests'
+              version: '1.23.2'
           - bash: |
               docker compose -f azure_pipelines/docker-compose.functional_tests.yml up -d
             displayName: 'Docker compose postgres'
           - task: Go@0
             inputs:
               command: 'test'
-              arguments: 'github.com/dfds/confluent-gateway/functional_tests'
+              arguments: './...'
               workingDirectory: '$(srcDir)'
-            displayName: 'Functional tests'
+            displayName: 'Unit and Functional tests'
 
   - stage: CD
     displayName: 'Build, deliver deployment artifacts'
@@ -38,7 +34,7 @@ stages:
         steps:
           - task: GoTool@0
             inputs:
-              version: '1.23.1'
+              version: '1.23.2'
           - bash: |
               make clean-restore-build
             displayName: 'Build'

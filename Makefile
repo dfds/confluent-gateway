@@ -31,14 +31,9 @@ build:
 # go build -ldflags='-extldflags=-static -w -s' -tags netgo,osusergo
 
 test: tests
-tests: test-setup test-scripts test-teardown
-test-scripts:
-	-@cd src && go test -v -cover github.com/dfds/confluent-gateway/functional_tests
-	-@cd src && go test -v -cover ./...
-test-setup:
+tests:
 	docker compose -f azure_pipelines/docker-compose.functional_tests.yml up -d --build
-	@sleep 5
-test-teardown:
+	-@cd src && go test -v -cover ./...
 	docker compose -f azure_pipelines/docker-compose.functional_tests.yml down
 
 container:
