@@ -562,7 +562,6 @@ func (c *Client) ListTopics(ctx context.Context, clusterId models.ClusterId) ([]
 	}
 
 	return resp.Data, nil
-
 }
 
 func (c *Client) delete(ctx context.Context, url string, apiKey models.ApiKey) (*http.Response, error) {

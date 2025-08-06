@@ -68,7 +68,7 @@ func TestListTopics_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 	expectedBody, _ := json.Marshal(topics)
 	assert.JSONEq(t, string(expectedBody), rr.Body.String())
-	mockSchemaService.AssertExpectations(t)
+	mockTopicService.AssertExpectations(t)
 }
 
 func TestListTopics_Error(t *testing.T) {
@@ -92,5 +92,5 @@ func TestListTopics_Error(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	mockSchemaService.AssertExpectations(t)
+	mockTopicService.AssertExpectations(t)
 }
