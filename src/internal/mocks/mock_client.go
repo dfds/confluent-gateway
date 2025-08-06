@@ -66,6 +66,14 @@ func (m *MockClient) DeleteTopic(ctx context.Context, clusterId models.ClusterId
 	return args.Error(0)
 }
 
+func (m *MockClient) ListTopics(ctx context.Context, clusterId models.ClusterId) ([]models.ConfluentTopic, error) {
+	args := m.Called(ctx, clusterId)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ConfluentTopic), args.Error(1)
+}
+
 func (m *MockClient) GetConfluentInternalUsers(ctx context.Context) ([]models.ConfluentInternalUser, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]models.ConfluentInternalUser), args.Error(1)

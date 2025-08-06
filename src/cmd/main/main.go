@@ -66,7 +66,8 @@ func main() {
 
 	// API setup
 	schemaService := services.NewSchemaService(logger, confluentClient)
-	handler := handlers.NewHandler(ctx, logger, schemaService)
+	topicService := services.NewTopicService(logger, confluentClient)
+	handler := handlers.NewHandler(ctx, logger, schemaService, topicService)
 
 	m := NewMain(logger, config, consumer, handler)
 

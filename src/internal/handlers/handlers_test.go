@@ -13,9 +13,10 @@ func TestNewHandler(t *testing.T) {
 	ctx := context.Background()
 	mockLogger := &mocks.MockLogger{}
 	mockSchemaService := &mocks.MockSchemaService{}
+	mockTopicService := &mocks.MockTopicService{}
 
 	// Act: Initialize a new Handler
-	handler := NewHandler(ctx, mockLogger, mockSchemaService)
+	handler := NewHandler(ctx, mockLogger, mockSchemaService, mockTopicService)
 
 	// Assert: Check if the handler is correctly initialized
 	assert.NotNil(t, handler)

@@ -15,12 +15,14 @@ type Handler struct {
 	Ctx           context.Context
 	Logger        logging.Logger
 	SchemaService services.SchemaServiceInterface
+	TopicService  services.TopicServiceInterface
 }
 
-func NewHandler(ctx context.Context, logger logging.Logger, schemaService services.SchemaServiceInterface) *Handler {
+func NewHandler(ctx context.Context, logger logging.Logger, schemaService services.SchemaServiceInterface, topicService services.TopicServiceInterface) *Handler {
 	return &Handler{
 		Ctx:           ctx,
 		Logger:        logger,
 		SchemaService: schemaService,
+		TopicService:  topicService,
 	}
 }

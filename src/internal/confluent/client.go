@@ -54,6 +54,7 @@ type ConfluentClient interface {
 	CreateServiceAccountRoleBinding(ctx context.Context, serviceAccount models.ServiceAccountId, clusterId models.ClusterId) error
 	CreateTopic(ctx context.Context, clusterId models.ClusterId, name string, partitions int, retention int64) error
 	DeleteTopic(ctx context.Context, clusterId models.ClusterId, topicName string) error
+	ListTopics(ctx context.Context, clusterId models.ClusterId) ([]models.ConfluentTopic, error)
 	GetConfluentInternalUsers(ctx context.Context) ([]models.ConfluentInternalUser, error)
 	RegisterSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version int32) error
 	DeleteSchema(ctx context.Context, clusterId models.ClusterId, subject string, schema string, version string) error
@@ -325,6 +326,7 @@ func (c *Client) listApiKeys(ctx context.Context, serviceAccountId models.Servic
 	return resp, nil
 
 }
+
 func (c *Client) deleteApiKey(ctx context.Context, apiKeyId string) error {
 	url := fmt.Sprintf("%s/iam/v2/api-keys/%s", c.cloudApiAccess.ApiEndpoint, apiKeyId)
 	_, err := c.delete(ctx, url, c.cloudApiAccess.ApiKey())
@@ -544,6 +546,23 @@ func (c *Client) DeleteTopic(ctx context.Context, clusterId models.ClusterId, to
 	defer response.Body.Close()
 
 	return err
+}
+
+func (c *Client) ListTopics(ctx context.Context, clusterId models.ClusterId) ([]models.ConfluentTopic, error) {
+	url := fmt.Sprintf("%s/kafka/clusters/%s/topics", c.cloudApiAccess.ApiEndpoint, clusterId)
+	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	var resp models.ConfluentTopicResponse
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+
 }
 
 func (c *Client) delete(ctx context.Context, url string, apiKey models.ApiKey) (*http.Response, error) {

@@ -31,5 +31,11 @@ func SetupRoutes(handler *handlers.Handler) *http.ServeMux {
 		handlers.ListSchemas(handler, w, r, subjectPrefix, clusterId)
 	})
 
+	mux.HandleFunc("GET /clusters/{clusterId}/topics", func(w http.ResponseWriter, r *http.Request) {
+		clusterId := models.ClusterId(r.PathValue("clusterId"))
+
+		handlers.ListTopics(handler, w, r, clusterId)
+	})
+
 	return mux
 }

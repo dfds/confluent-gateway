@@ -53,4 +53,33 @@ type Schema struct {
 	RuleSet    RuleSet     `json:"ruleSet"`
 }
 
+type ConfluentTopic struct {
+	Kind     string `json:"kind"`
+	Metadata struct {
+		Self         string `json:"self"`
+		ResourceName string `json:"resource_name"`
+	} `json:"metadata"`
+	ClusterId         ClusterId `json:"cluster_id"`
+	TopicName         string    `json:"topic_name"`
+	IsInternal        bool      `json:"is_internal"`
+	ReplicationFactor int       `json:"replication_factor"`
+	PartitionsCount   int       `json:"partitions_count"`
+	Partitions        []struct {
+		Related string `json:"related"`
+	} `json:"partitions"`
+	Configs []struct {
+		Related string `json:"related"`
+	} `json:"configs"`
+	PartitionReasignments []struct {
+		Related string `json:"related"`
+	} `json:"partition_reasignments"`
+}
 
+type ConfluentTopicResponse struct {
+	Kind     string `json:"kind"`
+	Metadata struct {
+		Self string `json:"self"`
+		Next string `json:"next"`
+	}
+	Data []ConfluentTopic `json:"data"`
+}
