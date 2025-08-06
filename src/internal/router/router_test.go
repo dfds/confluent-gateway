@@ -24,8 +24,12 @@ func TestSetupRoutes(t *testing.T) {
 	// Mock the ListSchemas method in the SchemaService
 	mockSchemaService.On("ListSchemas", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil, nil)
 
+	// Mock the ListTopics method in the TopicService
+	mockTopicService := &mocks.MockTopicService{}
+	mockTopicService.On("ListTopics", mock.Anything, mock.Anything).Return(nil, nil)
+
 	// Create a new handler with the mock services
-	handler := handlers.NewHandler(context.Background(), mockLogger, mockSchemaService)
+	handler := handlers.NewHandler(context.Background(), mockLogger, mockSchemaService, mockTopicService)
 
 	// Initialize the routes with the handler
 	router := SetupRoutes(handler)

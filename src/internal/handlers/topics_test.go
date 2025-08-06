@@ -54,7 +54,7 @@ func TestListTopics_Success(t *testing.T) {
 		},
 	}
 
-	mockSchemaService.On("ListTopics", mock.Anything, "", mock.Anything).Return(topics, nil)
+	mockTopicService.On("ListTopics", mock.Anything, mock.Anything).Return(topics, nil)
 
 	req, err := http.NewRequest(http.MethodGet, "/clusters/abc-1234/topics", nil)
 	assert.NoError(t, err)
@@ -80,7 +80,7 @@ func TestListTopics_Error(t *testing.T) {
 
 	mockLogger.On("Error", mock.Anything, "failed to list topics", mock.Anything).Return(nil)
 
-	mockSchemaService.On("ListTopics", mock.Anything, "", mock.Anything).Return(nil, errors.New("failed to list schemas"))
+	mockTopicService.On("ListTopics", mock.Anything, mock.Anything).Return(nil, errors.New("failed to list schemas"))
 
 	req, err := http.NewRequest(http.MethodGet, "/clusters/abc-1234/topics", nil)
 	assert.NoError(t, err)
@@ -88,7 +88,7 @@ func TestListTopics_Error(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Act
-	ListSchemas(handler, rr, req, "", "")
+	ListTopics(handler, rr, req, "")
 
 	// Assert
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
