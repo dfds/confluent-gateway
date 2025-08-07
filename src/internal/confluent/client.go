@@ -549,7 +549,7 @@ func (c *Client) DeleteTopic(ctx context.Context, clusterId models.ClusterId, to
 }
 
 func (c *Client) ListTopics(ctx context.Context, clusterId models.ClusterId) ([]models.ConfluentTopic, error) {
-	url := fmt.Sprintf("%s/kafka/clusters/%s/topics", c.cloudApiAccess.ApiEndpoint, clusterId)
+	url := fmt.Sprintf("%s/kafka/v3/clusters/%s/topics", c.cloudApiAccess.ApiEndpoint, clusterId)
 	response, err := c.get(ctx, url, c.cloudApiAccess.ApiKey())
 	if err != nil {
 		return nil, err
