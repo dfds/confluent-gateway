@@ -3,6 +3,8 @@ package delete
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/dfds/confluent-gateway/internal/models"
 	. "github.com/dfds/confluent-gateway/internal/process"
 	"github.com/dfds/confluent-gateway/internal/storage"
@@ -154,7 +156,9 @@ func ensureTopicIsDeletedStep(step EnsureTopicIsDeletedStep) error {
 
 	err := step.DeleteTopic()
 	if err != nil {
-		return err
+		if !strings.Contains(strings.ToLower(err.Error()), "this server does not host this topic-partition") {
+			return err
+		}
 	}
 
 	step.MarkAsCompleted()

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'develop'
       - 'feat/chart'
     paths:
       - '.github/workflows/chart.yml'
