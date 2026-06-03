@@ -7,7 +7,7 @@ on:
 
 jobs:
   shared:
-    uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml@master
+    uses: dfds/shared-workflows/.github/workflows/automation-create-pull-request.yaml@v2.0.1
     with:
       repository-name: ${{ github.repository }}
       main-branch: main
